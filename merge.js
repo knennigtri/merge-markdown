@@ -6,58 +6,70 @@ var path = require('path')
  , markdownLinkCheck = require('markdown-link-check')
 , doctoc = require('doctoc/lib/transform');
 
-exports.add = function(manifest, outputFile, linkcheckFile, quiet){
+exports.add = function(manifestJSON, relPath){
     var tocTitle = "#### Module Contents";
-    var manifestJSON = JSON.parse(fs.readFileSync(manifest, 'utf8'));
-    var listOfFiles = manifestJSON.list;
-    var manifestPath = path.dirname(manifest);
+    var quiet = manifestJSON.quiet || false;
+    var inputList = manifestJSON.input;
+    var outputFileRelPathStr = relPath +"/"+ manifestJSON.output;
+    var outputLinkcheckFile = outputFileRelPathStr.replace(".md",".linkcheck.md");
+    if(!fs.existsSync(path.dirname(outputFileRelPathStr))){
+        fs.mkdirSync(path.dirname(outputFileRelPathStr));
+    } else {
+        if(fs.existsSync(outputFileRelPathStr)){
+            fs.unlinkSync(outputFileRelPathStr);
+        }
+        if(fs.existsSync(outputLinkcheckFile)){
+            fs.unlinkSync(outputLinkcheckFile);
+        }
+    }
 
-    var linkCheckContent = "";
-    var refFilesList= [];
-    for (var fileKey in listOfFiles){
-        var fileStr = listOfFiles[fileKey];
-        var filePath = manifestPath +"/"+ fileStr;
+    //Iterate through all of the files in manifest input to:
+    // - check all links are valid
+    // - remove YAML from all files except the first one
+    // - inject a TOC
+    // - add all files to an ordered list to be merged
+    var fileList= [];
+    var refFileList= [];
+    for (var inputKey in inputList){
+        var fileStr = inputList[inputKey];
+        var fileRelPathStr = relPath +"/"+ fileStr;
         
         console.log("*******************")
-        if (fs.existsSync(filePath)){
-            console.log(filePath);
-            if(fileKey != 0){
-                var tempFile = createTempFile(filePath,tocTitle);
-                listOfFiles[fileKey] = tempFile;
+        if (fs.existsSync(fileRelPathStr)){
+            console.log(fileRelPathStr);
+            if(inputKey != 0){
+                var tempFile = createTempFile(fileRelPathStr,tocTitle);
                 console.log(tempFile+" scrubbed for output.");
+                fileList.push(tempFile);
             } else {
-                listOfFiles[fileKey] = filePath;
+                fileList.push(fileRelPathStr);
             }
-            //TODO add Linkcheck
-            //linkCheckContent+=linkCheck(listOfFiles[fileKey]);
+            
+            linkCheck(fileRelPathStr,outputLinkcheckFile,quiet);
 
             //Adds any same name .ref.md files to refFilesList
-            var refFileStr = filePath.replace(".md",".ref.md")
-            if(fs.existsSync(refFileStr)){
-                console.log("Including "+refFileStr+ " at end of output");
-                refFilesList.push(refFileStr);
+            var refFileRelPathStr = fileRelPathStr.replace(".md",".ref.md")
+            if(fs.existsSync(refFileRelPathStr)){
+                console.log("Including "+refFileRelPathStr+ " at end of output");
+                refFileList.push(refFileRelPathStr);
             }
         }
         else {
             console.warn(fileStr + " does not exist. Skipping.");
-            delete listOfFiles[fileKey];
         }
     }
-    //TODO add Linkcheck
-    //Write link checker file
-    //fs.writeFileSync(linkcheckFile,linkCheckContent);
 
     //Merge lists and output single markdown file
-    var mergedListOfFiles = listOfFiles.concat(refFilesList);
-    console.log("List of files to combine: " + mergedListOfFiles);
-    createSingleFile(mergedListOfFiles, outputFile);
+    var mergedFileList = fileList.concat(refFileList);
+    console.log("List of files to combine: " + mergedFileList);
+    createSingleFile(mergedFileList, outputFileRelPathStr);
 
     //Remove temp files
     findFiles('./',/\.temp$/,function(tempFilename){
         fs.unlinkSync(tempFilename);
     });
-    
 }
+
 function createSingleFile(list, output){
     console.log("creating single file");
     outputPath = path.dirname(output);
@@ -79,9 +91,10 @@ function createTempFile (fileString, tocTitle) {
     
     //TODO add removeYAML 
     //Remove YAML
-    // var contentNoYAML = removeYAML(content);
+    //var contentNoYAML = removeYAML(content);
 
-    //Write TOC with doctoc
+    // Write TOC with doctoc
+    // https://github.com/thlorenz/doctoc
     var outDoctoc = doctoc(origContent,"github.com",3,tocTitle,false,"",true,true);
     scrubbedContent = outDoctoc.data;
 
@@ -92,36 +105,55 @@ function createTempFile (fileString, tocTitle) {
 //TODO Remove YAML
 function removeYAML(fileContents) {
     var YAMLFrontMatter= '/^---[.\r\n]*---/';
-    // gulp.src(fileString)
-    //     .pipe(replace(YAMLFrontMatter, ''))
-    //     .pipe(gulp.dest('./temp'));
+    gulp.src(fileString)
+        .pipe(replace(YAMLFrontMatter, ''))
+        .pipe(gulp.dest('./temp'));
     return fileContents;
 }
 
-//FIXME Linkcheck is not writing anything
-function linkCheck(inputFile) {
-    fs.readFile(inputFile, 'utf8' , (err, data) => {
-        if (err) {
-          console.error(err)
-          return
-        }
-        markdownLinkCheck(data,
-            {ignorePatterns: [{ "pattern": "^http://localhost"}]}, 
-            function (err, results) {
-                if (err) {
-                    console.error('Error', err);
-                    return;
+// function that uses markdown-link-check to validate all URLS and relative links to images
+// https://github.com/tcort/markdown-link-check
+function linkCheck(relFileStr, outputLinkcheck, quiet) {
+    var contents = fs.readFileSync(relFileStr, 'utf8');
+    linkcheckResults= "FILE: " + relFileStr + " \n";
+    
+    markdownLinkCheck(contents,
+        {
+            baseUrl: 'file://' + process.cwd(),
+            ignorePatterns: [{ pattern: "^http://localhost" }],
+        }, function (err, results) {
+            if (err) {
+                console.error('Error', err);
+                return;
+            }
+            results.forEach(function (result) {
+                var icon = "";
+                switch(result.status) {
+                    case "alive":
+                      icon = "✓"
+                      break;
+                    case "dead":
+                      icon = "x";
+                      break;
+                    case "ignored":
+                        icon="-"
+                        break;
+                  }
+                //TODO implement -q quiet
+                if(result.status != "alive"){
+                    linkcheckResults+=" ["+icon+"] " + result.link + " is " + result.status + " \n";
                 }
-                results.forEach(function (result) {
-                    console.log('%s is %s', result.link, result.status);
-                    // fs.writeFileSync(result.status,"linkcheck.md")
-                } 
-                );
-                return results;
-        });
+            });
+            linkcheckResults+="\n "+results.length +" links checked. \n\n  \n";
+            if(fs.existsSync(outputLinkcheck)){
+                fs.appendFileSync(outputLinkcheck,linkcheckResults);
+            }else{
+                fs.writeFileSync(outputLinkcheck,linkcheckResults);
+            }
     });
 }
 
+// Helper method to find all .temp files and do something with them
 function findFiles(startPath,filter,callback){
     //console.log('Starting from dir '+startPath+'/');
 
