@@ -17,15 +17,16 @@ note: quiet is optional
 `;
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
-  --type               [single | multi] specifys the type of module merge
-  -m manifestName      json file that contains an ordered list of modules. Default is manifest.json
-  -p modulePath        Only use with --type=single. Specifies the input path of the module location
+  -m manifestName      json file that contains build info. Default is manifest.json
   -q                   Sets the markdown link checker to quiet. (does not output success links)
   -h                   Displays this screen
   -v                   Displays version of this package
 `+EX_MANIFEST;
 
 //TODO Figure out how to check and verify module outputs
+//TODO make linkchecker optional
+//TODO make doctoc optional
+//TODO make yaml remover optional
 
 var init = function() {
     "use strict";

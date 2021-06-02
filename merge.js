@@ -1,8 +1,6 @@
 var path = require('path')
  ,   fs  =  require('fs')
  , concat = require('concat')
- , replace = require('gulp-replace')
- , gulp = require('gulp')
  , markdownLinkCheck = require('markdown-link-check')
 , doctoc = require('doctoc/lib/transform');
 
