@@ -104,8 +104,9 @@ function createTempFile (fileString, tocTitle) {
 
 //Removes YAML at beginning of file
 function removeYAML(fileContents) {
-    var YAMLFrontMatter= /^---[.\s\S]*---/;
-    var noYaml = fileContents.replace(YAMLFrontMatter,'');
+ //   var YAMLFrontMatter= /^---[.\s\S]*---/;
+  //  var noYaml = fileContents.replace(YAMLFrontMatter,'');
+  var noYaml=fileContents;
     return  noYaml;
 
     //TODO rewrite noYAML

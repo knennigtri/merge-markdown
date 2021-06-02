@@ -25,6 +25,8 @@ Options:
   -v                   Displays version of this package
 `+EX_MANIFEST;
 
+//TODO Figure out how to check and verify module outputs
+
 var init = function() {
     "use strict";
     var args = minimist(process.argv.slice(2));
