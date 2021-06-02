@@ -44,7 +44,6 @@ exports.add = function(manifestJSON, relPath){
             } else {
                 fileList.push(fileRelPathStr);
             }
-            
             linkCheck(fileRelPathStr,outputLinkcheckFile,quiet);
 
             //Adds any same name .ref.md files to refFilesList
@@ -85,38 +84,43 @@ function createSingleFile(list, output){
 function createTempFile (fileString, tocTitle) {
     var tempFile = fileString + ".temp";
     console.log("File to be created: "+tempFile);
-    var scrubbedContent = "";
-    
     var origContent = fs.readFileSync(fileString, 'utf-8');
-    
-    //TODO add removeYAML 
-    //Remove YAML
-    //var contentNoYAML = removeYAML(content);
+    var scrubbedContent = "";
 
+    //Remove YAML
+    var contentNoYAML = removeYAML(origContent);
+    scrubbedContent = contentNoYAML;
+    
     // Write TOC with doctoc
     // https://github.com/thlorenz/doctoc
-    var outDoctoc = doctoc(origContent,"github.com",3,tocTitle,false,"",true,true);
-    scrubbedContent = outDoctoc.data;
+    var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
+    if(outDoctoc.data != null){
+        scrubbedContent = outDoctoc.data;
+    }
 
     fs.writeFileSync(tempFile,scrubbedContent)
     return tempFile;
 } 
 
-//TODO Remove YAML
+//Removes YAML at beginning of file
 function removeYAML(fileContents) {
-    var YAMLFrontMatter= '/^---[.\r\n]*---/';
-    gulp.src(fileString)
-        .pipe(replace(YAMLFrontMatter, ''))
-        .pipe(gulp.dest('./temp'));
-    return fileContents;
+    var YAMLFrontMatter= /^---[.\s\S]*---/;
+    var noYaml = fileContents.replace(YAMLFrontMatter,'');
+    return  noYaml;
+
+    //TODO rewrite noYAML
+    //Read in file contents
+    //if line 1 is ---, start counting
+    //when --- is reached again, stop counting
+    //Remove lines between counts
+    //Return noYAMLMarkdown
 }
 
 // function that uses markdown-link-check to validate all URLS and relative links to images
 // https://github.com/tcort/markdown-link-check
 function linkCheck(relFileStr, outputLinkcheck, quiet) {
     var contents = fs.readFileSync(relFileStr, 'utf8');
-    linkcheckResults= "FILE: " + relFileStr + " \n";
-    
+    //TODO Linkcheck doesn't work for devOps. Need investigation
     markdownLinkCheck(contents,
         {
             baseUrl: 'file://' + process.cwd(),
@@ -126,6 +130,7 @@ function linkCheck(relFileStr, outputLinkcheck, quiet) {
                 console.error('Error', err);
                 return;
             }
+            linkcheckResults= "FILE: " + relFileStr + " \n";
             results.forEach(function (result) {
                 var icon = "";
                 switch(result.status) {
