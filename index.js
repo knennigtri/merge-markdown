@@ -1,15 +1,16 @@
 var minimist = require('minimist');
 var fs = require('fs');
 var packageInfo = require("./package.json");
+var merge = require("./merge.js");
 
 
 // Command line options
-const MSG_HELP = `Usage: aemfed [OPTIONS]
+const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
   --type               [single | multi] specifys the type of module merge
   -m manifestName      Sets the manifest that contains an ordered list of modules. Default is manifest.txt
-  -p modulePath        Specifys the input path of the module location
-  -q                   TRUE sets the markdown link checker to quiet. (does not output success links)
+  -p modulePath        Only use with --type=single. Specifies the input path of the module location
+  -q                   Sets the markdown link checker to quiet. (does not output success links)
   -h                   Displays this screen
   -v                   Displays version of this package`;
 
@@ -29,57 +30,64 @@ var init = function() {
       return;
     }
 
-    var mergeType = 'multi';
-    var inputType = args.type;
-    if(args.type == "single") {
-      console.log("this is a single module output");
-      mergeType = "single";
-    }
-    else if(args.type == "multi") {
-      console.log("this is a single module output");
-      mergeType = "single";
-    }
-    else {
-      console.log("Input Type should be [single | multi]");
-      return;
-    }
-    
-
-    var inputManifest = args.m || "manifest.txt";
-    var inputPath = args.p || "";
-    var outputPath = "output/";
+    var inputManifest = args.m || "./manifest.txt";
+    var inputPath = args.p || "./";
+    var outputPath = args.o || "output/";
     var outputFileName = "studentGuide";
 
-    //Initial
-    // console.log("Manifest: %s", inputManifest);
-    // console.log("inputPath: %s", inputPath);
-    // console.log("outputPath: %s", outputPath);
-    
-    if( mergeType == "single" && inputPath != "") {
-      inputPath = inputPath.replace(/\/$/, '');
-      outputFileName = inputPath;
-      inputManifest = inputPath + "/" + inputManifest;
-      if (!fs.existsSync(inputManifest)){
-        console.log("%s does not exist. Consider creating it.", inputManifest);
+    var mergeType;
+    if(args.type == "multi") {
+      console.log("Multi-module merge mode");
+      mergeType = "multi";
+      if(inputPath != "./") {
+        console.log("Ignoring -p for --type merge")
+      }
+    }
+    else if(args.type == "single") {
+      console.log("Single module merge mode");
+      mergeType = "single";
+      if(inputPath == "./") {
+        console.log("No module folder path given. Specify path with -p")
+        console.log(MSG_HELP);
         return;
       }
-    } else {
-      console.log("Current directory will be used.")
+      inputPath = inputPath.replace(/\/$/, '');
+      if (!fs.existsSync(inputPath)){
+        console.log("%s path does not exist.", inputPath);
+        return;
+      }
+      outputFileName = inputPath;
+      inputManifest = inputPath + "/" + inputManifest; 
     }
+    else {
+      console.log("Required: --type [single | multi]");
+      console.log(MSG_HELP);
+      return;
+    } 
 
-    //Inputs
-    console.log("Manifest: %s", inputManifest);
+    //Manifest Input
+    if (!fs.existsSync(inputManifest)){
+      console.log("%s does not exist. Consider creating it.", inputManifest);
+      return;
+    }
+    console.log("Using Manifest: %s", inputManifest);
 
-    //Outputs
+    //Markdown file output
     outputPath = outputPath.replace(/\/$/, '');
     outputFileName = outputFileName.replace(/\.[^/.]+$/, "");
-    var outputLocation = outputPath + "/" + outputFileName + ".md";
-    console.log("outputLocation: %s", outputLocation);
+    var outputFile = outputPath + "/" + outputFileName + ".md";
+    console.log("outputFile: %s", outputFile);
     
-    if(args.qa) {
-      console.log("QA links will be provided");
-      var qa = args.qa;
+    //linkcheck file output
+    var linkcheckFile = outputPath+"/"+outputFileName+".linkcheck.md";
+    console.log("QA Linkcheckfile: %s", linkcheckFile);
+
+    if(args.q) {
+      console.log("markdown link checker set to quiet");
+      var quiet = args.q;
     }
+
+    merge.add(inputManifest, outputFile, linkcheckFile, quiet);
 }
 
 exports.init = init;
