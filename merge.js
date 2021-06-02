@@ -10,24 +10,29 @@ exports.add = function(manifest, outputFile, linkcheckFile, quiet){
     var tocTitle = "#### Module Contents";
     var manifestJSON = JSON.parse(fs.readFileSync(manifest, 'utf8'));
     var listOfFiles = manifestJSON.list;
+    var manifestPath = path.dirname(manifest);
 
     var linkCheckContent = "";
     var refFilesList= [];
     for (var fileKey in listOfFiles){
         var fileStr = listOfFiles[fileKey];
+        var filePath = manifestPath +"/"+ fileStr;
         
         console.log("*******************")
-        if (fs.existsSync(fileStr)){
-            console.log(fileStr);
+        if (fs.existsSync(filePath)){
+            console.log(filePath);
             if(fileKey != 0){
-                var tempFile = createTempFile(fileStr,tocTitle);
+                var tempFile = createTempFile(filePath,tocTitle);
                 listOfFiles[fileKey] = tempFile;
                 console.log(tempFile+" scrubbed for output.");
+            } else {
+                listOfFiles[fileKey] = filePath;
             }
-         //   linkCheckContent+=linkCheck(listOfFiles[fileKey]);
+            //TODO add Linkcheck
+            //linkCheckContent+=linkCheck(listOfFiles[fileKey]);
 
             //Adds any same name .ref.md files to refFilesList
-            var refFileStr = fileStr.replace(".md",".ref.md")
+            var refFileStr = filePath.replace(".md",".ref.md")
             if(fs.existsSync(refFileStr)){
                 console.log("Including "+refFileStr+ " at end of output");
                 refFilesList.push(refFileStr);
@@ -38,53 +43,53 @@ exports.add = function(manifest, outputFile, linkcheckFile, quiet){
             delete listOfFiles[fileKey];
         }
     }
-    fs.writeFileSync(linkcheckFile,linkCheckContent);
+    //TODO add Linkcheck
+    //Write link checker file
+    //fs.writeFileSync(linkcheckFile,linkCheckContent);
 
-    //add all .ref.md files
-    //var merged = new Map([...listOfFiles, ...refFilesList]);
-    //var merged = new Set(["0-frontmatter.md","1-overview.md.temp","1-overview.ref.md"]);
-
+    //Merge lists and output single markdown file
     var mergedListOfFiles = listOfFiles.concat(refFilesList);
     console.log("List of files to combine: " + mergedListOfFiles);
+    createSingleFile(mergedListOfFiles, outputFile);
 
-    //works
-   createSingleFile(mergedListOfFiles, outputFile);
-
-    // findFiles('./',/\.temp$/,function(tempFilename){
-    //     fs.unlinkSync(tempFilename);
-    // });
+    //Remove temp files
+    findFiles('./',/\.temp$/,function(tempFilename){
+        fs.unlinkSync(tempFilename);
+    });
     
 }
 function createSingleFile(list, output){
-    fs.unlink(output, (err) => {
-        concat(list, output);
-        console.log(output + " has been created.");
-    })
+    console.log("creating single file");
+    outputPath = path.dirname(output);
+    if(!fs.existsSync(outputPath)){
+        fs.mkdirSync(outputPath);
+    }
+    // fs.unlinkSync(output);
+    concat(list, output).then(result =>
+        console.log(output + " has been created.")
+    );
 }
 
 function createTempFile (fileString, tocTitle) {
     var tempFile = fileString + ".temp";
+    console.log("File to be created: "+tempFile);
     var scrubbedContent = "";
     
-    fs.readFile(fileString, 'utf8' , (err, content) => {
-        if (err) {
-          console.error(err)
-          return
-        }
+    var origContent = fs.readFileSync(fileString, 'utf-8');
+    
+    //TODO add removeYAML 
+    //Remove YAML
+    // var contentNoYAML = removeYAML(content);
 
-        //Remove YAML
-       // var contentNoYAML = removeYAML(content);
+    //Write TOC with doctoc
+    var outDoctoc = doctoc(origContent,"github.com",3,tocTitle,false,"",true,true);
+    scrubbedContent = outDoctoc.data;
 
-        //Write TOC with doctoc
-        var outDoctoc = doctoc(content,"github.com",3,tocTitle,false,"",true,true);
-        scrubbedContent = outDoctoc.data;
-
-        fs.writeFileSync(tempFile,scrubbedContent);
-      });
+    fs.writeFileSync(tempFile,scrubbedContent)
     return tempFile;
 } 
 
-//TODO not working.
+//TODO Remove YAML
 function removeYAML(fileContents) {
     var YAMLFrontMatter= '/^---[.\r\n]*---/';
     // gulp.src(fileString)
@@ -93,7 +98,7 @@ function removeYAML(fileContents) {
     return fileContents;
 }
 
-//TODO not writing anything
+//FIXME Linkcheck is not writing anything
 function linkCheck(inputFile) {
     fs.readFile(inputFile, 'utf8' , (err, data) => {
         if (err) {
@@ -117,9 +122,6 @@ function linkCheck(inputFile) {
     });
 }
 
-
-
-//TODO
 function findFiles(startPath,filter,callback){
     //console.log('Starting from dir '+startPath+'/');
 

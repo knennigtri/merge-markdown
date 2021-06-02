@@ -43,6 +43,7 @@ var init = function() {
     var outputPath = args.o || "output/";
     var outputFileName = "studentGuide";
 
+    //TODO Test Single Module output
     var mergeType;
     if(args.type == "multi") {
       console.log("Multi-module merge mode");
@@ -54,11 +55,11 @@ var init = function() {
     else if(args.type == "single") {
       console.log("Single module merge mode");
       mergeType = "single";
-      if(inputPath == "./") {
-        console.log("No module folder path given. Specify path with -p")
-        console.log(MSG_HELP);
-        return;
-      }
+      // if(inputPath == "./") {
+      //   console.log("No module folder path given. Specify path with -p")
+      //   console.log(MSG_HELP);
+      //   return;
+      // }
       inputPath = inputPath.replace(/\/$/, '');
       if (!fs.existsSync(inputPath)){
         console.log("%s path does not exist.", inputPath);
