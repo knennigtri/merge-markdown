@@ -12,7 +12,7 @@ exports.add = function(manifest, outputFile, linkcheckFile, quiet){
     var listOfFiles = manifestJSON.list;
 
     var linkCheckContent = "";
-    var refFilesList=" ";
+    var refFilesList= [];
     for (var fileKey in listOfFiles){
         var fileStr = listOfFiles[fileKey];
         
@@ -20,17 +20,17 @@ exports.add = function(manifest, outputFile, linkcheckFile, quiet){
         if (fs.existsSync(fileStr)){
             console.log(fileStr);
             if(fileKey != 0){
-                var tempFile = createTempFile(fileStr);
+                var tempFile = createTempFile(fileStr,tocTitle);
                 listOfFiles[fileKey] = tempFile;
                 console.log(tempFile+" scrubbed for output.");
             }
-            linkCheckContent+=linkCheck(listOfFiles[fileKey]);
+         //   linkCheckContent+=linkCheck(listOfFiles[fileKey]);
 
             //Adds any same name .ref.md files to refFilesList
             var refFileStr = fileStr.replace(".md",".ref.md")
             if(fs.existsSync(refFileStr)){
                 console.log("Including "+refFileStr+ " at end of output");
-                refFilesList+=" "+refFileStr;
+                refFilesList.push(refFileStr);
             }
         }
         else {
@@ -41,16 +41,25 @@ exports.add = function(manifest, outputFile, linkcheckFile, quiet){
     fs.writeFileSync(linkcheckFile,linkCheckContent);
 
     //add all .ref.md files
-    listOfFiles+=refFilesList;
-    console.log("List of files to combine: " + listOfFiles);
+    //var merged = new Map([...listOfFiles, ...refFilesList]);
+    //var merged = new Set(["0-frontmatter.md","1-overview.md.temp","1-overview.ref.md"]);
+
+    var mergedListOfFiles = listOfFiles.concat(refFilesList);
+    console.log("List of files to combine: " + mergedListOfFiles);
 
     //works
-  //  createSingleFile(listOfFiles, outputFile);
+   createSingleFile(mergedListOfFiles, outputFile);
 
     // findFiles('./',/\.temp$/,function(tempFilename){
     //     fs.unlinkSync(tempFilename);
     // });
     
+}
+function createSingleFile(list, output){
+    fs.unlink(output, (err) => {
+        concat(list, output);
+        console.log(output + " has been created.");
+    })
 }
 
 function createTempFile (fileString, tocTitle) {
@@ -108,17 +117,7 @@ function linkCheck(inputFile) {
     });
 }
 
-//TODO
-function findAllRefFiles(fileMap, regexStr){
-    return "";
-}
 
-function createSingleFile(list, output){
-    fs.unlink(output, (err) => {
-        concat(list, output);
-        console.log(output + " has been created.");
-    })
-}
 
 //TODO
 function findFiles(startPath,filter,callback){
