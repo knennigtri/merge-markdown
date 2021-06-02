@@ -47,9 +47,9 @@ exports.add = function(manifest, outputFile, linkcheckFile, quiet){
     //works
   //  createSingleFile(listOfFiles, outputFile);
 
-    findFiles('./',/\.temp$/,function(tempFilename){
-        fs.unlinkSync(tempFilename);
-    });
+    // findFiles('./',/\.temp$/,function(tempFilename){
+    //     fs.unlinkSync(tempFilename);
+    // });
     
 }
 
@@ -65,15 +65,13 @@ function createTempFile (fileString, tocTitle) {
 
         //Remove YAML
        // var contentNoYAML = removeYAML(content);
-       
-        // console.log(content);
-        //Write TOC with doctoc
-        var outDoctoc = doctoc(content,"github.com",3,tocTitle,false,"","",true);
-        console.log(outDoctoc);
-        scrubbedContent = outDoctoc.data;
-      });
-      fs.writeFileSync(tempFile,scrubbedContent);
 
+        //Write TOC with doctoc
+        var outDoctoc = doctoc(content,"github.com",3,tocTitle,false,"",true,true);
+        scrubbedContent = outDoctoc.data;
+
+        fs.writeFileSync(tempFile,scrubbedContent);
+      });
     return tempFile;
 } 
 
