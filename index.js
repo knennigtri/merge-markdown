@@ -1,10 +1,20 @@
 var minimist = require('minimist');
 var fs = require('fs');
+var path = require('path');
 var packageInfo = require("./package.json");
 var merge = require("./merge.js");
 
-
-// Command line options
+const EX_MANIFEST = `Example manifest.json
+{
+  "input": [
+    "module1Folder/file1.md",
+    "module2Folder/file2.md"
+  ],
+  "output": "output/myOutput.md",
+  "quiet": true
+}
+note: quiet is optional
+`;
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
   --type               [single | multi] specifys the type of module merge
@@ -13,14 +23,7 @@ Options:
   -q                   Sets the markdown link checker to quiet. (does not output success links)
   -h                   Displays this screen
   -v                   Displays version of this package
-Example manifest.json
-  {
-    "list": [
-      "module1Folder/file1.md",
-      "module2Folder/file2.md"
-    ]
-  }
-  `;
+`+EX_MANIFEST;
 
 var init = function() {
     "use strict";
@@ -39,64 +42,43 @@ var init = function() {
     }
 
     var inputManifest = args.m || "./manifest.json";
-    var inputPath = args.p || "./";
-    var outputPath = args.o || "output/";
-    var outputFileName = "studentGuide";
 
-    //TODO Test Single Module output
-    var mergeType;
-    if(args.type == "multi") {
-      console.log("Multi-module merge mode");
-      mergeType = "multi";
-      if(inputPath != "./") {
-        console.log("Ignoring -p for --type merge")
-      }
-    }
-    else if(args.type == "single") {
-      console.log("Single module merge mode");
-      mergeType = "single";
-      // if(inputPath == "./") {
-      //   console.log("No module folder path given. Specify path with -p")
-      //   console.log(MSG_HELP);
-      //   return;
-      // }
-      inputPath = inputPath.replace(/\/$/, '');
-      if (!fs.existsSync(inputPath)){
-        console.log("%s path does not exist.", inputPath);
-        return;
-      }
-      outputFileName = inputPath;
-      inputManifest = inputPath + "/" + inputManifest; 
-    }
-    else {
-      console.log("Required: --type [single | multi]");
-      console.log(MSG_HELP);
-      return;
-    } 
-
-    //Manifest Input
+    //Verify Manifest exists
     if (!fs.existsSync(inputManifest)){
       console.log("%s does not exist. Consider creating it.", inputManifest);
       return;
     }
     console.log("Using Manifest: %s", inputManifest);
+    var manifestJSON = JSON.parse(fs.readFileSync(inputManifest, 'utf8'));
 
-    //Markdown file output
-    outputPath = outputPath.replace(/\/$/, '');
-    outputFileName = outputFileName.replace(/\.[^/.]+$/, "");
-    var outputFile = outputPath + "/" + outputFileName + ".md";
-    console.log("outputFile: %s", outputFile);
-    
-    //linkcheck file output
-    var linkcheckFile = outputPath+"/"+outputFileName+".linkcheck.md";
-    console.log("QA Linkcheckfile: %s", linkcheckFile);
+    //Verify manifest has correct properties.
+    if(!manifestJSON.hasOwnProperty("input")) {
+      console.log("Manifest is missing input.");
+      console.log(EX_MANIFEST);
+      return;
+    }
+    if(!manifestJSON.hasOwnProperty("output")) {
+      console.log("Manifest is missing output.");
+      console.log(EX_MANIFEST);
+      return;
+    }
+
+    var manifestRelPath = path.dirname(inputManifest);
+
+    var inputList = manifestJSON.input;
+    var outputFile = manifestJSON.output;
+    if(outputFile.split('.').pop() != "md"){
+      console.log("output needs to be a .md file");
+    }
+
+    console.log("Input: " + inputList);
+    console.log("Ouput: " + outputFile);
 
     if(args.q) {
       console.log("markdown link checker set to quiet");
       var quiet = args.q;
     }
-
-    merge.add(inputManifest, outputFile, linkcheckFile, quiet);
+    merge.add(manifestJSON, manifestRelPath, quiet);
 }
 
 exports.init = init;
