@@ -8,11 +8,19 @@ var merge = require("./merge.js");
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
   --type               [single | multi] specifys the type of module merge
-  -m manifestName      Sets the manifest that contains an ordered list of modules. Default is manifest.txt
+  -m manifestName      json file that contains an ordered list of modules. Default is manifest.json
   -p modulePath        Only use with --type=single. Specifies the input path of the module location
   -q                   Sets the markdown link checker to quiet. (does not output success links)
   -h                   Displays this screen
-  -v                   Displays version of this package`;
+  -v                   Displays version of this package
+Example manifest.json
+  {
+    "list": [
+      "module1Folder/file1.md",
+      "module2Folder/file2.md"
+    ]
+  }
+  `;
 
 var init = function() {
     "use strict";
@@ -30,7 +38,7 @@ var init = function() {
       return;
     }
 
-    var inputManifest = args.m || "./manifest.txt";
+    var inputManifest = args.m || "./manifest.json";
     var inputPath = args.p || "./";
     var outputPath = args.o || "output/";
     var outputFileName = "studentGuide";
