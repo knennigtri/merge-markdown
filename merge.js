@@ -12,7 +12,7 @@ exports.add = function(manifest, outputFile, linkcheckFile, quiet){
     var listOfFiles = manifestJSON.list;
 
     var linkCheckContent = "";
-    var refFiles=" ";
+    var refFilesList=" ";
     for (var fileKey in listOfFiles){
         var fileStr = listOfFiles[fileKey];
         
@@ -25,24 +25,23 @@ exports.add = function(manifest, outputFile, linkcheckFile, quiet){
                 console.log(tempFile+" scrubbed for output.");
             }
             linkCheckContent+=linkCheck(listOfFiles[fileKey]);
-        }
-        else if(fileStr.includes(".ref.md")) {
-           //TODO only look for .ref.md files of files we are including
-           
-           findFiles('./',/\.ref.md$/,function(refFileName){
-                refFiles+=" "+refFileName;    
-                console.log(refFileName+ " Found!")
-            });
-            delete listOfFiles[fileKey]; 
-           // listOfFiles = findAllRefFiles(listOfFiles,fileStr);
+
+            //Adds any same name .ref.md files to refFilesList
+            var refFileStr = fileStr.replace(".md",".ref.md")
+            if(fs.existsSync(refFileStr)){
+                console.log("Including "+refFileStr+ " at end of output");
+                refFilesList+=" "+refFileStr;
+            }
         }
         else {
             console.warn(fileStr + " does not exist. Skipping.");
             delete listOfFiles[fileKey];
         }
     }
-    listOfFiles+=refFiles;
     fs.writeFileSync(linkcheckFile,linkCheckContent);
+
+    //add all .ref.md files
+    listOfFiles+=refFilesList;
     console.log("List of files to combine: " + listOfFiles);
 
     //works
@@ -58,7 +57,6 @@ function createTempFile (fileString, tocTitle) {
     var tempFile = fileString + ".temp";
     var scrubbedContent = "";
     
-    console.log("file: " +fileString);
     fs.readFile(fileString, 'utf8' , (err, content) => {
         if (err) {
           console.error(err)
@@ -66,13 +64,14 @@ function createTempFile (fileString, tocTitle) {
         }
 
         //Remove YAML
-        var contentNoYAML = removeYAML(content);
-
+       // var contentNoYAML = removeYAML(content);
+       
+        // console.log(content);
         //Write TOC with doctoc
         var outDoctoc = doctoc(content,"github.com",3,tocTitle,false,"","",true);
         console.log(outDoctoc);
         scrubbedContent = outDoctoc.data;
-      })
+      });
       fs.writeFileSync(tempFile,scrubbedContent);
 
     return tempFile;
