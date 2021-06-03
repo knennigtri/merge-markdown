@@ -1,5 +1,5 @@
 {
-  "name": "@knennigtri/merge-markdown",
+  "name": "merge-markdown",
   "version": "0.0.7",
   "description": "Creates a single markdown file (with TOC) from several markdown files",
   "repository": {
@@ -38,5 +38,8 @@
   "devDependencies": {},
   "bugs": {
     "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
+  },
+  "publishConfig": {
+    "registry": "https://registry-url"
   }
 }

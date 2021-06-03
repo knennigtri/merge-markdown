@@ -20,9 +20,9 @@ jobs:
         with:
           node-version: 12
           registry-url: https://npm.pkg.github.com
-          name: '@knennigtri/merge-markdown'
           scope: '@knennigtri'
       - run: npm ci
+      - run: echo registry=https://npm.pkg.github.com/knennigtri >> .npmrc
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
