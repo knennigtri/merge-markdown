@@ -38,8 +38,5 @@
   "devDependencies": {},
   "bugs": {
     "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
-  },
-  "publishConfig": {
-    "registry": "https://registry-url"
   }
 }
