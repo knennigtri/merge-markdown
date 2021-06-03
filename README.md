@@ -2,9 +2,6 @@
 Takes in a list of markdown files and merges them together
 
 ## Installation
-
-```
-
 To install the command line tool globally, run:
 
 ```shell
@@ -15,8 +12,7 @@ To add the module to your project, run:
 
 ```shell
 npm install --save-dev merge-markdown
-
----
+```
 
 ## Command Line Tool
 

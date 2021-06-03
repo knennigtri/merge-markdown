@@ -1,14 +1,17 @@
 {
   "name": "merge-markdown",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Creates a single markdown file (with TOC) from several markdown files",
   "repository": {
     "type": "git",
-    "url": "#"
+    "url": "https://github.com/knennigtri/merge-markdown"
   },
-  "author": "Kevin Nennig",
+  "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
-    "multi": "merge-markdown --type multi -m ./manifest.txt -o ./"
+    "default": "merge-markdown -m manifest.json",
+    "curFolder": "merge-markdown -m manifest-full.json",
+    "subFolder": "merge-markdown -m manifest-subfolder.json",
+    "yamlTest": "merge-markdown -m manifest-yaml.json"
   },
   "main": "index.js",
   "keywords": [
@@ -26,7 +29,11 @@
     "minimist": "^1.2.5"
   },
   "bin": {
-    "merge-markdown": "./bin/global.js"
+    "merge-markdown": "bin/global.js"
   },
-  "preferGlobal": true
+  "preferGlobal": true,
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {}
 }
