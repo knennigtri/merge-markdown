@@ -4,7 +4,7 @@
   "description": "Creates a single markdown file (with TOC) from several markdown files",
   "repository": {
     "type": "git",
-    "url": "https://github.com/knennigtri/merge-markdown.git"
+    "url": "git@github.com:knennigtri/merge-markdown.git"
   },
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
@@ -35,5 +35,8 @@
   "directories": {
     "test": "test"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "bugs": {
+    "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
+  }
 }
