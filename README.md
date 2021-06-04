@@ -1,5 +1,6 @@
 # merge-markdown
 Takes in a list of markdown files and merges them together
+Available on NPM: https://www.npmjs.com/package/merge-markdown
 
 ## Installation
 To install the command line tool globally, run:
