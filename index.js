@@ -18,9 +18,9 @@ note: quiet is optional
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
   -m manifestName      json file that contains build info. Default is manifest.json
-  -q                   Sets the markdown link checker to quiet. (does not output success links)
+  -v                   Sets verbose output
   -h                   Displays this screen
-  -v                   Displays version of this package
+  --version            Displays version of this package
 `+EX_MANIFEST;
 
 //TODO Figure out how to check and verify module outputs
@@ -39,14 +39,17 @@ var init = function() {
       return;
     }
     // Show version
-    if (args.v) {
+    if (args.version) {
       console.log(packageInfo.version);
       return;
     }
-
-    var inputManifest = args.m || "./manifest.json";
+    var verbose = false;
+    if(args.v) {
+      verbose = true;
+    }
 
     //Verify Manifest exists
+    var inputManifest = args.m || "./manifest.json";
     if (!fs.existsSync(inputManifest)){
       console.log("%s does not exist. Consider creating it.", inputManifest);
       return;
@@ -81,7 +84,7 @@ var init = function() {
       console.log("markdown link checker set to quiet");
       var quiet = args.q;
     }
-    merge.add(manifestJSON, manifestRelPath, quiet);
+    merge.add(manifestJSON, manifestRelPath, verbose);
 }
 
 exports.init = init;
