@@ -6,21 +6,20 @@ var merge = require("./merge.js");
 
 const EX_MANIFEST = `Example manifest.json
 {
-  "input": [
-    "module1Folder/file1.md",
-    "module2Folder/file2.md"
-  ],
+  "input": {
+    "frontmatter.md": "",
+    "module1Folder/file1.md": [OPTIONS],
+    "module2Folder/file2.md": [OPTIONS]
+  },
   "output": "output/myOutput.md",
-  "quiet": true
 }
-note: quiet is optional
 `;
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
   -m manifestName      json file that contains build info. Default is manifest.json
-  -q                   Sets the markdown link checker to quiet. (does not output success links)
+  -v                   Sets verbose output
   -h                   Displays this screen
-  -v                   Displays version of this package
+  --version            Displays version of this package
 `+EX_MANIFEST;
 
 //TODO Figure out how to check and verify module outputs
@@ -31,7 +30,6 @@ Options:
 var init = function() {
     "use strict";
     var args = minimist(process.argv.slice(2));
-    console.log(args);
 
     // Show help
     if (args.h) {
@@ -39,16 +37,20 @@ var init = function() {
       return;
     }
     // Show version
-    if (args.v) {
+    if (args.version) {
       console.log(packageInfo.version);
       return;
     }
-
-    var inputManifest = args.m || "./manifest.json";
+    var verbose = false;
+    if(args.v) {
+      verbose = true;
+    }
 
     //Verify Manifest exists
-    if (!fs.existsSync(inputManifest)){
-      console.log("%s does not exist. Consider creating it.", inputManifest);
+    var inputManifest = args.m;
+    if (!fs.existsSync(inputManifest) || (inputManifest.split('.').pop() != "json")){
+      console.log("Cannot find manifest file or it is not a JSON");
+      console.log(MSG_HELP);
       return;
     }
     console.log("Using Manifest: %s", inputManifest);
@@ -65,23 +67,14 @@ var init = function() {
       console.log(EX_MANIFEST);
       return;
     }
-
     var manifestRelPath = path.dirname(inputManifest);
 
-    var inputList = manifestJSON.input;
     var outputFile = manifestJSON.output;
     if(outputFile.split('.').pop() != "md"){
       console.log("output needs to be a .md file");
     }
 
-    console.log("Input: " + inputList);
-    console.log("Ouput: " + outputFile);
-
-    if(args.q) {
-      console.log("markdown link checker set to quiet");
-      var quiet = args.q;
-    }
-    merge.add(manifestJSON, manifestRelPath, quiet);
+   merge.add(manifestJSON, manifestRelPath, verbose);
 }
 
 exports.init = init;

@@ -3,11 +3,13 @@ var path = require('path')
  , concat = require('concat')
  , markdownLinkCheck = require('markdown-link-check')
 , doctoc = require('doctoc/lib/transform');
+const { exit } = require('process');
 
-exports.add = function(manifestJSON, relPath){
+exports.add = function(manifestJSON, relPath, v){
+    var verbose = v || false;
     var tocTitle = "#### Module Contents";
     var quiet = manifestJSON.quiet || false;
-    var inputList = manifestJSON.input;
+    var inputJSON = manifestJSON.input;
     var outputFileRelPathStr = relPath +"/"+ manifestJSON.output;
     var outputLinkcheckFile = outputFileRelPathStr.replace(".md",".linkcheck.md");
     if(!fs.existsSync(path.dirname(outputFileRelPathStr))){
@@ -21,28 +23,25 @@ exports.add = function(manifestJSON, relPath){
         }
     }
 
-    //Iterate through all of the files in manifest input to:
+    //Iterate through all of the files in manifest and:
     // - check all links are valid
     // - remove YAML from all files except the first one
     // - inject a TOC
     // - add all files to an ordered list to be merged
     var fileList= [];
     var refFileList= [];
-    for (var inputKey in inputList){
-        var fileStr = inputList[inputKey];
+    // for (var inputKey in inputJSON){
+    Object.keys(inputJSON).forEach(function(inputKey) {
+        var fileStr = inputKey;
+        var fileOptions = inputJSON[inputKey];
         var fileRelPathStr = relPath +"/"+ fileStr;
         
         console.log("*******************")
         if (fs.existsSync(fileRelPathStr)){
             console.log(fileRelPathStr);
-            if(inputKey != 0){
-                var tempFile = createTempFile(fileRelPathStr,tocTitle);
-                console.log(tempFile+" scrubbed for output.");
-                fileList.push(tempFile);
-            } else {
-                fileList.push(fileRelPathStr);
-            }
-            linkCheck(fileRelPathStr,outputLinkcheckFile,quiet);
+            var tempFile = createTempFile(fileRelPathStr,tocTitle,fileOptions,v);
+            linkCheck(fileRelPathStr,outputLinkcheckFile,v);
+            fileList.push(tempFile);
 
             //Adds any same name .ref.md files to refFilesList
             var refFileRelPathStr = fileRelPathStr.replace(".md",".ref.md")
@@ -54,11 +53,12 @@ exports.add = function(manifestJSON, relPath){
         else {
             console.warn(fileStr + " does not exist. Skipping.");
         }
-    }
+    });
 
+    console.log("++++++++++++++++++++")
     //Merge lists and output single markdown file
     var mergedFileList = fileList.concat(refFileList);
-    console.log("List of files to combine: " + mergedFileList);
+    console.log("List of files to combine:\n    " + mergedFileList.join("\n    "));
     createSingleFile(mergedFileList, outputFileRelPathStr);
 
     //Remove temp files
@@ -67,62 +67,94 @@ exports.add = function(manifestJSON, relPath){
     });
 }
 
-function createSingleFile(list, output){
-    console.log("creating single file");
+function createSingleFile(list, output, v){
+    if (v) console.log("creating single file");
     outputPath = path.dirname(output);
     if(!fs.existsSync(outputPath)){
         fs.mkdirSync(outputPath);
     }
-    // fs.unlinkSync(output);
     concat(list, output).then(result =>
         console.log(output + " has been created.")
     );
 }
 
-function createTempFile (fileString, tocTitle) {
+function createTempFile (fileString, tocTitle, options, v) {
     var tempFile = fileString + ".temp";
-    console.log("File to be created: "+tempFile);
+    console.log("Preparing file: "+tempFile);
     var origContent = fs.readFileSync(fileString, 'utf-8');
-    var scrubbedContent = "";
+    var scrubbedContent = origContent;
 
     //Remove YAML
-    var contentNoYAML = removeYAML(origContent);
-    scrubbedContent = contentNoYAML;
+    if(options.includes("noYAML")){
+        var contentNoYAML = removeYAML(origContent, v);
+        scrubbedContent = contentNoYAML;
+    }
     
-    // Write TOC with doctoc
-    // https://github.com/thlorenz/doctoc
-    var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
-    if(outDoctoc.data != null){
-        scrubbedContent = outDoctoc.data;
+    if(options.includes("TOC")){
+        // Write TOC with doctoc
+        // https://github.com/thlorenz/doctoc
+        var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
+        if(outDoctoc.data != null){
+            scrubbedContent = outDoctoc.data;
+            console.log("TOC Added");
+        }
     }
 
     fs.writeFileSync(tempFile,scrubbedContent)
+    console.log("Ready for merge");
     return tempFile;
 } 
 
 //Removes YAML at beginning of file
-function removeYAML(fileContents) {
- //   var YAMLFrontMatter= /^---[.\s\S]*---/;
-  //  var noYaml = fileContents.replace(YAMLFrontMatter,'');
-  var noYaml=fileContents;
+function removeYAML(fileContents, v) {
+    var lines = fileContents.split("\n");
+    var i=0;
+    var startYAML=-1;
+    var endYAML=-1;
+    for (i=0; i < lines.length; i++) {
+        var line = lines[i];
+        //Stop searching if there is no YAML
+        if(i == 0 && line != "---"){
+            break;
+        }
+        //Set start/end YAML indexes if they are available
+        if(i == 0 && startYAML == -1 && line == "---"){
+                startYAML=i;
+        } else if(startYAML != -1 && endYAML == -1 && line == "---"){
+                endYAML = i;
+                break;
+        }//TODO YAML is on line 2 or (\n\r before YAML..)
+        
+        //Stop searching if a header # is reached
+        if(startYAML != -1 && line.startsWith("#")){
+            break;
+        }
+    }
+    // console.log("S("+startYAML+")E("+endYAML+")✓'d("+i+")T("+lines.length+")");
+    if(startYAML != -1 && endYAML != -1){
+        //shows YAML being removed
+        yaml = lines.splice(startYAML,1+endYAML-startYAML).join("\n");
+        if(v) console.log("Removing S("+startYAML+")->E("+endYAML+") YAML:")
+        if(v) console.log(yaml);
+        noYaml = lines.join("\n");
+        console.log("YAML removed");
+    } else {
+        console.log("No YAML found for removal");
+    }
     return  noYaml;
-
-    //TODO rewrite noYAML
-    //Read in file contents
-    //if line 1 is ---, start counting
-    //when --- is reached again, stop counting
-    //Remove lines between counts
-    //Return noYAMLMarkdown
 }
 
 // function that uses markdown-link-check to validate all URLS and relative links to images
 // https://github.com/tcort/markdown-link-check
-function linkCheck(relFileStr, outputLinkcheck, quiet) {
+function linkCheck(relFileStr, outputLinkcheck, v) {
     var contents = fs.readFileSync(relFileStr, 'utf8');
     //TODO Linkcheck doesn't work for devOps. Need investigation
+    var base = "file://" + process.cwd();
+    console.log("BASE: "+base);
     markdownLinkCheck(contents,
         {
-            baseUrl: 'file://' + process.cwd(),
+            baseUrl: base+"/..",
+            projectbaseUrl: base,
             ignorePatterns: [{ pattern: "^http://localhost" }],
         }, function (err, results) {
             if (err) {
@@ -159,13 +191,10 @@ function linkCheck(relFileStr, outputLinkcheck, quiet) {
 
 // Helper method to find all .temp files and do something with them
 function findFiles(startPath,filter,callback){
-    //console.log('Starting from dir '+startPath+'/');
-
     if (!fs.existsSync(startPath)){
         console.log("no dir ",startPath);
         return;
     }
-
     var files=fs.readdirSync(startPath);
     for(var i=0;i<files.length;i++){
         var filename=path.join(startPath,files[i]);
