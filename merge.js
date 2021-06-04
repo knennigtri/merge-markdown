@@ -148,9 +148,12 @@ function removeYAML(fileContents, v) {
 function linkCheck(relFileStr, outputLinkcheck, v) {
     var contents = fs.readFileSync(relFileStr, 'utf8');
     //TODO Linkcheck doesn't work for devOps. Need investigation
+    var base = "file://" + process.cwd();
+    console.log("BASE: "+base);
     markdownLinkCheck(contents,
         {
-            baseUrl: 'file://' + process.cwd(),
+            baseUrl: base+"/..",
+            projectbaseUrl: base,
             ignorePatterns: [{ pattern: "^http://localhost" }],
         }, function (err, results) {
             if (err) {
