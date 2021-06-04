@@ -6,10 +6,11 @@ var merge = require("./merge.js");
 
 const EX_MANIFEST = `Example manifest.json
 {
-  "input": [
-    "module1Folder/file1.md",
-    "module2Folder/file2.md"
-  ],
+  "input": {
+    "frontmatter.md": "",
+    "module1Folder/file1.md": [OPTIONS],
+    "module2Folder/file2.md": [OPTIONS]
+  },
   "output": "output/myOutput.md",
 }
 `;
@@ -73,7 +74,7 @@ var init = function() {
       console.log("output needs to be a .md file");
     }
 
-    merge.add(manifestJSON, manifestRelPath, verbose);
+   merge.add(manifestJSON, manifestRelPath, verbose);
 }
 
 exports.init = init;

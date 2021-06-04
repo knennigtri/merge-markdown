@@ -9,7 +9,7 @@ exports.add = function(manifestJSON, relPath, v){
     var verbose = v || false;
     var tocTitle = "#### Module Contents";
     var quiet = manifestJSON.quiet || false;
-    var inputList = manifestJSON.input;
+    var inputJSON = manifestJSON.input;
     var outputFileRelPathStr = relPath +"/"+ manifestJSON.output;
     var outputLinkcheckFile = outputFileRelPathStr.replace(".md",".linkcheck.md");
     if(!fs.existsSync(path.dirname(outputFileRelPathStr))){
@@ -30,21 +30,18 @@ exports.add = function(manifestJSON, relPath, v){
     // - add all files to an ordered list to be merged
     var fileList= [];
     var refFileList= [];
-    for (var inputKey in inputList){
-        var fileStr = inputList[inputKey];
+    // for (var inputKey in inputJSON){
+    Object.keys(inputJSON).forEach(function(inputKey) {
+        var fileStr = inputKey;
+        var fileOptions = inputJSON[inputKey];
         var fileRelPathStr = relPath +"/"+ fileStr;
         
         console.log("*******************")
         if (fs.existsSync(fileRelPathStr)){
             console.log(fileRelPathStr);
-            if(inputKey != 0){
-                var tempFile = createTempFile(fileRelPathStr,tocTitle,v);
-                fileList.push(tempFile);
-            } else {
-                console.log("first file, skipping prepare.");
-                fileList.push(fileRelPathStr);
-            }
+            var tempFile = createTempFile(fileRelPathStr,tocTitle,fileOptions,v);
             linkCheck(fileRelPathStr,outputLinkcheckFile,v);
+            fileList.push(tempFile);
 
             //Adds any same name .ref.md files to refFilesList
             var refFileRelPathStr = fileRelPathStr.replace(".md",".ref.md")
@@ -56,7 +53,7 @@ exports.add = function(manifestJSON, relPath, v){
         else {
             console.warn(fileStr + " does not exist. Skipping.");
         }
-    }
+    });
 
     console.log("++++++++++++++++++++")
     //Merge lists and output single markdown file
@@ -81,22 +78,26 @@ function createSingleFile(list, output, v){
     );
 }
 
-function createTempFile (fileString, tocTitle, v) {
+function createTempFile (fileString, tocTitle, options, v) {
     var tempFile = fileString + ".temp";
     console.log("Preparing file: "+tempFile);
     var origContent = fs.readFileSync(fileString, 'utf-8');
-    var scrubbedContent = "";
+    var scrubbedContent = origContent;
 
     //Remove YAML
-    var contentNoYAML = removeYAML(origContent, v);
-    scrubbedContent = contentNoYAML;
+    if(options.includes("noYAML")){
+        var contentNoYAML = removeYAML(origContent, v);
+        scrubbedContent = contentNoYAML;
+    }
     
-    // Write TOC with doctoc
-    // https://github.com/thlorenz/doctoc
-    var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
-    if(outDoctoc.data != null){
-        scrubbedContent = outDoctoc.data;
-        console.log("TOC Added");
+    if(options.includes("TOC")){
+        // Write TOC with doctoc
+        // https://github.com/thlorenz/doctoc
+        var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
+        if(outDoctoc.data != null){
+            scrubbedContent = outDoctoc.data;
+            console.log("TOC Added");
+        }
     }
 
     fs.writeFileSync(tempFile,scrubbedContent)

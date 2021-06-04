@@ -41,38 +41,43 @@ Options:
 `manifest.json`:
 This file should be in project directory where markdown files are to be merged
 
-* `input`: An array of markdown files within the local project. These can be relative paths.
+* `input`: json object or markdown files within the local project. These can be relative paths.
+  * `[OPTIONS]`: These are options that can be applied to individual files for merge preperation 
 * `output`: path/name.md of the resultant file of the merge. The path/ should be the same level deep as the markdown files to maintain asset references.
-* `quiet`: not implemented yet
+
+Supported `[OPTIONS]`
+* "noYAML": removes YAML from file
+* "TOC": Adds a TOC based on doctoc. See https://www.npmjs.com/package/doctoc#specifying-location-of-toc 
 
 **Examples:**
 
 ```json
 {
-  "input": [
-    "file1.md",
-    "file2.md"
-  ],
+  "input": {
+    "frontmatter.md": "",
+    "file1.md": ["noYAML","TOC"],
+    "file2.md": ["noYAML","TOC"]
+  },
   "output": "myOutput.md",
   "quiet": true
 }
 ```
 ```json
 {
-  "input": [
-    "folder1/file1.md",
-    "folder2/file2.md"
-  ],
+  "input": {
+    "folder1/file1.md": ["TOC"],
+    "folder2/file2.md": ["noYAML","TOC"]
+  },
   "output": "output/myOutput.md",
   "quiet": true
 }
 ```
 ```json
 {
-  "input": [
-    "folder1/folder1/file1.md",
-    "folder2/folder2/file2.md"
-  ],
+  "input": {
+    "folder1/folder1/file1.md": "",
+    "folder2/folder2/file2.md": : ["noYAML"]
+  },
   "output": "output/1/myOutput.md",
   "quiet": true
 }
