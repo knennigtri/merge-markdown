@@ -1,8 +1,8 @@
-var path = require('path')
- ,   fs  =  require('fs')
- , concat = require('concat')
- , markdownLinkCheck = require('markdown-link-check')
-, doctoc = require('doctoc/lib/transform');
+var path = require('path'),
+fs  =  require('fs'),
+concat = require('concat'),
+markdownLinkCheck = require('markdown-link-check'),
+doctoc = require('doctoc/lib/transform');
 const { exit } = require('process');
 
 exports.add = function(manifestJSON, relPath, v){
