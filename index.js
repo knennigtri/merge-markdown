@@ -4,24 +4,33 @@ var path = require('path');
 var packageInfo = require("./package.json");
 var merge = require("./merge.js");
 
-const EX_MANIFEST = `Example manifest.json
+const EXAMPLE_MANIFEST = `Example manifest.json
 {
   "input": {
     "frontmatter.md": "",
-    "module1Folder/file1.md": [OPTIONS],
-    "module2Folder/file2.md": [OPTIONS]
+    "module1Folder/file1.md": {options},
+    "module2Folder/file2.md": {"noYAML":true,"TOC":true}
   },
-  "moduleTOCTitle": "#### Module Contents",
   "output": "output/myOutput.md",
 }
 `;
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
-  -m manifestName      json file that contains build info. Default is manifest.json
+  -m manifestName      Required json file that contains merging info.
+  --options            Displays supported manifest {options}
   -v                   Sets verbose output
   -h                   Displays this screen
   --version            Displays version of this package
-`+EX_MANIFEST;
+`+EXAMPLE_MANIFEST;
+const MANIFEST_OPTIONS = `Manifest input file options:
+Supported key/value pairs for {options}:
+  "noYAML": true|false                      optionlly removes YAML. Default=false
+  "TOC": true|false|"TOC title"             optionally adds a TOC to this file with doctoc. Default=false
+  "replace": {                              searches for \${key} and replaces with "value"
+      "timestamp": true|false|"stringVal"   true for todays date or add you own timestamp string
+      *: "stringVal"                        replace any key string with the value string
+  }
+`;
 
 //TODO Figure out how to check and verify module outputs
 var init = function() {
@@ -36,6 +45,11 @@ var init = function() {
     // Show version
     if (args.version) {
       console.log(packageInfo.version);
+      return;
+    }
+    //Show manifest input options
+    if(args.options) {
+      console.log(MANIFEST_OPTIONS);
       return;
     }
     var verbose = false;
@@ -56,12 +70,12 @@ var init = function() {
     //Verify manifest has correct properties.
     if(!manifestJSON.input) {
       console.log("Manifest is missing input.");
-      console.log(EX_MANIFEST);
+      console.log(EXAMPLE_MANIFEST);
       return;
     }
     if(!manifestJSON.output) {
       console.log("Manifest is missing output.");
-      console.log(EX_MANIFEST);
+      console.log(EXAMPLE_MANIFEST);
       return;
     }
     var manifestRelPath = path.dirname(inputManifest);

@@ -1,9 +1,8 @@
 {
 	"input": {
-		"lorem-frontmatter.md": ["timestamp"],
-		"lorem-module.md": ["noYAML","TOC"]
+		"lorem-frontmatter.md": {"replace": {"timestamp":"06/01/2021"}},
+		"lorem-module.md": {"noYAML":true,"TOC":true}
 	},
-	"moduleTOCTitle": "#### Module Contents",
 	"output": "+moduleGuide.md"
 }
 

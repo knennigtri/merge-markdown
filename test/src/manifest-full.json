@@ -1,9 +1,9 @@
 {
 	"input": {
 		"frontmatter.md": {"timestamp":""},
-		"lorem-module.md": {"noYAML":true,"TOC":"#### Module Contents"},
-		"ipsum-module.md": {"noYAML":true,"TOC":"#### Module Contents"},
-		"etiam-module.md": {"noYAML":true,"TOC":"#### Module Contents"}
+		"lorem-module.md": {"noYAML":true,"TOC":true},
+		"ipsum-module.md": {"noYAML":true,"TOC":true},
+		"etiam-module.md": {"noYAML":true,"TOC":true}
 	},
 	"output": "+myGuide.md"
 }
