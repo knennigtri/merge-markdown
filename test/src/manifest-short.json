@@ -1,8 +1,11 @@
 {
 	"input": {
-		"frontmatter.md": {"replace": {"timestamp":true}},
+		"frontmatter.md": "",
 		"lorem-module.md": {"noYAML":true,"TOC":true}
 	},
-	"output": "+shortGuide.md"
+	"output": "+shortGuide.md",
+	"replace":{
+		"timestamp":true
+	}
 }
 

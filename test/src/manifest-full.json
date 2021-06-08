@@ -1,10 +1,13 @@
 {
 	"input": {
-		"frontmatter.md": {"timestamp":""},
+		"frontmatter.md": "",
 		"lorem-module.md": {"noYAML":true,"TOC":true},
 		"ipsum-module.md": {"noYAML":true,"TOC":true},
 		"etiam-module.md": {"noYAML":true,"TOC":true}
 	},
-	"output": "+myGuide.md"
+	"output": "+myGuide.md",
+	"replace":{
+		"timestamp":true
+	}
 }
 
