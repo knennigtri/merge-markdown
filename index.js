@@ -54,12 +54,12 @@ var init = function() {
     var manifestJSON = JSON.parse(fs.readFileSync(inputManifest, 'utf8'));
 
     //Verify manifest has correct properties.
-    if(!manifestJSON.hasOwnProperty("input")) {
+    if(!manifestJSON.input) {
       console.log("Manifest is missing input.");
       console.log(EX_MANIFEST);
       return;
     }
-    if(!manifestJSON.hasOwnProperty("output")) {
+    if(!manifestJSON.output) {
       console.log("Manifest is missing output.");
       console.log(EX_MANIFEST);
       return;
@@ -70,7 +70,6 @@ var init = function() {
     if(outputFile.split('.').pop() != "md"){
       console.log("output needs to be a .md file");
     }
-
    merge.add(manifestJSON, manifestRelPath, verbose);
 }
 
