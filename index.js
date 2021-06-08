@@ -12,6 +12,7 @@ const EXAMPLE_MANIFEST = `Example manifest.json
     "module2Folder/file2.md": {"noYAML":true,"TOC":true}
   },
   "output": "output/myOutput.md",
+  {options}
 }
 `;
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]

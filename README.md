@@ -38,8 +38,9 @@ Options:
 This file should be in project directory where markdown files are to be merged
 
 * `input`: json object of markdown files within the local project. These can be relative paths.
-  * `{options}`: These are options that can be applied to individual files for merge preperation 
+  * `{options}`: Options that can be applied to individual files for merge preperation 
 * `output`: path/name.md of the resultant file of the merge. The path should be the same level deep as the markdown files to maintain asset references.
+* `{options}`: Options can also be applied to all files at a global level
 
 ### Supported `{options}`
 * noYAML: optionlly removes YAML. Default=false
@@ -67,7 +68,7 @@ Example of using a custom TOC title in a file.
     "file1.md": {"noYAML":true,"TOC":"#### Section Contents"},
     "file2.md": {"noYAML":true,"TOC":"#### Section Contents"}
   },
-  "output": "myOutput.md",
+  "output": "myOutput.md"
 }
 ```
 Example of different options.
@@ -77,7 +78,21 @@ Example of different options.
     "folder1/file1.md": {"TOC":true},
     "folder2/file2.md": {"noYAML":true,"TOC":true}
   },
+  "output": "output/myOutput.md"
+}
+```
+Example of global options applied to all files
+```json
+{
+  "input": {
+    "folder1/file1.md": "",
+    "folder2/file2.md": {"noYAML":true}
+  },
   "output": "output/myOutput.md",
+  "replace":{
+		"timestamp":"06/01/2021",
+	},
+  "TOC": "#### Chapter contents"
 }
 ```
 Example of using custom replace statements. The markdown needs to have ${key} to replace the value.
