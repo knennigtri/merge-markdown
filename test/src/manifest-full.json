@@ -1,0 +1,10 @@
+{
+	"input": {
+		"frontmatter.md": "",
+		"lorem-module.md": ["noYAML","TOC"],
+		"ipsum-module.md": ["noYAML","TOC"],
+		"etiam-module.md": ["noYAML","TOC"]
+	},
+	"output": "+myGuide.md"
+}
+

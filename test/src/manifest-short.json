@@ -1,0 +1,8 @@
+{
+	"input": {
+		"frontmatter.md": "",
+		"lorem-module.md": ["noYAML","TOC"]
+	},
+	"output": "+shortGuide.md"
+}
+

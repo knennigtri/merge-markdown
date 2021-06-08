@@ -1,0 +1,10 @@
+{
+	"input": {
+		"yaml1-FM.md": "",
+		"yaml2-hasYAML.md": ["noYAML","TOC"],
+		"yaml3-noYAML.md": ["noYAML","TOC"],
+		"yaml4-badYAML.md": ["noYAML","TOC"],
+		"yaml5-badYAML.md": ["noYAML","TOC"]
+	},
+	"output": "+yamlRemove.md"
+}
