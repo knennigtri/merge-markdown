@@ -1,10 +1,10 @@
 {
 	"input": {
-		"yaml1-FM.md": "",
-		"yaml2-hasYAML.md": ["noYAML","TOC"],
-		"yaml3-noYAML.md": ["noYAML","TOC"],
-		"yaml4-badYAML.md": ["noYAML","TOC"],
-		"yaml5-badYAML.md": ["noYAML","TOC"]
+		"yaml1-FM.md": {"replace": {"timestamp":true}},
+		"yaml2-hasYAML.md": {"noYAML":true,"TOC":true},
+		"yaml3-noYAML.md": {"noYAML":true,"TOC":true},
+		"yaml4-badYAML.md": {"noYAML":true,"TOC":true},
+		"yaml5-badYAML.md": {"noYAML":true,"TOC":true}
 	},
 	"output": "+yamlRemove.md"
 }
