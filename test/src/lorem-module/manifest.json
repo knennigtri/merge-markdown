@@ -3,6 +3,7 @@
 		"lorem-frontmatter.md": "",
 		"lorem-module.md": ["noYAML","TOC"]
 	},
+	"moduleTOCTitle": "#### Module Contents",
 	"output": "+moduleGuide.md"
 }
 

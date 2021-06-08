@@ -5,12 +5,12 @@ markdownLinkCheck = require('markdown-link-check'),
 doctoc = require('doctoc/lib/transform');
 const { exit } = require('process');
 
-exports.add = function(manifestJSON, relPath, v){
+exports.add = function(manifestJSON, relPathManifest, v){
     var verbose = v || false;
-    var tocTitle = "#### Module Contents";
+    var tocTitle = manifestJSON.moduleTOCTitle || "#### Module Contents";
     var quiet = manifestJSON.quiet || false;
     var inputJSON = manifestJSON.input;
-    var outputFileRelPathStr = relPath +"/"+ manifestJSON.output;
+    var outputFileRelPathStr = relPathManifest +"/"+ manifestJSON.output;
     var outputLinkcheckFile = outputFileRelPathStr.replace(".md",".linkcheck.md");
     if(!fs.existsSync(path.dirname(outputFileRelPathStr))){
         fs.mkdirSync(path.dirname(outputFileRelPathStr));
@@ -34,13 +34,13 @@ exports.add = function(manifestJSON, relPath, v){
     Object.keys(inputJSON).forEach(function(inputKey) {
         var fileStr = inputKey;
         var fileOptions = inputJSON[inputKey];
-        var fileRelPathStr = relPath +"/"+ fileStr;
+        var fileRelPathStr = relPathManifest +"/"+ fileStr;
         
         console.log("*******************")
         if (fs.existsSync(fileRelPathStr)){
             console.log(fileRelPathStr);
-            var tempFile = createTempFile(fileRelPathStr,tocTitle,fileOptions,v);
-            linkCheck(fileRelPathStr,outputLinkcheckFile,v);
+            var tempFile = createTempFile(fileRelPathStr,tocTitle,fileOptions,verbose);
+            linkCheck(fileRelPathStr,outputLinkcheckFile,relPathManifest,verbose);
             fileList.push(tempFile);
 
             //Adds any same name .ref.md files to refFilesList
@@ -146,15 +146,13 @@ function removeYAML(fileContents, v) {
 
 // function that uses markdown-link-check to validate all URLS and relative links to images
 // https://github.com/tcort/markdown-link-check
-function linkCheck(relFileStr, outputLinkcheck, v) {
+function linkCheck(relFileStr, outputLinkcheck, relPath, v) {
     var contents = fs.readFileSync(relFileStr, 'utf8');
-    //TODO Linkcheck doesn't work for devOps. Need investigation
-    var base = "file://" + process.cwd();
-    console.log("BASE: "+base);
+    base = path.join("file://",process.cwd(),path.dirname(relFileStr));
+    if(v) console.log("BASE: "+base);
     markdownLinkCheck(contents,
         {
-            baseUrl: base+"/..",
-            projectbaseUrl: base,
+            baseUrl: base,
             ignorePatterns: [{ pattern: "^http://localhost" }],
         }, function (err, results) {
             if (err) {
@@ -162,6 +160,7 @@ function linkCheck(relFileStr, outputLinkcheck, v) {
                 return;
             }
             linkcheckResults= "FILE: " + relFileStr + " \n";
+            if(v) console.log(linkcheckResults);
             results.forEach(function (result) {
                 var icon = "";
                 switch(result.status) {
@@ -175,9 +174,11 @@ function linkCheck(relFileStr, outputLinkcheck, v) {
                         icon="-"
                         break;
                   }
+                var statusStr="["+icon+"] " + result.link + " is " + result.status;
+                if(v) console.log(statusStr);
                 //TODO implement -q quiet
                 if(result.status != "alive"){
-                    linkcheckResults+=" ["+icon+"] " + result.link + " is " + result.status + " \n";
+                    linkcheckResults+=" "+ statusStr + " \n";
                 }
             });
             linkcheckResults+="\n "+results.length +" links checked. \n\n  \n";

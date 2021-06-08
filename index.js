@@ -11,6 +11,7 @@ const EX_MANIFEST = `Example manifest.json
     "module1Folder/file1.md": [OPTIONS],
     "module2Folder/file2.md": [OPTIONS]
   },
+  "moduleTOCTitle": "#### Module Contents",
   "output": "output/myOutput.md",
 }
 `;
@@ -23,10 +24,6 @@ Options:
 `+EX_MANIFEST;
 
 //TODO Figure out how to check and verify module outputs
-//TODO make linkchecker optional
-//TODO make doctoc optional
-//TODO make yaml remover optional
-
 var init = function() {
     "use strict";
     var args = minimist(process.argv.slice(2));
