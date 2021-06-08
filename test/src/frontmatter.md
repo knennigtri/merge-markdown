@@ -28,7 +28,7 @@ Morbi et dolor aliquam, dapibus lectus vel, varius risus. Donec lacus metus, pre
 </br></br>
 Donec nec libero id lorem suscipit elementum. Phasellus dui purus, finibus eget massa imperdiet, posuere lobortis magna. Aenean hendrerit enim id ligula dignissim, ac euismod turpis vehicula. Vivamus ullamcorper risus euismod lectus faucibus molestie quis eget nulla. Sed maximus lorem non varius interdum. Aliquam orci eros, varius a mauris sit amet, varius aliquet lectus. Fusce porttitor nisi lectus, consectetur tincidunt libero dapibus sed. Quisque sed justo lobortis risus porttitor elementum id in nisi.
 </br></br></br></br>
-<div class="last-updated">5-14-2021</div>
+<div class="last-updated">${timestamp}</div>
 </div>
 <div class="page-break"></div>
 

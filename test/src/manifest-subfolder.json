@@ -1,8 +1,8 @@
 {
 	"input": {
-		"frontmatter.md": "",
-		"lorem-module/lorem-module.md": ["noYAML","TOC"],
-		"ipsum-module/ipsum-module.md": ["noYAML","TOC"]
+		"frontmatter.md": {"timestamp":""},
+		"lorem-module/lorem-module.md": {"noYAML":true,"TOC":"#### Module Contents"},
+		"ipsum-module/ipsum-module.md": {"noYAML":true,"TOC":"#### Module Contents"}
 	},
 	"output": "output/+myGuide.md"
 }

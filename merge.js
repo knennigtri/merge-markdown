@@ -39,7 +39,7 @@ exports.add = function(manifestJSON, relPathManifest, v){
         console.log("*******************")
         if (fs.existsSync(fileRelPathStr)){
             console.log(fileRelPathStr);
-            var tempFile = createTempFile(fileRelPathStr,tocTitle,fileOptions,verbose);
+            var tempFile = createTempFile(fileRelPathStr,fileOptions,verbose);
             linkCheck(fileRelPathStr,outputLinkcheckFile,verbose);
             fileList.push(tempFile);
 
@@ -78,19 +78,24 @@ function createSingleFile(list, output, v){
     );
 }
 
-function createTempFile (fileString, tocTitle, options, v) {
+function createTempFile (fileString, options, v) {
     var tempFile = fileString + ".temp";
     console.log("Preparing file: "+tempFile);
     var origContent = fs.readFileSync(fileString, 'utf-8');
     var scrubbedContent = origContent;
 
     //Remove YAML
-    if(options.includes("noYAML")){
+    if(options.noYAML){
         var contentNoYAML = removeYAML(origContent, v);
         scrubbedContent = contentNoYAML;
     }
     
-    if(options.includes("TOC")){
+    //Add TOC
+    if(options.TOC){
+        tocTitle = "#### Module Contents";
+        if(options.TOC.toString().toLowerCase() != "true"){
+            tocTitle = options.TOC
+        } 
         // Write TOC with doctoc
         // https://github.com/thlorenz/doctoc
         var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
@@ -99,15 +104,29 @@ function createTempFile (fileString, tocTitle, options, v) {
             console.log("TOC Added");
         }
     }
-    if(options.includes("timestamp")){
-        ts = Date.now();
-        date_ob = new Date(ts);
-        date = date_ob.getDate();
-        month = date_ob.getMonth() + 1;
-        year = date_ob.getFullYear();
-        insertDate = monty + "-" + date + "-" + year;
-        console.log("Adding date: " + insertDate);
-        scrubbedContent = scrubbedContent.replace("${timestamp}",insertDate);
+
+    //Allows for find and replace options in the markdown with ${}
+    if(options.replace){
+        Object.keys(options.replace).forEach(function(replaceKey) {
+            var find="",replace="";
+            var optionValue = options.replace[replaceKey];
+            if(optionValue){
+                find=replaceKey;
+                switch(replaceKey) {
+                    case "timestamp":
+                        date_ob = new Date(Date.now());
+                        replace = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
+                        if(typeof optionValue != "boolean" && optionValue.toString() != ""){
+                            replace = optionValue;
+                        }
+                        break;
+                    default:
+                        replace=optionValue;
+                }
+                console.log("Replacing: ${"+find+"} with: "+replace);
+                scrubbedContent = scrubbedContent.replace("${"+find+"}",replace);
+            }   
+        });
     }
 
     fs.writeFileSync(tempFile,scrubbedContent)
@@ -140,7 +159,7 @@ function removeYAML(fileContents, v) {
             break;
         }
     }
-    // console.log("S("+startYAML+")E("+endYAML+")✓'d("+i+")T("+lines.length+")");
+    if(v) console.log("S("+startYAML+")E("+endYAML+")✓'d("+i+")T("+lines.length+")");
     if(startYAML != -1 && endYAML != -1){
         //shows YAML being removed
         yaml = lines.splice(startYAML,1+endYAML-startYAML).join("\n");

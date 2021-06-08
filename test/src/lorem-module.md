@@ -14,11 +14,8 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur egestas dapib
 
 *WKND SPA Implementation*
 
-
-<!-- AUTO-GENERATED-CONTENT:START (gobalTOC) -->
-[...back to main TOC](#course-contents)
-<!-- AUTO-GENERATED-CONTENT:END -->
-
+<!-- START doctoc -->
+<!-- END doctoc -->
 
 [...back to main TOC](#course-contents)
 
