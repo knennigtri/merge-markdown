@@ -47,7 +47,7 @@ This file should be in project directory where markdown files are to be merged
 * replace: searches for ${key} and replaces with "value"
   * timestamp: true for todays date or add you own timestamp string
   * *: replace any key string with the value string
-```json
+```
 {
   "noYAML": true|false
   "TOC": true|false|"TOC title"
