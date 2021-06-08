@@ -40,7 +40,7 @@ exports.add = function(manifestJSON, relPathManifest, v){
         if (fs.existsSync(fileRelPathStr)){
             console.log(fileRelPathStr);
             var tempFile = createTempFile(fileRelPathStr,tocTitle,fileOptions,verbose);
-            linkCheck(fileRelPathStr,outputLinkcheckFile,relPathManifest,verbose);
+            linkCheck(fileRelPathStr,outputLinkcheckFile,verbose);
             fileList.push(tempFile);
 
             //Adds any same name .ref.md files to refFilesList
@@ -99,6 +99,16 @@ function createTempFile (fileString, tocTitle, options, v) {
             console.log("TOC Added");
         }
     }
+    if(options.includes("timestamp")){
+        ts = Date.now();
+        date_ob = new Date(ts);
+        date = date_ob.getDate();
+        month = date_ob.getMonth() + 1;
+        year = date_ob.getFullYear();
+        insertDate = monty + "-" + date + "-" + year;
+        console.log("Adding date: " + insertDate);
+        scrubbedContent = scrubbedContent.replace("${timestamp}",insertDate);
+    }
 
     fs.writeFileSync(tempFile,scrubbedContent)
     console.log("Ready for merge");
@@ -146,7 +156,7 @@ function removeYAML(fileContents, v) {
 
 // function that uses markdown-link-check to validate all URLS and relative links to images
 // https://github.com/tcort/markdown-link-check
-function linkCheck(relFileStr, outputLinkcheck, relPath, v) {
+function linkCheck(relFileStr, outputLinkcheck, v) {
     var contents = fs.readFileSync(relFileStr, 'utf8');
     base = path.join("file://",process.cwd(),path.dirname(relFileStr));
     if(v) console.log("BASE: "+base);

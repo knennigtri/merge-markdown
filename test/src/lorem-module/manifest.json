@@ -1,6 +1,6 @@
 {
 	"input": {
-		"lorem-frontmatter.md": "",
+		"lorem-frontmatter.md": ["timestamp"],
 		"lorem-module.md": ["noYAML","TOC"]
 	},
 	"moduleTOCTitle": "#### Module Contents",
