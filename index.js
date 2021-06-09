@@ -20,6 +20,7 @@ Options:
   -m manifestName      Required json file that contains merging info.
   --options            Displays supported manifest {options}
   -v                   Sets verbose output
+  -d                   Sets debug output
   -h                   Displays this screen
   --version            Displays version of this package
 `+EXAMPLE_MANIFEST;
@@ -57,6 +58,10 @@ var init = function() {
     if(args.v) {
       verbose = true;
     }
+    var debug = false;
+    if(args.d) {
+      debug = true;
+    }
 
     //Verify Manifest exists
     var inputManifest = args.m;
@@ -85,7 +90,7 @@ var init = function() {
     if(outputFile.split('.').pop() != "md"){
       console.log("output needs to be a .md file");
     }
-   merge.add(manifestJSON, manifestRelPath, verbose);
+   merge.add(manifestJSON, manifestRelPath, verbose, debug);
 }
 
 exports.init = init;

@@ -25,11 +25,12 @@ merge-markdown -m manifest.json
 ```shell
 Usage: merge-markdown [OPTIONS]
 Options:
-  -m manifestName      json file that contains build info. Default is manifest.json
+  -m manifestName      Required json file that contains merging info.
   --options            Displays supported manifest {options}
-  -q                   Sets the markdown link checker to quiet. (does not output success links)
+  -v                   Sets verbose output
+  -d                   Sets debug output
   -h                   Displays this screen
-  -v                   Displays version of this package
+  --version            Displays version of this package
 ```
 
 ## manifest file format
