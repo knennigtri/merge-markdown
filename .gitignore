@@ -1,5 +1,8 @@
 *.DS_store
-/test/src
+/test/src/**/+*.md
+output/
+Output/
+notes.txt
 
 # Logs
 logs
