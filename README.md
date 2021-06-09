@@ -81,20 +81,6 @@ Example of different options.
   "output": "output/myOutput.md"
 }
 ```
-Example of global options applied to all files
-```json
-{
-  "input": {
-    "folder1/file1.md": "",
-    "folder2/file2.md": {"noYAML":true}
-  },
-  "output": "output/myOutput.md",
-  "replace":{
-		"timestamp":"06/01/2021",
-	},
-  "TOC": "#### Chapter contents"
-}
-```
 Example of using custom replace statements. The markdown needs to have ${key} to replace the value.
 ```json
 {
@@ -107,5 +93,19 @@ Example of using custom replace statements. The markdown needs to have ${key} to
     "folder2/folder2/file2.md": {"noYAML":true}
   },
   "output": "output/1/myOutput.md",
+}
+```
+Example of global options applied to all files
+```json
+{
+  "input": {
+    "folder1/file1.md": "",
+    "folder2/file2.md": {"noYAML":true}
+  },
+  "output": "output/myOutput.md",
+  "replace":{
+		"timestamp":"06/01/2021",
+	},
+  "TOC": "#### Chapter contents"
 }
 ```
