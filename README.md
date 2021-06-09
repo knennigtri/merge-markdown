@@ -1,4 +1,4 @@
-# merge-markdown
+# merge-markdown [![Publish to NPM](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml/badge.svg?branch=main)](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml)
 Takes in a list of markdown files and merges them together
 Available on NPM: https://www.npmjs.com/package/merge-markdown
 
