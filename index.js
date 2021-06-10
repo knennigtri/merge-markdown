@@ -56,14 +56,6 @@ var init = function() {
       console.log(MANIFEST_OPTIONS);
       return;
     }
-    var verbose = false;
-    if(args.v) {
-      verbose = true;
-    }
-    var debug = false;
-    if(args.d) {
-      debug = true;
-    }
 
     //Verify Manifest exists
     var inputManifest = args.m;
@@ -92,7 +84,15 @@ var init = function() {
     if(outputFile.split('.').pop() != "md"){
       console.log("output needs to be a .md file");
     }
-   merge.add(manifestJSON, manifestRelPath, verbose, debug);
+
+    if(args.qa){
+      if (!manifestJSON.qa || !manifestJSON.qa.exclude){
+        console.log("No exclude patterns given for QA.")
+        console.log(EXAMPLE_MANIFEST);
+        return;
+      }
+    }
+  merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);
 }
 
 exports.init = init;

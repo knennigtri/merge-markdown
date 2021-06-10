@@ -4,6 +4,9 @@
 		"lorem-module.md": {"noYAML":true,"TOC":true}
 	},
 	"output": "+moduleGuide.md",
+	"qa": {
+		"exclude": "frontmatter"
+	},
 	"replace":{
 		"startStr":"<!--{",
 		"endStr":"}-->",
