@@ -12,6 +12,7 @@ exports.add = function(manifestJSON, relPathManifest, v,d,qa){
     var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
     var outputLinkcheckFileStr = outputFileStr.replace(".md",".linkcheck.md");
     var outputQAFileStr = outputFileStr.replace(".md",".qa.md");
+    var qaRegex = new RegExp(manifestJSON.qa.exclude);
 
     //Iterate through all of the input files in manifest apply options
     var fileArr= [];
@@ -22,45 +23,43 @@ exports.add = function(manifestJSON, relPathManifest, v,d,qa){
 
         if (!fs.existsSync(inputFileStr)){
             console.warn(inputKey + " does not exist. Skipping.");
-        } else {
-            var origContent = fs.readFileSync(inputFileStr, 'utf-8');
-            //applies gobal generate rules
-            if (v) console.log("--applying manifest options--");
-            var generatedContent = applyGeneratedContent(origContent,manifestJSON,verbose,debug);
-            //Applies file specific generate rules
-            if (v) console.log("--applying file options--");
-            generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey],verbose,debug);
-            var tempFile = inputFileStr+".temp";
-            fs.writeFileSync(tempFile,generatedContent);
-            
-            //checks for broken links within the content
-            linkCheck(inputFileStr,outputLinkcheckFileStr,verbose,debug);
+            return;
+        } 
+        if(onlyQA && qaRegex.test(inputFileStr)){
+            console.warn("Skipping " +inputKey + " for QA");
+            return;
+        } 
+        var origContent = fs.readFileSync(inputFileStr, 'utf-8');
+        //applies gobal generate rules
+        if (v) console.log("--applying manifest options--");
+        var generatedContent = applyGeneratedContent(origContent,manifestJSON,verbose,debug);
+        //Applies file specific generate rules
+        if (v) console.log("--applying file options--");
+        generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey],verbose,debug);
+        var tempFile = inputFileStr+".temp";
+        fs.writeFileSync(tempFile,generatedContent);
+        
+        //checks for broken links within the content
+        linkCheck(inputFileStr,outputLinkcheckFileStr,verbose,debug);
 
-            //add the  temp file to the list to merge together
-            fileArr.push(tempFile);
-            console.log(path.basename(tempFile)+" added to merge list");
+        //add the  temp file to the list to merge together
+        fileArr.push(tempFile);
+        console.log(path.basename(tempFile)+" added to merge list");
 
-            //Adds any same name .ref.md files to refFilesList
-            var refFileStr = inputFileStr.replace(".md",".ref.md")
-            if(fs.existsSync(refFileStr)){
-                console.log(path.basename(refFileStr)+ " added to references merge list");
-                refFileArr.push(refFileStr);
-            }
-        }
+        //Adds any same name .ref.md files to refFilesList
+        var refFileStr = inputFileStr.replace(".md",".ref.md")
+        if(fs.existsSync(refFileStr)){
+            console.log(path.basename(refFileStr)+ " added to references merge list");
+            refFileArr.push(refFileStr);
+        } 
     });
 
     console.log("++++++++++++++++++++")
     //Merge lists and output single markdown file
     var mergedFileArr = fileArr.concat(refFileArr);
     
-    if(onlyQA){
-        var qaFileArr = removeMatching(mergedFileArr, manifestJSON.qa.exclude)
-        console.log("List of QA files to merge:\n    " + qaFileArr.join("\n    "));
-        createSingleFile(qaFileArr, outputQAFileStr,verbose,debug);
-    } else {
-        console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
-        createSingleFile(mergedFileArr, outputFileStr,verbose,debug);
-    }
+    console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
+    createSingleFile(mergedFileArr, outputFileStr,verbose,debug);
 
     //Remove temp files
     findFiles('./',/\.temp$/,function(tempFilename){
@@ -257,19 +256,4 @@ function findFiles(startPath,filter,callback){
         }
         else if (filter.test(filename)) callback(filename);
     };
-};
-
-function removeMatching(originalArray, excludeStr, v,d) {
-    var j = 0;
-    if (d) console.log("Regex: "+excludeStr);
-    var regex = new RegExp(excludeStr);
-    while (j < originalArray.length) {
-        if (regex.test(originalArray[j])){
-            if (d) console.log("RegEx Hit on: " + originalArray[j]);
-            originalArray.splice(j, 1);
-        } else {
-            j++;
-        }
-    }
-    return originalArray;
 }

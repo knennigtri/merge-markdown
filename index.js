@@ -7,11 +7,14 @@ var merge = require("./merge.js");
 const EXAMPLE_MANIFEST = `Example manifest.json
 {
   "input": {
-    "frontmatter.md": "",
+    "global-frontmatter.md": "",
     "module1Folder/file1.md": {options},
     "module2Folder/file2.md": {"noYAML":true,"TOC":true}
   },
   "output": "output/myOutput.md",
+  "qa": {
+    "exclude": "frontmatter"
+  },
   {options}
 }
 `;
@@ -19,6 +22,7 @@ const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
   -m manifestName      Required json file that contains merging info.
   --options            Displays supported manifest {options}
+  --qa                 Enters into QA mode. Requires manifest.qa.exclude
   -v                   Sets verbose output
   -d                   Sets debug output
   -h                   Displays this screen

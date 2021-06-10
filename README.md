@@ -84,18 +84,18 @@ Example of different options.
   "output": "output/myOutput.md"
 }
 ```
-Example of using custom replace statements. The markdown needs to have ${key} to replace the value.
+Example of QA mode being used
 ```json
 {
   "input": {
-    "folder1/folder1/file1.md": {"replace": {
-      "timestamp":"06/01/2021",
-      "courseName":"My amazing course",
-      "endOfSection":"> To learn more on this subject, visit: www.example.com"
-      }},
-    "folder2/folder2/file2.md": {"noYAML":true}
+    "global-frontmatter.md": "",
+    "module1Folder/file1.md": "",
+    "module2Folder/file2.md": {"noYAML":true,"TOC":true}
   },
-  "output": "output/1/myOutput.md",
+  "output": "output/myOutput.md",
+  "qa": {
+    "exclude": "frontmatter|file1"
+  }
 }
 ```
 Example of global options applied to all files
@@ -125,5 +125,19 @@ Example of replace `${timestamp}` with `06/01/2021`
 		"endStr":"}",
 		"timestamp":"06/01/2021",
 	},
+}
+```
+Example of using custom replace statements. The markdown needs to have ${key} to replace the value.
+```json
+{
+  "input": {
+    "folder1/folder1/file1.md": {"replace": {
+      "timestamp":"06/01/2021",
+      "courseName":"My amazing course",
+      "endOfSection":"> To learn more on this subject, visit: www.example.com"
+      }},
+    "folder2/folder2/file2.md": {"noYAML":true}
+  },
+  "output": "output/1/myOutput.md",
 }
 ```
