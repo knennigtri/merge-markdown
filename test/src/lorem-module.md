@@ -16,7 +16,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur egestas dapib
 
 <!-- START doctoc -->
 <!-- END doctoc -->
-${returnToMainTOC}
+<!--{returnToMainTOC}-->
 
 #### About
 

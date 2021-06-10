@@ -12,7 +12,7 @@ Donec ut dui id diam fringilla auctor ac id tellus. Ut venenatis fermentum phare
 
 <!-- START doctoc -->
 <!-- END doctoc -->
-${returnToMainTOC}
+<!--{returnToMainTOC}-->
 
 #### Objective
 

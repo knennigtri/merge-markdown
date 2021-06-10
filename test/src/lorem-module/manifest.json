@@ -5,6 +5,8 @@
 	},
 	"output": "+moduleGuide.md",
 	"replace":{
+		"startStr":"<!--{",
+		"endStr":"}-->",
 		"timestamp":"06/01/2021",
 		"returnToMainTOC": "[...back to main TOC](#course-contents)"
 	}
