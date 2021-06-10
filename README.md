@@ -46,9 +46,11 @@ This file should be in project directory where markdown files are to be merged
 ### Supported `{options}`
 * noYAML: optionlly removes YAML. Default=false
 * TOC: optionally adds a TOC to this file with doctoc. Default=false. See https://www.npmjs.com/package/doctoc#specifying-location-of-toc 
-* replace: searches for ${key} and replaces with "value"
-  * timestamp: true for todays date or add you own timestamp string
-  * *: replace any key string with the value string
+* replace: searches for `<!--{key}-->` and replaces with `value`
+  * startStr:    optional. Set a unqiue start str for replace. Default is `<!--{`
+	* endStr:      optional. Set a unqiue start str for replace. Default is `}-->`
+  * timestamp:   true for todays date or add you own timestamp string
+  * *:           replace any key string with the value string
 ```
 {
   "noYAML": true|false
@@ -108,5 +110,20 @@ Example of global options applied to all files
 		"timestamp":"06/01/2021",
 	},
   "TOC": "#### Chapter contents"
+}
+```
+Example of replace `${timestamp}` with `06/01/2021`
+```json
+{
+  "input": {
+    "folder1/file1.md": "",
+    "folder2/file2.md": {"noYAML":true}
+  },
+  "output": "output/myOutput.md",
+  "replace":{
+    "startStr":"${",
+		"endStr":"}",
+		"timestamp":"06/01/2021",
+	},
 }
 ```

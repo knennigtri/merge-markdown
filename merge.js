@@ -160,24 +160,35 @@ function removeYAML(fileContents, v,d) {
 
 function replaceStrings(fileContents,replacements,v,d){
     var replacedContent = fileContents;
+    var startStrKey="startStr", endStrKey="endStr";
+    var startStr = replacements[startStrKey] || "<!--{";
+    var endStr = replacements[endStrKey] || "}-->";
     Object.keys(replacements).forEach(function(replaceKey) {
-        var find="",replace="";
+        var find="",replaceStr="",replace=true;
         var optionValue = replacements[replaceKey];
         if(optionValue){
             find=replaceKey;
             switch(replaceKey) {
+                case startStrKey:
+                    replace=false;
+                    break;
+                case endStrKey:
+                    replace=false;
+                    break;
                 case "timestamp":
                     date_ob = new Date(Date.now());
-                    replace = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
+                    replaceStr = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
                     if(typeof optionValue != "boolean" && optionValue.toString() != ""){
-                        replace = optionValue;
+                        replaceStr = optionValue;
                     }
                     break;
                 default:
-                    replace=optionValue;
+                    replaceStr=optionValue;
             }
-            if(v) console.log("Replacing: ${"+find+"} with: "+replace);
-            replacedContent = replacedContent.replace("${"+find+"}",replace);
+            if(replace) {
+                if(v) console.log("Replacing: "+startStr+find+endStr+" with: "+replaceStr);
+                sreplacedContent = replacedContent.replace("${"+find+"}",replaceStr);
+            }
         }   
     });
     return replacedContent;

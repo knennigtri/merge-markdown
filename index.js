@@ -28,7 +28,9 @@ const MANIFEST_OPTIONS = `Manifest input file options:
 Supported key/value pairs for {options}:
   "noYAML": true|false                      optionlly removes YAML. Default=false
   "TOC": true|false|"TOC title"             optionally adds a TOC to this file with doctoc. Default=false
-  "replace": {                              searches for \${key} and replaces with "value"
+  "replace": {                              searches for <!--{key}--> and replaces with value
+      "startStr": "replaceStrStart"         optional. Set a unqiue start str for replace. Default is <!--{
+      "endStr": "replaceStrEnd"             optional. Set a unqiue end str for replace. Default is }-->
       "timestamp": true|false|"stringVal"   true for todays date or add you own timestamp string
       *: "stringVal"                        replace any key string with the value string
   }
