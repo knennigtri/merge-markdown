@@ -33,9 +33,19 @@ npm install -g merge-markdown
 The command line tool optionally takes 1 argument, the file name or http/https URL.
 If not supplied, the tool reads from standard input.
 
+merges all files at the root
+```shell
+merge-markdown
+```
+Merges based on manifest file
 ```shell
 merge-markdown -m manifest.json
 ```
+Merges all md files in the folder
+```shell
+merge-markdown -m path/to/files
+```
+
 With QA
 ```shell
 merge-markdown -m myManifest.json --qa

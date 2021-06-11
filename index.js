@@ -6,7 +6,9 @@ packageInfo = require("./package.json"),
 merge = require("./merge.js");
 var args = minimist(process.argv.slice(2));
 
-const EXAMPLE_MANIFEST = `Example manifest.json
+const DEFAULT_MANIFEST = "manifest.json";
+
+const EXAMPLE_MANIFEST = `Example `+DEFAULT_MANIFEST+`
 {
   "input": {
     "global-frontmatter.md": "",
@@ -22,13 +24,15 @@ const EXAMPLE_MANIFEST = `Example manifest.json
 `;
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
-  -m manifestName      Required json file that contains merging info.
+  -m manifestName      [json | folder]
   --options            Displays supported manifest {options}
-  --qa                 Enters into QA mode. Requires manifest.qa.exclude
+  --qa                 Enters into QA mode. Files with 'frontmatter' in the name are omitted by default
   -v                   Sets verbose output
   -d                   Sets debug output
   -h                   Displays this screen
   --version            Displays version of this package
+Default manifest: `+DEFAULT_MANIFEST+` unless specified in -m. 
+If there is no manifest, all md files in the folder will be used.
 `+EXAMPLE_MANIFEST;
 const MANIFEST_OPTIONS = `Manifest input file options:
 Supported key/value pairs for {options}:
@@ -63,15 +67,15 @@ var init = function() {
   //Verify Manifest exists
   var inputManifest = args.m;
   if(!inputManifest){
-    useFolderPath("./");
+      useFolderPath(".");
   } else if (!fs.existsSync(inputManifest)){
-    console.log("Manifest input is not valid. Choose a json file or folder.");
-    console.log(MSG_HELP);
-    return;
+     console.log("Manifest input is not valid. Choose a json file or folder.");
+     console.log(MSG_HELP);
+      return;
   } else if(fs.lstatSync(inputManifest).isDirectory()){
-    useFolderPath(inputManifest);
+     useFolderPath(inputManifest);
   } else {
-    useManifestFile(inputManifest);
+     useManifestFile(inputManifest);
   }
   return; 
 }
@@ -111,6 +115,11 @@ function useManifestFile(inputManifest){
   merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
 }
 function useFolderPath(inputFolder){
+  var defManifest = path.join(inputFolder,DEFAULT_MANIFEST)
+  if(fs.existsSync(defManifest)){
+    useManifestFile(defManifest);
+    return;
+  }
   console.log("No manifest file given. Using "+inputFolder+" folder to create manifest.");
   var generatedJSON = {"input": {},"output": ""};
   //Create ouput
