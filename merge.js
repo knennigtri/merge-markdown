@@ -3,16 +3,18 @@ fs  =  require('fs'),
 concat = require('concat'),
 markdownLinkCheck = require('markdown-link-check'),
 doctoc = require('doctoc/lib/transform');
+var v,d,onlyQA;
 
-exports.add = function(manifestJSON, relPathManifest, v,d,qa){
-    var verbose = v || false;
-    var debug = d || false;
-    var onlyQA = qa || false;
+exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
+    v = verbose || false;
+    d = debug || false;
+    onlyQA = qaContent || false;
     var inputJSON = manifestJSON.input;
     var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
     var outputLinkcheckFileStr = outputFileStr.replace(".md",".linkcheck.md");
     var outputQAFileStr = outputFileStr.replace(".md",".qa.md");
-    var qaRegex = new RegExp(manifestJSON.qa.exclude);
+    var qaRegex;
+    if(onlyQA) qaRegex = new RegExp(manifestJSON.qa.exclude);
 
     //Iterate through all of the input files in manifest apply options
     var fileArr= [];
@@ -32,15 +34,15 @@ exports.add = function(manifestJSON, relPathManifest, v,d,qa){
         var origContent = fs.readFileSync(inputFileStr, 'utf-8');
         //applies gobal generate rules
         if (v) console.log("--applying manifest options--");
-        var generatedContent = applyGeneratedContent(origContent,manifestJSON,verbose,debug);
+        var generatedContent = applyGeneratedContent(origContent,manifestJSON);
         //Applies file specific generate rules
         if (v) console.log("--applying file options--");
-        generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey],verbose,debug);
+        generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey]);
         var tempFile = inputFileStr+".temp";
         fs.writeFileSync(tempFile,generatedContent);
         
         //checks for broken links within the content
-        linkCheck(inputFileStr,outputLinkcheckFileStr,verbose,debug);
+        linkCheck(inputFileStr,outputLinkcheckFileStr);
 
         //add the  temp file to the list to merge together
         fileArr.push(tempFile);
@@ -59,7 +61,7 @@ exports.add = function(manifestJSON, relPathManifest, v,d,qa){
     var mergedFileArr = fileArr.concat(refFileArr);
     
     console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
-    createSingleFile(mergedFileArr, outputFileStr,verbose,debug);
+    createSingleFile(mergedFileArr, outputFileStr);
 
     //Remove temp files
     findFiles('./',/\.temp$/,function(tempFilename){
@@ -67,7 +69,7 @@ exports.add = function(manifestJSON, relPathManifest, v,d,qa){
     });
 }
 
-function createSingleFile(list, outputFileStr, v,d){
+function createSingleFile(list, outputFileStr){
     if (d) console.log("Creating single file");
     if(list == null || list == ""){
         console.log("List to merge is not valid. Aborting..");
@@ -82,11 +84,11 @@ function createSingleFile(list, outputFileStr, v,d){
     );
 }
 
-function applyGeneratedContent(origContent, fileOptions, v,d) {
+function applyGeneratedContent(origContent, fileOptions) {
     var scrubbedContent = origContent;
     //Remove YAML
     if(fileOptions.noYAML){
-        var contentNoYAML = removeYAML(origContent, v,d);
+        var contentNoYAML = removeYAML(origContent);
         scrubbedContent = contentNoYAML;
     }
     //Add TOC
@@ -105,13 +107,13 @@ function applyGeneratedContent(origContent, fileOptions, v,d) {
     }
     //Allows for find and replace options in the markdown with ${}
     if(fileOptions.replace){
-        scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace,v,d);
+        scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
     }
     return scrubbedContent;
 } 
 
 //Removes YAML at beginning of file
-function removeYAML(fileContents, v,d) {
+function removeYAML(fileContents) {
     var lines = fileContents.split("\n");
     var i=0;
     var startYAML=-1;
@@ -149,7 +151,7 @@ function removeYAML(fileContents, v,d) {
     return  noYaml;
 }
 
-function replaceStrings(fileContents,replacements,v,d){
+function replaceStrings(fileContents,replacements){
     var replacedContent = fileContents;
     var startStrKey="startStr", endStrKey="endStr";
     var startStr = replacements[startStrKey] || "<!--{";
@@ -188,7 +190,7 @@ function replaceStrings(fileContents,replacements,v,d){
 
 // function that uses markdown-link-check to validate all URLS and relative links to images
 // https://github.com/tcort/markdown-link-check
-function linkCheck(inputFileStr, outputFileStr, v,d) {
+function linkCheck(inputFileStr, outputFileStr) {
     var outputFolder = path.dirname(outputFileStr)
     if(!fs.existsSync(outputFolder)){
         fs.mkdirSync(outputFolder);
