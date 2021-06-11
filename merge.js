@@ -1,9 +1,18 @@
+"use strict";
 var path = require('path'),
 fs  =  require('fs'),
 concat = require('concat'),
 markdownLinkCheck = require('markdown-link-check'),
 doctoc = require('doctoc/lib/transform');
 var v,d,onlyQA;
+var EXT = {
+    "linkcheck": ".linkcheck.md",
+    "qa": ".qa.md",
+    "out": ".out.md",
+    "ref": ".ref.md"
+};
+exports.EXT = EXT;
+
 
 exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
     v = verbose || false;
@@ -11,8 +20,8 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
     onlyQA = qaContent || false;
     var inputJSON = manifestJSON.input;
     var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
-    var outputLinkcheckFileStr = outputFileStr.replace(".md",".linkcheck.md");
-    var outputQAFileStr = outputFileStr.replace(".md",".qa.md");
+    var outputLinkcheckFileStr = outputFileStr.replace(".md",EXT.linkcheck);
+    var outputQAFileStr = outputFileStr.replace(".md",EXT.qa);
     var qaRegex;
     if(onlyQA) qaRegex = new RegExp(manifestJSON.qa.exclude);
 
@@ -49,7 +58,7 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
         console.log(path.basename(tempFile)+" added to merge list");
 
         //Adds any same name .ref.md files to refFilesList
-        var refFileStr = inputFileStr.replace(".md",".ref.md")
+        var refFileStr = inputFileStr.replace(".md",EXT.ref)
         if(fs.existsSync(refFileStr)){
             console.log(path.basename(refFileStr)+ " added to references merge list");
             refFileArr.push(refFileStr);
@@ -75,7 +84,7 @@ function createSingleFile(list, outputFileStr){
         console.log("List to merge is not valid. Aborting..");
         return;
     }
-    outputPath = path.dirname(outputFileStr);
+    var outputPath = path.dirname(outputFileStr);
     if(!fs.existsSync(outputPath)){
         fs.mkdirSync(outputPath);
     }
@@ -201,7 +210,7 @@ function linkCheck(inputFileStr, outputFileStr) {
     }
     
     var inputFolder = path.dirname(inputFileStr);
-    base = path.join("file://",process.cwd(),inputFolder);
+    var base = path.join("file://",process.cwd(),inputFolder);
     if(d) console.log("Input Folder Location: "+base);
     var inputContent = fs.readFileSync(inputFileStr, 'utf-8');
     markdownLinkCheck(inputContent,
@@ -213,7 +222,7 @@ function linkCheck(inputFileStr, outputFileStr) {
                 console.error('Error', err);
                 return;
             }
-            linkcheckResults= "FILE: " + inputFileStr + " \n";
+            var linkcheckResults = "FILE: " + inputFileStr + " \n";
             if(d) console.log(linkcheckResults);
             results.forEach(function (result) {
                 var icon = "";
