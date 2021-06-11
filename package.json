@@ -12,6 +12,7 @@
     "curFolder": "merge-markdown -m test/src/manifest-full.json",
     "subFolder": "merge-markdown -m test/src/manifest-subfolder.json",
     "yamlTest": "merge-markdown -m test/src/yamlTest-manifest.json",
+    "readmeTOC": "doctoc README.md --github --title='# Contents'",
     "devops": "merge-markdown -m /Users/nennig/Documents/GitHub/devops-guide/source/manifest.json"
   },
   "main": "index.js",
