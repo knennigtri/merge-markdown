@@ -56,12 +56,17 @@ merge-markdown -m myManifest.json --qa
 ```shell
 Usage: merge-markdown [OPTIONS]
 Options:
-  -m manifestName      Required json file that contains merging info.
-  --options            Displays supported manifest {options}
-  -v                   Sets verbose output
-  -d                   Sets debug output
-  -h                   Displays this screen
+  -m manifestName      [json | folder]
+  --qa                 QA mode.
+  -v                   Verbose output
+  -d                   Debug output
+  --h                  Displays this screen
+  --hme                Displays manifest example
+  --hopts              Displays manifest options help
+  --hqa                Displays qa help
   --version            Displays version of this package
+Default manifest: manifest.json unless specified in -m. 
+If there is no manifest, all md files in the folder will be used.
 ```
 
 ## Manifest file format

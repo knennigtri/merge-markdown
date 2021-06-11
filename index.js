@@ -20,20 +20,21 @@ const EXAMPLE_MANIFEST = `Example `+DEFAULT_MANIFEST+`
     "exclude": "frontmatter"
   },
   {options}
-}
-`;
+}`;
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
   -m manifestName      [json | folder]
-  --options            Displays supported manifest {options}
-  --qa                 Enters into QA mode. Files with 'frontmatter' in the name are omitted by default
-  -v                   Sets verbose output
-  -d                   Sets debug output
-  -h                   Displays this screen
+  --qa                 QA mode.
+  -v                   Verbose output
+  -d                   Debug output
+  --h                  Displays this screen
+  --hme                Displays manifest example
+  --hopts              Displays manifest options help
+  --hqa                Displays qa help
   --version            Displays version of this package
 Default manifest: `+DEFAULT_MANIFEST+` unless specified in -m. 
 If there is no manifest, all md files in the folder will be used.
-`+EXAMPLE_MANIFEST;
+`;
 const MANIFEST_OPTIONS = `Manifest input file options:
 Supported key/value pairs for {options}:
   "noYAML": true|false                      optionlly removes YAML. Default=false
@@ -43,24 +44,42 @@ Supported key/value pairs for {options}:
       "endStr": "replaceStrEnd"             optional. Set a unqiue end str for replace. Default is }-->
       "timestamp": true|false|"stringVal"   true for todays date or add you own timestamp string
       *: "stringVal"                        replace any key string with the value string
+  }`;
+const QA_HELP=`When --qa is set:
+Output will omit all filenames with 'frontmatter' by default
+Add a regex to the manifest to customize exclusion:
+{
+  "qa": {
+    "exclude": "frontmatter|preamble"
   }
-`;
+}`;
 
 //TODO Figure out how to check and verify module outputs
 var init = function() {
-  // Show help
+  // Show CLI help
   if (args.h) {
     console.log(MSG_HELP);
     return;
   }
+  //Show manifest input options help
+  if(args.hme) {
+    console.log(EXAMPLE_MANIFEST);
+    return;
+  }
+  //Show manifest input options help
+  if(args.hopts) {
+    console.log(MANIFEST_OPTIONS);
+    return;
+  }
+  //Show manifest input options help
+  if(args.hqa) {
+    console.log(QA_HELP);
+    return;
+  }
+
   // Show version
   if (args.version) {
     console.log(packageInfo.version);
-    return;
-  }
-  //Show manifest input options
-  if(args.options) {
-    console.log(MANIFEST_OPTIONS);
     return;
   }
 
