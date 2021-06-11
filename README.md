@@ -8,11 +8,10 @@ Available on NPM: https://www.npmjs.com/package/merge-markdown
 
 - [Installation](#installation)
 - [Command Line Tool](#command-line-tool)
-  - [Examples](#examples)
 - [Usage](#usage)
 - [Manifest file format](#manifest-file-format)
   - [Supported {options}](#supported-options)
-  - [Examples](#examples-1)
+  - [Examples](#examples)
     - [Custom TOC title in a file.](#custom-toc-title-in-a-file)
     - [Module specific options](#module-specific-options)
     - [QA mode being used](#qa-mode-being-used)
@@ -45,14 +44,12 @@ Merges all md files in the folder
 ```shell
 merge-markdown -m path/to/files
 ```
-
 With QA
 ```shell
 merge-markdown -m myManifest.json --qa
 ```
 
 ## Usage
-
 ```shell
 Usage: merge-markdown [OPTIONS]
 Options:
@@ -96,6 +93,17 @@ This file should be in project directory where markdown files are to be merged
       *: "stringVal"                  
 }
 ```
+### QA Mode
+```shell
+merge-markdown -m manifest.json --qa
+```
+Output will omit all filenames with `frontmatter` by default
+Add a regex to the manifest.json to customize exclusion:
+{
+  "qa": {
+    "exclude": "frontmatter|preamble"
+  }
+}
 
 ### Examples
 

@@ -27,7 +27,7 @@ Options:
   --qa                 QA mode.
   -v                   Verbose output
   -d                   Debug output
-  --h                  Displays this screen
+  -h                  Displays this screen
   --hme                Displays manifest example
   --hopts              Displays manifest options help
   --hqa                Displays qa help
@@ -47,7 +47,7 @@ Supported key/value pairs for {options}:
   }`;
 const QA_HELP=`When --qa is set:
 Output will omit all filenames with 'frontmatter' by default
-Add a regex to the manifest to customize exclusion:
+Add a regex to the `+DEFAULT_MANIFEST+` to customize exclusion:
 {
   "qa": {
     "exclude": "frontmatter|preamble"
