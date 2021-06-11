@@ -44,40 +44,39 @@ Supported key/value pairs for {options}:
 
 //TODO Figure out how to check and verify module outputs
 var init = function() {
-    // Show help
-    if (args.h) {
-      console.log(MSG_HELP);
-      return;
-    }
-    // Show version
-    if (args.version) {
-      console.log(packageInfo.version);
-      return;
-    }
-    //Show manifest input options
-    if(args.options) {
-      console.log(MANIFEST_OPTIONS);
-      return;
-    }
+  // Show help
+  if (args.h) {
+    console.log(MSG_HELP);
+    return;
+  }
+  // Show version
+  if (args.version) {
+    console.log(packageInfo.version);
+    return;
+  }
+  //Show manifest input options
+  if(args.options) {
+    console.log(MANIFEST_OPTIONS);
+    return;
+  }
 
-    //Verify Manifest exists
-    var inputManifest = args.m;
-    if(!inputManifest){
-      useFolderPath("./");
-    } else if (!fs.existsSync(inputManifest)){
-      console.log("Manifest input is not valid. Choose a json file or folder.");
-      console.log(MSG_HELP);
-      return;
-    } else if(fs.lstatSync(inputManifest).isDirectory){
-      useFolderPath(inputManifest);
-    } else {
-      useManifestFile(inputManifest);
-    }
-return;
-    
+  //Verify Manifest exists
+  var inputManifest = args.m;
+  if(!inputManifest){
+    useFolderPath("./");
+  } else if (!fs.existsSync(inputManifest)){
+    console.log("Manifest input is not valid. Choose a json file or folder.");
+    console.log(MSG_HELP);
+    return;
+  } else if(fs.lstatSync(inputManifest).isDirectory()){
+    useFolderPath(inputManifest);
+  } else {
+    useManifestFile(inputManifest);
+  }
+  return; 
 }
-function useManifestFile(){
-  if (inputManifest.split('.').pop() != "json")){
+function useManifestFile(inputManifest){
+  if (inputManifest.split('.').pop() != "json"){
     console.log("Cannot find manifest file or it is not a JSON");
     console.log(MSG_HELP);
     return;
@@ -105,9 +104,8 @@ function useManifestFile(){
 
   if(args.qa){
     if (!manifestJSON.qa || !manifestJSON.qa.exclude){
-      console.log("No exclude patterns given for QA.")
-      console.log(EXAMPLE_MANIFEST);
-      return;
+      console.log("No exclude patterns given for QA. Using default `frontmatter` for exclusion.")
+      manifestJSON.qa = {"exclude":"frontmatter"};
     }
   }
   merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  

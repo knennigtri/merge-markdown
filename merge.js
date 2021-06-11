@@ -102,7 +102,7 @@ function applyGeneratedContent(origContent, fileOptions) {
     }
     //Add TOC
     if(fileOptions.TOC){
-        tocTitle = "#### Module Contents";
+        var tocTitle = "#### Module Contents";
         if(fileOptions.TOC.toString().toLowerCase() != "true"){
             tocTitle = fileOptions.TOC
         } 
@@ -123,6 +123,7 @@ function applyGeneratedContent(origContent, fileOptions) {
 
 //Removes YAML at beginning of file
 function removeYAML(fileContents) {
+    var resultContent = fileContents;
     var lines = fileContents.split("\n");
     var i=0;
     var startYAML=-1;
@@ -149,15 +150,14 @@ function removeYAML(fileContents) {
     if(d) console.log("S("+startYAML+")E("+endYAML+")✓'d("+i+")T("+lines.length+")");
     if(startYAML != -1 && endYAML != -1){
         //shows YAML being removed
-        yaml = lines.splice(startYAML,1+endYAML-startYAML).join("\n");
         if(d) console.log("Removing S("+startYAML+")->E("+endYAML+") YAML:")
-        if(d) console.log(yaml);
-        noYaml = lines.join("\n");
+        if(d) console.log(lines.splice(startYAML,1+endYAML-startYAML).join("\n"));
+        resultContent = lines.join("\n");
         if (v) console.log("YAML removed");
     } else {
         if (v) console.log("No YAML found for removal");
     }
-    return  noYaml;
+    return  resultContent;
 }
 
 function replaceStrings(fileContents,replacements){
@@ -178,7 +178,7 @@ function replaceStrings(fileContents,replacements){
                     replace=false;
                     break;
                 case "timestamp":
-                    date_ob = new Date(Date.now());
+                    var date_ob = new Date(Date.now());
                     replaceStr = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
                     if(typeof optionValue != "boolean" && optionValue.toString() != ""){
                         replaceStr = optionValue;
