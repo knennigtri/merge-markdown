@@ -1,0 +1,9 @@
+{
+	"input": {
+		"frontmatter.md": {"replace": {"timestamp":true}},
+		"hasYAML.md": {"noYAML":true,"TOC":true},
+		"noYAML.md": {"noYAML":true,"TOC":true},
+		"badYAML.md": {"noYAML":true,"TOC":true}
+	},
+	"output": "+yamlRemove.md"
+}

@@ -1,77 +1,76 @@
+"use strict";
 var path = require('path'),
 fs  =  require('fs'),
 concat = require('concat'),
 markdownLinkCheck = require('markdown-link-check'),
 doctoc = require('doctoc/lib/transform');
-const { exit } = require('process');
+var v,d,onlyQA;
+var EXT = {
+    "linkcheck": ".linkcheck.md",
+    "qa": ".qa.md",
+    "out": ".out.md",
+    "ref": ".ref.md"
+};
+exports.EXT = EXT;
 
-exports.add = function(manifestJSON, relPathManifest, v){
-    var verbose = v || false;
-    var tocTitle = manifestJSON.moduleTOCTitle || "#### Module Contents";
-    var quiet = manifestJSON.quiet || false;
+
+exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
+    v = verbose || false;
+    d = debug || false;
+    onlyQA = qaContent || false;
     var inputJSON = manifestJSON.input;
-    var outputFileRelPathStr = relPathManifest +"/"+ manifestJSON.output;
-    var outputLinkcheckFile = outputFileRelPathStr.replace(".md",".linkcheck.md");
-    if(!fs.existsSync(path.dirname(outputFileRelPathStr))){
-        fs.mkdirSync(path.dirname(outputFileRelPathStr));
-    } else {
-        if(fs.existsSync(outputFileRelPathStr)){
-            fs.unlinkSync(outputFileRelPathStr);
-        }
-        if(fs.existsSync(outputLinkcheckFile)){
-            fs.unlinkSync(outputLinkcheckFile);
-        }
-    }
+    var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
+    var outputLinkcheckFileStr = outputFileStr.replace(".md",EXT.linkcheck);
+    var outputQAFileStr = outputFileStr.replace(".md",EXT.qa);
+    var qaRegex;
+    if(onlyQA) qaRegex = new RegExp(manifestJSON.qa.exclude);
 
-    //Iterate through all of the files in manifest and:
-    // - check all links are valid
-    // - remove YAML from all files except the first one
-    // - inject a TOC
-    // - add all files to an ordered list to be merged
-    var fileList= [];
-    var refFileList= [];
-    // for (var inputKey in inputJSON){
+    //Iterate through all of the input files in manifest apply options
+    var fileArr= [];
+    var refFileArr= [];
     Object.keys(inputJSON).forEach(function(inputKey) {
-        var fileStr = inputKey;
-        var fileOptions = inputJSON[inputKey];
-        var fileRelPathStr = relPathManifest +"/"+ fileStr;
+        var inputFileStr = relPathManifest +"/"+ inputKey;
+        console.log("*********"+inputFileStr+"*********");
+
+        if (!fs.existsSync(inputFileStr)){
+            console.warn(inputKey + " does not exist. Skipping.");
+            return;
+        } 
+        if(onlyQA && qaRegex.test(inputFileStr)){
+            console.warn("Skipping " +inputKey + " for QA");
+            return;
+        } 
+        var origContent = fs.readFileSync(inputFileStr, 'utf-8');
+        //applies gobal generate rules
+        if (v) console.log("--applying manifest options--");
+        var generatedContent = applyGeneratedContent(origContent,manifestJSON);
+        //Applies file specific generate rules
+        if (v) console.log("--applying file options--");
+        generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey]);
+        var tempFile = inputFileStr+".temp";
+        fs.writeFileSync(tempFile,generatedContent);
         
-        console.log("*********"+fileRelPathStr+"*********");
-        if (fs.existsSync(fileRelPathStr)){
-            var origContent = fs.readFileSync(fileRelPathStr, 'utf-8');
-            //applies gobal generate rules
-            console.log("--applying manifest options--");
-            var generatedContent = applyGeneratedContent(origContent,manifestJSON,verbose);
-            //Applies file specific generate rules
-            console.log("--applying file options--");
-            generatedContent = applyGeneratedContent(generatedContent,fileOptions,verbose);
-            var tempFile = fileRelPathStr+".temp";
-            fs.writeFileSync(tempFile,generatedContent);
-            
-            //checks for broken links within the content
-            linkCheck(fileRelPathStr,outputLinkcheckFile,verbose);
+        //checks for broken links within the content
+        linkCheck(inputFileStr,outputLinkcheckFileStr);
 
-            //add the  temp file to the list to merge together
-            fileList.push(tempFile);
-            console.log(path.basename(tempFile)+" added to merge list");
+        //add the  temp file to the list to merge together
+        fileArr.push(tempFile);
+        console.log(path.basename(tempFile)+" added to merge list");
 
-            //Adds any same name .ref.md files to refFilesList
-            var refFileRelPathStr = fileRelPathStr.replace(".md",".ref.md")
-            if(fs.existsSync(refFileRelPathStr)){
-                console.log(path.basename(refFileRelPathStr)+ " added to references merge list");
-                refFileList.push(refFileRelPathStr);
-            }
-        }
-        else {
-            console.warn(fileStr + " does not exist. Skipping.");
-        }
+        //Adds any same name .ref.md files to refFilesList
+        var refFileStr = inputFileStr.replace(".md",EXT.ref)
+        if(fs.existsSync(refFileStr)){
+            console.log(path.basename(refFileStr)+ " added to references merge list");
+            refFileArr.push(refFileStr);
+        } 
     });
 
     console.log("++++++++++++++++++++")
     //Merge lists and output single markdown file
-    var mergedFileList = fileList.concat(refFileList);
-    console.log("List of files to combine:\n    " + mergedFileList.join("\n    "));
-    createSingleFile(mergedFileList, outputFileRelPathStr);
+    var mergedFileArr = fileArr.concat(refFileArr);
+    
+    console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
+    createSingleFile(mergedFileArr, outputFileStr);
 
     //Remove temp files
     findFiles('./',/\.temp$/,function(tempFilename){
@@ -79,27 +78,31 @@ exports.add = function(manifestJSON, relPathManifest, v){
     });
 }
 
-function createSingleFile(list, output, v){
-    if (v) console.log("creating single file");
-    outputPath = path.dirname(output);
+function createSingleFile(list, outputFileStr){
+    if (d) console.log("Creating single file");
+    if(list == null || list == ""){
+        console.log("List to merge is not valid. Aborting..");
+        return;
+    }
+    var outputPath = path.dirname(outputFileStr);
     if(!fs.existsSync(outputPath)){
         fs.mkdirSync(outputPath);
     }
-    concat(list, output).then(result =>
-        console.log(output + " has been created.")
+    concat(list, outputFileStr).then(result =>
+        console.log(outputFileStr + " has been created.")
     );
 }
 
-function applyGeneratedContent(origContent, fileOptions, v) {
+function applyGeneratedContent(origContent, fileOptions) {
     var scrubbedContent = origContent;
     //Remove YAML
     if(fileOptions.noYAML){
-        var contentNoYAML = removeYAML(origContent, v);
+        var contentNoYAML = removeYAML(origContent);
         scrubbedContent = contentNoYAML;
     }
     //Add TOC
     if(fileOptions.TOC){
-        tocTitle = "#### Module Contents";
+        var tocTitle = "#### Module Contents";
         if(fileOptions.TOC.toString().toLowerCase() != "true"){
             tocTitle = fileOptions.TOC
         } 
@@ -108,7 +111,7 @@ function applyGeneratedContent(origContent, fileOptions, v) {
         var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
         if(outDoctoc.data != null){
             scrubbedContent = outDoctoc.data;
-            console.log("TOC Added");
+            if (v) console.log("TOC Added");
         }
     }
     //Allows for find and replace options in the markdown with ${}
@@ -119,7 +122,8 @@ function applyGeneratedContent(origContent, fileOptions, v) {
 } 
 
 //Removes YAML at beginning of file
-function removeYAML(fileContents, v) {
+function removeYAML(fileContents) {
+    var resultContent = fileContents;
     var lines = fileContents.split("\n");
     var i=0;
     var startYAML=-1;
@@ -143,40 +147,51 @@ function removeYAML(fileContents, v) {
             break;
         }
     }
-    if(v) console.log("S("+startYAML+")E("+endYAML+")✓'d("+i+")T("+lines.length+")");
+    if(d) console.log("S("+startYAML+")E("+endYAML+")✓'d("+i+")T("+lines.length+")");
     if(startYAML != -1 && endYAML != -1){
         //shows YAML being removed
-        yaml = lines.splice(startYAML,1+endYAML-startYAML).join("\n");
-        if(v) console.log("Removing S("+startYAML+")->E("+endYAML+") YAML:")
-        if(v) console.log(yaml);
-        noYaml = lines.join("\n");
-        console.log("YAML removed");
+        if(d) console.log("Removing S("+startYAML+")->E("+endYAML+") YAML:")
+        if(d) console.log(lines.splice(startYAML,1+endYAML-startYAML).join("\n"));
+        resultContent = lines.join("\n");
+        if (v) console.log("YAML removed");
     } else {
-        console.log("No YAML found for removal");
+        if (v) console.log("No YAML found for removal");
     }
-    return  noYaml;
+    return  resultContent;
 }
 
 function replaceStrings(fileContents,replacements){
     var replacedContent = fileContents;
+    var startStrKey="startStr", endStrKey="endStr";
+    var startStr = replacements[startStrKey] || "<!--{";
+    var endStr = replacements[endStrKey] || "}-->";
     Object.keys(replacements).forEach(function(replaceKey) {
-        var find="",replace="";
+        var find="",replaceStr="",replace=true;
         var optionValue = replacements[replaceKey];
         if(optionValue){
             find=replaceKey;
             switch(replaceKey) {
+                case startStrKey:
+                    replace=false;
+                    break;
+                case endStrKey:
+                    replace=false;
+                    break;
                 case "timestamp":
-                    date_ob = new Date(Date.now());
-                    replace = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
+                    var date_ob = new Date(Date.now());
+                    replaceStr = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
                     if(typeof optionValue != "boolean" && optionValue.toString() != ""){
-                        replace = optionValue;
+                        replaceStr = optionValue;
                     }
                     break;
                 default:
-                    replace=optionValue;
+                    replaceStr=optionValue;
             }
-            console.log("Replacing: ${"+find+"} with: "+replace);
-            replacedContent = replacedContent.replace("${"+find+"}",replace);
+            if(replace) {
+                var findStr = startStr+find+endStr;
+                if(v) console.log("Replacing: "+findStr+" with: "+replaceStr);
+                replacedContent = replacedContent.replace(findStr,replaceStr);
+            }
         }   
     });
     return replacedContent;
@@ -184,11 +199,21 @@ function replaceStrings(fileContents,replacements){
 
 // function that uses markdown-link-check to validate all URLS and relative links to images
 // https://github.com/tcort/markdown-link-check
-function linkCheck(relFileStr, outputLinkcheck, v) {
-    var origContent = fs.readFileSync(relFileStr, 'utf-8');
-    base = path.join("file://",process.cwd(),path.dirname(relFileStr));
-    if(v) console.log("BASE: "+base);
-    markdownLinkCheck(origContent,
+function linkCheck(inputFileStr, outputFileStr) {
+    var outputFolder = path.dirname(outputFileStr)
+    if(!fs.existsSync(outputFolder)){
+        fs.mkdirSync(outputFolder);
+    } else {
+        if(fs.existsSync(outputFileStr)){
+            fs.unlinkSync(outputFileStr);
+        }
+    }
+    
+    var inputFolder = path.dirname(inputFileStr);
+    var base = path.join("file://",process.cwd(),inputFolder);
+    if(d) console.log("Input Folder Location: "+base);
+    var inputContent = fs.readFileSync(inputFileStr, 'utf-8');
+    markdownLinkCheck(inputContent,
         {
             baseUrl: base,
             ignorePatterns: [{ pattern: "^http://localhost" }],
@@ -197,8 +222,8 @@ function linkCheck(relFileStr, outputLinkcheck, v) {
                 console.error('Error', err);
                 return;
             }
-            linkcheckResults= "FILE: " + relFileStr + " \n";
-            if(v) console.log(linkcheckResults);
+            var linkcheckResults = "FILE: " + inputFileStr + " \n";
+            if(d) console.log(linkcheckResults);
             results.forEach(function (result) {
                 var icon = "";
                 switch(result.status) {
@@ -213,17 +238,16 @@ function linkCheck(relFileStr, outputLinkcheck, v) {
                         break;
                   }
                 var statusStr="["+icon+"] " + result.link + " is " + result.status;
-                if(v) console.log(statusStr);
-                //TODO implement -q quiet
+                if(d) console.log(statusStr);
                 if(result.status != "alive"){
                     linkcheckResults+=" "+ statusStr + " \n";
                 }
             });
             linkcheckResults+="\n "+results.length +" links checked. \n\n  \n";
-            if(fs.existsSync(outputLinkcheck)){
-                fs.appendFileSync(outputLinkcheck,linkcheckResults);
+            if(fs.existsSync(outputFileStr)){
+                fs.appendFileSync(outputFileStr,linkcheckResults);
             }else{
-                fs.writeFileSync(outputLinkcheck,linkcheckResults);
+                fs.writeFileSync(outputFileStr,linkcheckResults);
             }
     });
 }
@@ -243,4 +267,4 @@ function findFiles(startPath,filter,callback){
         }
         else if (filter.test(filename)) callback(filename);
     };
-};
+}

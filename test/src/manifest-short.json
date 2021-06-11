@@ -5,6 +5,8 @@
 	},
 	"output": "+shortGuide.md",
 	"replace":{
+		"startStr":"${",
+		"endStr":"}",
 		"timestamp":true
 	}
 }
