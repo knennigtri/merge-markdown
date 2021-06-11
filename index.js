@@ -1,8 +1,10 @@
-var minimist = require('minimist');
-var fs = require('fs');
-var path = require('path');
-var packageInfo = require("./package.json");
-var merge = require("./merge.js");
+"use strict";
+var minimist = require('minimist'),
+fs = require('fs'),
+path = require('path'),
+packageInfo = require("./package.json"),
+merge = require("./merge.js");
+var args = minimist(process.argv.slice(2));
 
 const EXAMPLE_MANIFEST = `Example manifest.json
 {
@@ -42,9 +44,6 @@ Supported key/value pairs for {options}:
 
 //TODO Figure out how to check and verify module outputs
 var init = function() {
-    "use strict";
-    var args = minimist(process.argv.slice(2));
-
     // Show help
     if (args.h) {
       console.log(MSG_HELP);
@@ -63,40 +62,77 @@ var init = function() {
 
     //Verify Manifest exists
     var inputManifest = args.m;
-    if (!fs.existsSync(inputManifest) || (inputManifest.split('.').pop() != "json")){
-      console.log("Cannot find manifest file or it is not a JSON");
+    if(!inputManifest){
+      useFolderPath("./");
+    } else if (!fs.existsSync(inputManifest)){
+      console.log("Manifest input is not valid. Choose a json file or folder.");
       console.log(MSG_HELP);
       return;
+    } else if(fs.lstatSync(inputManifest).isDirectory){
+      useFolderPath(inputManifest);
+    } else {
+      useManifestFile(inputManifest);
     }
-    console.log("Using Manifest: %s", inputManifest);
-    var manifestJSON = JSON.parse(fs.readFileSync(inputManifest, 'utf8'));
+return;
+    
+}
+function useManifestFile(){
+  if (inputManifest.split('.').pop() != "json")){
+    console.log("Cannot find manifest file or it is not a JSON");
+    console.log(MSG_HELP);
+    return;
+  }
+  console.log("Using Manifest: %s", inputManifest);
+  var manifestJSON = JSON.parse(fs.readFileSync(inputManifest, 'utf8'));
 
-    //Verify manifest has correct properties.
-    if(!manifestJSON.input) {
-      console.log("Manifest is missing input.");
+  //Verify manifest has correct properties.
+  if(!manifestJSON.input) {
+    console.log("Manifest is missing input.");
+    console.log(EXAMPLE_MANIFEST);
+    return;
+  }
+  if(!manifestJSON.output) {
+    console.log("Manifest is missing output.");
+    console.log(EXAMPLE_MANIFEST);
+    return;
+  }
+  var manifestRelPath = path.dirname(inputManifest);
+
+  var outputFile = manifestJSON.output;
+  if(outputFile.split('.').pop() != "md"){
+    console.log("output needs to be a .md file");
+  }
+
+  if(args.qa){
+    if (!manifestJSON.qa || !manifestJSON.qa.exclude){
+      console.log("No exclude patterns given for QA.")
       console.log(EXAMPLE_MANIFEST);
       return;
     }
-    if(!manifestJSON.output) {
-      console.log("Manifest is missing output.");
-      console.log(EXAMPLE_MANIFEST);
-      return;
+  }
+  merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
+}
+function useFolderPath(inputFolder){
+  console.log("No manifest file given. Using "+inputFolder+" folder to create manifest.");
+  var generatedJSON = {"input": {},"output": ""};
+  //Create ouput
+  var outputFileStr = inputFolder.match(/([^\/]*)\/*$/)[1];
+  if(outputFileStr == ".") outputFileStr = "merge";
+  generatedJSON.output = outputFileStr + merge.EXT.out;
+  //create input
+  fs.readdirSync(inputFolder).forEach (file => {
+    var add = true;
+    if(file.endsWith(".md")){
+      add = Object.keys(merge.EXT).every(extension =>{
+        if(file.endsWith(merge.EXT[extension])) return false;
+        return true;
+      });
+      if(add) generatedJSON.input[file] = "";
     }
-    var manifestRelPath = path.dirname(inputManifest);
+  });
 
-    var outputFile = manifestJSON.output;
-    if(outputFile.split('.').pop() != "md"){
-      console.log("output needs to be a .md file");
-    }
-
-    if(args.qa){
-      if (!manifestJSON.qa || !manifestJSON.qa.exclude){
-        console.log("No exclude patterns given for QA.")
-        console.log(EXAMPLE_MANIFEST);
-        return;
-      }
-    }
-  merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);
+  if (args.v) console.log("generated JSON: "+ JSON.stringify(generatedJSON.input));
+  merge.add(generatedJSON, inputFolder, args.v, args.d, args.qa);
 }
 
 exports.init = init;
