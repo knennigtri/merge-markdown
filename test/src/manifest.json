@@ -7,7 +7,9 @@
 	},
 	"output": "+myGuide.md",
 	"replace":{
-		"timestamp":true
+		"timestamp":true,
+		"courseTitle": "DevOps for Adobe Experience Manager as a Cloud Service",
+		"author": "Kevin Nennig"
 	}
 }
 

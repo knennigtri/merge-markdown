@@ -95,10 +95,17 @@ function createSingleFile(list, outputFileStr){
 
 function applyGeneratedContent(origContent, fileOptions) {
     var scrubbedContent = origContent;
+
+   // var scrubbedContent = assetsRelToABS(origContent);
+
     //Remove YAML
     if(fileOptions.noYAML){
         var contentNoYAML = removeYAML(origContent);
         scrubbedContent = contentNoYAML;
+    }
+    //Allows for find and replace options in the markdown with ${}
+    if(fileOptions.replace){
+        scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
     }
     //Add TOC
     if(fileOptions.TOC){
@@ -113,13 +120,44 @@ function applyGeneratedContent(origContent, fileOptions) {
             scrubbedContent = outDoctoc.data;
             if (v) console.log("TOC Added");
         }
-    }
-    //Allows for find and replace options in the markdown with ${}
-    if(fileOptions.replace){
-        scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
-    }
+    } 
     return scrubbedContent;
 } 
+
+//use cases
+// ![*](relPath)
+// src="relPath"
+function assetsRelToABS(fileContents){
+    var resultContent = fileContents;
+    var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
+
+    var lines = fileContents.split("\n");
+    lines.forEach(line => {
+        // console.log(line);
+        //Look for ![*](relPath) or src="relPath"
+        var match = line.match(regex);
+        var relPath = "";
+        //if found capture relPath
+        if(match != null){
+            var origStr = match[0];
+            console.log("STR: "+origStr);
+            if(origStr.startsWith("![")){
+                relPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
+            } else if(origStr.startsWith("src=")){
+                relPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+            } 
+            console.log("relPath: "+relPath);
+            //TODO apply the folder/manifest path
+            //TODO Skip Any URLs
+            var absPath = path.resolve(relPath);
+            console.log("absPath: "+absPath);
+            // line.replace(relPath,absPath);
+        }
+    });
+    // resultContent = lines.join("\n");
+
+    return resultContent;
+}
 
 //Removes YAML at beginning of file
 function removeYAML(fileContents) {
@@ -151,7 +189,8 @@ function removeYAML(fileContents) {
     if(startYAML != -1 && endYAML != -1){
         //shows YAML being removed
         if(d) console.log("Removing S("+startYAML+")->E("+endYAML+") YAML:")
-        if(d) console.log(lines.splice(startYAML,1+endYAML-startYAML).join("\n"));
+        var yaml = lines.splice(startYAML,1+endYAML-startYAML).join("\n");
+        if(d) console.log(yaml);
         resultContent = lines.join("\n");
         if (v) console.log("YAML removed");
     } else {
@@ -189,8 +228,9 @@ function replaceStrings(fileContents,replacements){
             }
             if(replace) {
                 var findStr = startStr+find+endStr;
-                if(v) console.log("Replacing: "+findStr+" with: "+replaceStr);
-                replacedContent = replacedContent.replace(findStr,replaceStr);
+                var findRegex = new RegExp(findStr, 'g')
+                if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
+                replacedContent = replacedContent.replace(findRegex,replaceStr);
             }
         }   
     });
@@ -223,7 +263,6 @@ function linkCheck(inputFileStr, outputFileStr) {
                 return;
             }
             var linkcheckResults = "FILE: " + inputFileStr + " \n";
-            if(d) console.log(linkcheckResults);
             results.forEach(function (result) {
                 var icon = "";
                 switch(result.status) {
@@ -238,8 +277,8 @@ function linkCheck(inputFileStr, outputFileStr) {
                         break;
                   }
                 var statusStr="["+icon+"] " + result.link + " is " + result.status;
-                if(d) console.log(statusStr);
-                if(result.status != "alive"){
+                if(d) linkcheckResults+=" "+ statusStr + " \n";
+                if(!d && result.status != "alive"){
                     linkcheckResults+=" "+ statusStr + " \n";
                 }
             });
