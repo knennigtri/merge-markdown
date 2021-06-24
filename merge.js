@@ -41,21 +41,21 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
             return;
         } 
         var origContent = fs.readFileSync(inputFileStr, 'utf-8');
+        
+        //updates all relative asset paths to the relative output location
+        var generatedContent = updateAssetRelPaths(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr));
+        
         //applies gobal generate rules
-        console.log("relOutputPath: "+path.dirname(outputFileStr));
-        console.log("relInputPath"+ path.dirname(inputFileStr));
-        var generatedContent = assetsRelToABS(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr));
-
         if (v) console.log("--applying manifest options--");
-     //   generatedContent = applyGeneratedContent(generatedContent,manifestJSON);
+        generatedContent = applyGeneratedContent(generatedContent,manifestJSON);
         //Applies file specific generate rules
         if (v) console.log("--applying file options--");
-     //   generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey]);
+        generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey]);
         var tempFile = inputFileStr+".temp";
         fs.writeFileSync(tempFile,generatedContent);
         
         //checks for broken links within the content
-     //    linkCheck(inputFileStr,outputLinkcheckFileStr);
+        linkCheck(inputFileStr,outputLinkcheckFileStr);
 
         //add the  temp file to the list to merge together
         fileArr.push(tempFile);
@@ -126,46 +126,39 @@ function applyGeneratedContent(origContent, fileOptions) {
     return scrubbedContent;
 } 
 
-//use cases
-// ![*](relPath)
-// src="relPath"
-// https://nodejs.org/api/path.html#path_path_relative_from_to
-function assetsRelToABS(fileContents,inputPath, outputPath){
+/**
+ * Searches for ![*](relPath) or src="relPath" in a string and replaces the asset
+ * relPath with a new relPath based on the output file. 
+ * @param {*} fileContents String containing relative paths to update
+ * @param {*} inputPath relative input path of fileContents
+ * @param {*} outputPath relative output path of output file
+ * @returns String that contains updated relative paths to the output file
+ */
+function updateAssetRelPaths(fileContents,inputPath, outputPath){
     var resultContent=[];
     var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
 
+    //Go through each line that and 
     var lines = fileContents.split("\n");
     lines.forEach(line => {
-        // console.log(line);
-        //Look for ![*](relPath) or src="relPath"
         var match = line.match(regex);
-        var origRelPath = "";
+        var origAssetRelPath = "";
         //if found capture relPath
         if(match != null){
             var origStr = match[0];
-            console.log("Found! "+origStr);
             if(origStr.startsWith("![")){
-                origRelPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
+                origAssetRelPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
             } else if(origStr.startsWith("src=")){
-                origRelPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+                origAssetRelPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
             } 
-            //TODO apply the folder/manifest path
-            //TODO Skip Any URLs
-            outputPath = "output"
-            console.log("origRelPath: "+origRelPath);
+            //resolve the asset path and create a new relative path to the output
+            var origAssetPath = path.resolve(inputPath, origAssetRelPath);
+            var newAssetRelPath = path.relative(outputPath,origAssetPath);
 
-            // var absOutputPath = path.resolve(outputPath);
-            // // console.log("absOutputPath: "+absOutputPath);
-            var origAbsPath = path.resolve(inputPath, origRelPath);
-            // // console.log("absPath: "+origAbsPath);
-            // var newRelPathABS = path.relative(absOutputPath,origAbsPath);
-            // console.log("newRelPathABS: "+newRelPathABS);
+            if(v) console.log("origAssetRelPath: "+origAssetRelPath);
+            if(v) console.log("newAssetRelPath: "+newAssetRelPath);
 
-            var newRelPath = path.relative(outputPath,origAbsPath);
-            console.log("newRelPath: "+newRelPath);
-            
-
-            var newLine = line.replace(origRelPath,newRelPath);
+            var newLine = line.replace(origAssetRelPath,newAssetRelPath);
             resultContent.push(newLine);
         }else{
             resultContent.push(line);
@@ -174,7 +167,11 @@ function assetsRelToABS(fileContents,inputPath, outputPath){
     return resultContent.join("\n");
 }
 
-//Removes YAML at beginning of file
+/**
+ * Removes the YAML at the top of a markdown file
+ * @param {*} fileContents String that might contain YAML
+ * @returns String that has YAML removed
+ */
 function removeYAML(fileContents) {
     var resultContent = fileContents;
     var lines = fileContents.split("\n");
@@ -262,8 +259,15 @@ function replaceStrings(fileContents,replacements){
     return replacedContent;
 }
 
-// function that uses markdown-link-check to validate all URLS and relative links to images
+// 
 // https://github.com/tcort/markdown-link-check
+/**
+ * Function that uses markdown-link-check to validate all URLS and relative links to images
+ * Writes a file called outputFile.linkcheck.md with the results
+ * https://github.com/tcort/markdown-link-check
+ * @param {*} inputFileStr markdown file name to perform link checking
+ * @param {*} outputFileStr output file name to write the results to
+ */
 function linkCheck(inputFileStr, outputFileStr) {
     var outputFolder = path.dirname(outputFileStr)
     if(!fs.existsSync(outputFolder)){
@@ -277,8 +281,8 @@ function linkCheck(inputFileStr, outputFileStr) {
     var inputFolder = path.dirname(inputFileStr);
     var base = path.join("file://",process.cwd(),inputFolder);
     if(d) console.log("Input Folder Location: "+base);
-    var inputContent = fs.readFileSync(inputFileStr, 'utf-8');
-    markdownLinkCheck(inputContent,
+    var fileContents = fs.readFileSync(inputFileStr, 'utf-8');
+    markdownLinkCheck(fileContents,
         {
             baseUrl: base,
             ignorePatterns: [{ pattern: "^http://localhost" }],
