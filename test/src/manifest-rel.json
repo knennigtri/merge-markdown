@@ -1,0 +1,13 @@
+{
+	"input": {
+		"rel-test/rel.md": {"noYAML":true,"TOC":true},
+		"ipsum-module.md": {"noYAML":true,"TOC":true}
+	},
+	"output": "output/+myRelativeGuide.md",
+	"replace":{
+		"timestamp":true,
+		"courseTitle": "DevOps for Adobe Experience Manager as a Cloud Service",
+		"author": "Kevin Nennig"
+	}
+}
+
