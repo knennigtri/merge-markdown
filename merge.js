@@ -42,16 +42,20 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
         } 
         var origContent = fs.readFileSync(inputFileStr, 'utf-8');
         //applies gobal generate rules
+        console.log("relOutputPath: "+path.dirname(outputFileStr));
+        console.log("relInputPath"+ path.dirname(inputFileStr));
+        var generatedContent = assetsRelToABS(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr));
+
         if (v) console.log("--applying manifest options--");
-        var generatedContent = applyGeneratedContent(origContent,manifestJSON);
+     //   generatedContent = applyGeneratedContent(generatedContent,manifestJSON);
         //Applies file specific generate rules
         if (v) console.log("--applying file options--");
-        generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey]);
+     //   generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey]);
         var tempFile = inputFileStr+".temp";
         fs.writeFileSync(tempFile,generatedContent);
         
         //checks for broken links within the content
-        linkCheck(inputFileStr,outputLinkcheckFileStr);
+     //    linkCheck(inputFileStr,outputLinkcheckFileStr);
 
         //add the  temp file to the list to merge together
         fileArr.push(tempFile);
@@ -96,8 +100,6 @@ function createSingleFile(list, outputFileStr){
 function applyGeneratedContent(origContent, fileOptions) {
     var scrubbedContent = origContent;
 
-   // var scrubbedContent = assetsRelToABS(origContent);
-
     //Remove YAML
     if(fileOptions.noYAML){
         var contentNoYAML = removeYAML(origContent);
@@ -127,8 +129,9 @@ function applyGeneratedContent(origContent, fileOptions) {
 //use cases
 // ![*](relPath)
 // src="relPath"
-function assetsRelToABS(fileContents){
-    var resultContent = fileContents;
+// https://nodejs.org/api/path.html#path_path_relative_from_to
+function assetsRelToABS(fileContents,inputPath, outputPath){
+    var resultContent=[];
     var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
 
     var lines = fileContents.split("\n");
@@ -136,27 +139,39 @@ function assetsRelToABS(fileContents){
         // console.log(line);
         //Look for ![*](relPath) or src="relPath"
         var match = line.match(regex);
-        var relPath = "";
+        var origRelPath = "";
         //if found capture relPath
         if(match != null){
             var origStr = match[0];
-            console.log("STR: "+origStr);
+            console.log("Found! "+origStr);
             if(origStr.startsWith("![")){
-                relPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
+                origRelPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
             } else if(origStr.startsWith("src=")){
-                relPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+                origRelPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
             } 
-            console.log("relPath: "+relPath);
             //TODO apply the folder/manifest path
             //TODO Skip Any URLs
-            var absPath = path.resolve(relPath);
-            console.log("absPath: "+absPath);
-            // line.replace(relPath,absPath);
+            outputPath = "output"
+            console.log("origRelPath: "+origRelPath);
+
+            // var absOutputPath = path.resolve(outputPath);
+            // // console.log("absOutputPath: "+absOutputPath);
+            var origAbsPath = path.resolve(inputPath, origRelPath);
+            // // console.log("absPath: "+origAbsPath);
+            // var newRelPathABS = path.relative(absOutputPath,origAbsPath);
+            // console.log("newRelPathABS: "+newRelPathABS);
+
+            var newRelPath = path.relative(outputPath,origAbsPath);
+            console.log("newRelPath: "+newRelPath);
+            
+
+            var newLine = line.replace(origRelPath,newRelPath);
+            resultContent.push(newLine);
+        }else{
+            resultContent.push(line);
         }
     });
-    // resultContent = lines.join("\n");
-
-    return resultContent;
+    return resultContent.join("\n");
 }
 
 //Removes YAML at beginning of file
@@ -199,6 +214,16 @@ function removeYAML(fileContents) {
     return  resultContent;
 }
 
+/**
+ * By default keys are expected to be wrapped with <!--{key}--> in the markdown 
+ * unless specified in the replacemens json.
+ * @param {*} fileContents - String that contains the replaceable characters
+ * @param {*} replacements - key value pairs that contain the find/replace values.
+ *   Special keys include:
+ *     - startStr: replaces the <!--{ start string
+ *     - endStr: replaces the }--> end string
+ * @returns String that contains the replaced keys with their values
+ */
 function replaceStrings(fileContents,replacements){
     var replacedContent = fileContents;
     var startStrKey="startStr", endStrKey="endStr";
