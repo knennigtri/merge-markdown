@@ -126,8 +126,7 @@ function applyGeneratedContent(origContent, fileOptions) {
     return scrubbedContent;
 } 
 
-/**
- * Searches for ![*](relPath) or src="relPath" in a string and replaces the asset
+/** Searches for ![*](relPath) or src="relPath" in a string and replaces the asset
  * relPath with a new relPath based on the output file. 
  * @param {*} fileContents String containing relative paths to update
  * @param {*} inputPath relative input path of fileContents
@@ -167,8 +166,7 @@ function updateAssetRelPaths(fileContents,inputPath, outputPath){
     return resultContent.join("\n");
 }
 
-/**
- * Removes the YAML at the top of a markdown file
+/** Removes the YAML at the top of a markdown file
  * @param {*} fileContents String that might contain YAML
  * @returns String that has YAML removed
  */
@@ -211,8 +209,7 @@ function removeYAML(fileContents) {
     return  resultContent;
 }
 
-/**
- * By default keys are expected to be wrapped with <!--{key}--> in the markdown 
+/** By default keys are expected to be wrapped with <!--{key}--> in the markdown 
  * unless specified in the replacemens json.
  * @param {*} fileContents - String that contains the replaceable characters
  * @param {*} replacements - key value pairs that contain the find/replace values.
@@ -259,10 +256,7 @@ function replaceStrings(fileContents,replacements){
     return replacedContent;
 }
 
-// 
-// https://github.com/tcort/markdown-link-check
-/**
- * Function that uses markdown-link-check to validate all URLS and relative links to images
+/** Function that uses markdown-link-check to validate all URLS and relative links to images
  * Writes a file called outputFile.linkcheck.md with the results
  * https://github.com/tcort/markdown-link-check
  * @param {*} inputFileStr markdown file name to perform link checking
