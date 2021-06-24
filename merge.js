@@ -3,7 +3,8 @@ var path = require('path'),
 fs  =  require('fs'),
 concat = require('concat'),
 markdownLinkCheck = require('markdown-link-check'),
-doctoc = require('doctoc/lib/transform');
+doctoc = require('doctoc/lib/transform'),
+validUrl = require('valid-url');
 var v,d,onlyQA;
 var EXT = {
     "linkcheck": ".linkcheck.md",
@@ -150,15 +151,19 @@ function updateAssetRelPaths(fileContents,inputPath, outputPath){
             } else if(origStr.startsWith("src=")){
                 origAssetRelPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
             } 
-            //resolve the asset path and create a new relative path to the output
-            var origAssetPath = path.resolve(inputPath, origAssetRelPath);
-            var newAssetRelPath = path.relative(outputPath,origAssetPath);
+            if(!validUrl.isUri(origAssetRelPath)){
+                //resolve the asset path and create a new relative path to the output
+                var origAssetPath = path.resolve(inputPath, origAssetRelPath);
+                var newAssetRelPath = path.relative(outputPath,origAssetPath);
 
-            if(v) console.log("origAssetRelPath: "+origAssetRelPath);
-            if(v) console.log("newAssetRelPath: "+newAssetRelPath);
+                if(v) console.log("origAssetRelPath: "+origAssetRelPath);
+                if(v) console.log("newAssetRelPath: "+newAssetRelPath);
 
-            var newLine = line.replace(origAssetRelPath,newAssetRelPath);
-            resultContent.push(newLine);
+                var newLine = line.replace(origAssetRelPath,newAssetRelPath);
+                resultContent.push(newLine);
+            }else{
+                resultContent.push(line);
+            }
         }else{
             resultContent.push(line);
         }
