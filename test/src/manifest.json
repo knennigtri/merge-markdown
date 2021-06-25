@@ -7,9 +7,10 @@
 	},
 	"output": "+myGuide.md",
 	"replace":{
-		"timestamp":true,
-		"courseTitle": "My Course Title",
-		"author": "Chuck Grant"
+		"<!--{timestamp}-->": "05/25/2021",
+		"<!--{returnToMainTOC}-->": "[...back to main TOC](#course-contents)",
+		"<!--{courseTitle}-->": "My Course Title",
+		"<!--{author}-->": "Chuck Grant",
+		"({#(.*?)})": ""
 	}
 }
-

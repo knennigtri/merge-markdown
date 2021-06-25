@@ -5,9 +5,9 @@
 	},
 	"output": "output/+myRelativeGuide.md",
 	"replace":{
-		"timestamp":true,
-		"courseTitle": "DevOps for Adobe Experience Manager as a Cloud Service",
-		"author": "Kevin Nennig"
+		"<!--{timestamp}-->":true,
+		"<!--{courseTitle}-->": "My Awesome Title",
+		"<!--{author}-->": "Chuck"
 	}
 }
 

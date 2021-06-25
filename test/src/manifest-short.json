@@ -5,9 +5,7 @@
 	},
 	"output": "+shortGuide.md",
 	"replace":{
-		"startStr":"${",
-		"endStr":"}",
-		"timestamp":true
+		"<!--{timestamp}-->": "05/25/2021"
 	}
 }
 

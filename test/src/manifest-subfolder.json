@@ -6,7 +6,7 @@
 	},
 	"output": "output/+myGuide.md",
 	"replace":{
-		"timestamp":true,
+		"<!--{timestamp}-->": "05/25/2021",
 		"returnToMainTOC": "[...back to main TOC](#course-contents)"
 	}
 }

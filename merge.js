@@ -221,6 +221,7 @@ function removeYAML(fileContents) {
  *   Special keys include:
  *     - startStr: replaces the <!--{ start string
  *     - endStr: replaces the }--> end string
+ *     - regex: regex value to search for replacement
  * @returns String that contains the replaced keys with their values
  */
 function replaceStrings(fileContents,replacements){
@@ -229,34 +230,38 @@ function replaceStrings(fileContents,replacements){
     var startStr = replacements[startStrKey] || "<!--{";
     var endStr = replacements[endStrKey] || "}-->";
     Object.keys(replacements).forEach(function(replaceKey) {
-        var find="",replaceStr="",replace=true;
-        var optionValue = replacements[replaceKey];
-        if(optionValue){
-            find=replaceKey;
-            switch(replaceKey) {
-                case startStrKey:
-                    replace=false;
-                    break;
-                case endStrKey:
-                    replace=false;
-                    break;
-                case "timestamp":
-                    var date_ob = new Date(Date.now());
-                    replaceStr = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
-                    if(typeof optionValue != "boolean" && optionValue.toString() != ""){
-                        replaceStr = optionValue;
-                    }
-                    break;
-                default:
-                    replaceStr=optionValue;
-            }
-            if(replace) {
-                var findStr = startStr+find+endStr;
-                var findRegex = new RegExp(findStr, 'g')
-                if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
-                replacedContent = replacedContent.replace(findRegex,replaceStr);
-            }
-        }   
+        var findRegex = new RegExp(replaceKey, 'g')
+        var replaceStr = replacements[replaceKey];
+        if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
+        replacedContent = replacedContent.replace(findRegex,replaceStr);
+        // if(optionValue){
+        //     find=replaceKey;
+        //     switch(replaceKey) {
+        //         case startStrKey:
+        //             break;
+        //         case endStrKey:
+        //             break;
+        //         case "timestamp":
+        //             var date_ob = new Date(Date.now());
+        //             replaceStr = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
+        //             if(typeof optionValue != "boolean" && optionValue.toString() != ""){
+        //                 replaceStr = optionValue;
+        //             }
+        //             findStr = startStr+find+endStr;
+        //             break;
+        //         case "regex":
+        //             findStr = optionValue;
+        //             break;
+        //         default:
+        //             replaceStr=optionValue;
+        //             findStr = startStr+find+endStr;
+        //     }
+        //     if(findStr != "") {
+        //         var findRegex = new RegExp(findStr, 'g')
+        //         if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
+        //         replacedContent = replacedContent.replace(findRegex,replaceStr);
+        //     }
+        // }   
     });
     return replacedContent;
 }
