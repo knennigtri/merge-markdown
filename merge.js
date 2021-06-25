@@ -214,54 +214,20 @@ function removeYAML(fileContents) {
     return  resultContent;
 }
 
-/** By default keys are expected to be wrapped with <!--{key}--> in the markdown 
- * unless specified in the replacemens json.
+/** Replaces any value with another value. 
+ * Regex values are allowed and will be wrapped with /str/g
  * @param {*} fileContents - String that contains the replaceable characters
  * @param {*} replacements - key value pairs that contain the find/replace values.
- *   Special keys include:
- *     - startStr: replaces the <!--{ start string
- *     - endStr: replaces the }--> end string
- *     - regex: regex value to search for replacement
  * @returns String that contains the replaced keys with their values
  */
 function replaceStrings(fileContents,replacements){
     var replacedContent = fileContents;
-    var startStrKey="startStr", endStrKey="endStr";
-    var startStr = replacements[startStrKey] || "<!--{";
-    var endStr = replacements[endStrKey] || "}-->";
     Object.keys(replacements).forEach(function(replaceKey) {
-        var findRegex = new RegExp(replaceKey, 'g')
+        var findRegex = "";
+        findRegex = new RegExp(replaceKey, 'g');
         var replaceStr = replacements[replaceKey];
         if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
-        replacedContent = replacedContent.replace(findRegex,replaceStr);
-        // if(optionValue){
-        //     find=replaceKey;
-        //     switch(replaceKey) {
-        //         case startStrKey:
-        //             break;
-        //         case endStrKey:
-        //             break;
-        //         case "timestamp":
-        //             var date_ob = new Date(Date.now());
-        //             replaceStr = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
-        //             if(typeof optionValue != "boolean" && optionValue.toString() != ""){
-        //                 replaceStr = optionValue;
-        //             }
-        //             findStr = startStr+find+endStr;
-        //             break;
-        //         case "regex":
-        //             findStr = optionValue;
-        //             break;
-        //         default:
-        //             replaceStr=optionValue;
-        //             findStr = startStr+find+endStr;
-        //     }
-        //     if(findStr != "") {
-        //         var findRegex = new RegExp(findStr, 'g')
-        //         if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
-        //         replacedContent = replacedContent.replace(findRegex,replaceStr);
-        //     }
-        // }   
+        replacedContent = replacedContent.replace(findRegex,replaceStr); 
     });
     return replacedContent;
 }
