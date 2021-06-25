@@ -8,8 +8,8 @@
 	"output": "+myGuide.md",
 	"replace":{
 		"timestamp":true,
-		"courseTitle": "DevOps for Adobe Experience Manager as a Cloud Service",
-		"author": "Kevin Nennig"
+		"courseTitle": "My Course Title",
+		"author": "Chuck Grant"
 	}
 }
 
