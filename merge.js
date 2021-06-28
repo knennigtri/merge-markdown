@@ -215,49 +215,20 @@ function removeYAML(fileContents) {
     return  resultContent;
 }
 
-/** By default keys are expected to be wrapped with <!--{key}--> in the markdown 
- * unless specified in the replacemens json.
+/** Replaces any value with another value. 
+ * Regex values are allowed and will be wrapped with /str/g
  * @param {*} fileContents - String that contains the replaceable characters
  * @param {*} replacements - key value pairs that contain the find/replace values.
- *   Special keys include:
- *     - startStr: replaces the <!--{ start string
- *     - endStr: replaces the }--> end string
  * @returns String that contains the replaced keys with their values
  */
 function replaceStrings(fileContents,replacements){
     var replacedContent = fileContents;
-    var startStrKey="startStr", endStrKey="endStr";
-    var startStr = replacements[startStrKey] || "<!--{";
-    var endStr = replacements[endStrKey] || "}-->";
     Object.keys(replacements).forEach(function(replaceKey) {
-        var find="",replaceStr="",replace=true;
-        var optionValue = replacements[replaceKey];
-        if(optionValue){
-            find=replaceKey;
-            switch(replaceKey) {
-                case startStrKey:
-                    replace=false;
-                    break;
-                case endStrKey:
-                    replace=false;
-                    break;
-                case "timestamp":
-                    var date_ob = new Date(Date.now());
-                    replaceStr = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
-                    if(typeof optionValue != "boolean" && optionValue.toString() != ""){
-                        replaceStr = optionValue;
-                    }
-                    break;
-                default:
-                    replaceStr=optionValue;
-            }
-            if(replace) {
-                var findStr = startStr+find+endStr;
-                var findRegex = new RegExp(findStr, 'g')
-                if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
-                replacedContent = replacedContent.replace(findRegex,replaceStr);
-            }
-        }   
+        var findRegex = "";
+        findRegex = new RegExp(replaceKey, 'g');
+        var replaceStr = replacements[replaceKey];
+        if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
+        replacedContent = replacedContent.replace(findRegex,replaceStr); 
     });
     return replacedContent;
 }

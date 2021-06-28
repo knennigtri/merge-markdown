@@ -76,18 +76,16 @@ This file can be in YAML or JSON format. Relative or absolute paths can be used.
 ### Supported {options}
 * noYAML: optionlly removes YAML. Default=false
 * TOC: optionally adds a TOC to this file with doctoc. Default=false. See https://www.npmjs.com/package/doctoc#specifying-location-of-toc 
-* replace: searches for `<!--{key}-->` and replaces with `value`
-  * startStr:    optional. Set a unqiue start str for replace. Default is `<!--{`
-  * endStr:      optional. Set a unqiue start str for replace. Default is `}-->`
-  * timestamp:   true for todays date or add you own timestamp string
-  * *:           replace any key string with the value string
+* replace:
+  * string: Specify a string to find and replace
+  * regex: Specify a regex to find and replace
 ```yaml
 ---
   noYAML: true|false
   TOC: true|false|"TOC title"
   replace:
-      timestamp: true|false|"stringVal"
-      *: stringVal                  
+      <!--{timestamp}-->: 01/01/2021
+      ({#(.*?)}): ""                  
 ---
 ```
 ### QA Mode
@@ -126,7 +124,7 @@ Add a regex to the manifest.json to customize exclusion:
   "output": "myOutput.md"
 }
 ```
-#### Module specific options
+#### file specific options
 ```json
 {
   "input": {
@@ -151,25 +149,21 @@ Add a regex to the manifest.json to customize exclusion:
   }
 }
 ```
-#### Replace keys with default replace pattern 
-* `<!--{timestamp}-->` is replaced with `06/01/2021`
-* `<!--{courseName}-->` is replaced with `My amazing course`
-* `<!--{endOfSection}-->` is replaced with `> To learn more on this subject, visit: www.example.com`
+#### Replace keys within a single file
 ```json
 {
   "input": {
     "folder1/folder1/file1.md": {"replace": {
-      "timestamp":"06/01/2021",
-      "courseName":"My amazing course",
-      "endOfSection":"> To learn more on this subject, visit: www.example.com"
+      "<!--{timestamp}-->": "06/01/2021",
+      "<!--{courseName}-->": "My amazing course",
+      "<!--{endOfSection}-->": "> To learn more on this subject, visit: www.example.com"
       }},
     "folder2/folder2/file2.md": {"noYAML":true}
   },
   "output": "output/1/myOutput.md",
 }
 ```
-#### Global options and replace with a unique pattern
-* `${timestamp}` will replace `06/01/2021`
+#### Options applied to all files
 ```json
 {
   "input": {
@@ -178,9 +172,7 @@ Add a regex to the manifest.json to customize exclusion:
   },
   "output": "output/myOutput.md",
   "replace":{
-    "startStr":"${",
-    "endStr":"}",
-    "timestamp":"06/01/2021",
+    "${timestamp}": "06/01/2021",
 	},
   "TOC": "#### Chapter contents"
 }
