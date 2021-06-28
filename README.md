@@ -107,15 +107,15 @@ Add a regex to the manifest.json to customize exclusion:
 #### YAML used as input
 ```yaml
 ---
-  input:
-    frontmatter.md: "",
-    file1.md: {noYAML: true, TOC: "#### Section Contents"}
-    file2.md: {noYAML: true, TOC: "#### Section Contents"}
-  output: myOutput.md
+input:
+  frontmatter.md: ""
+  file1.md: {noYAML: true, TOC: "#### Section Contents"}
+  file2.md: {noYAML: true, TOC: "#### Section Contents"}
+output: myOutput.md
 ---
 ```
 
-#### Custom TOC title in a file.
+#### JSON used as input
 ```json
 {
   "input": {
@@ -166,16 +166,15 @@ Add a regex to the manifest.json to customize exclusion:
 }
 ```
 #### Options applied to all files
-```json
-{
-  "input": {
-    "folder1/file1.md": "",
-    "folder2/file2.md": {"noYAML":true}
-  },
-  "output": "output/myOutput.md",
-  "replace":{
-    "${timestamp}": "06/01/2021",
-	},
-  "TOC": "#### Chapter contents"
-}
+```yaml
+---
+input:
+  frontmatter.md: ""
+  folder1/file1.md: {noYAML: true}
+  file2.md: {noYAML: true}
+output: myOutput.md
+replace:
+  ${timestamp}: 06/01/2021
+TOC: "#### Chapter contents"
+---
 ```
