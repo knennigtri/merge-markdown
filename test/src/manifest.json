@@ -5,7 +5,7 @@
 		"ipsum-module.md": {"noYAML":true,"TOC":true},
 		"etiam-module.md": {"noYAML":true,"TOC":true}
 	},
-	"output": "+myGuide.md",
+	"output": "+myJSONGuide.md",
 	"replace":{
 		"timestamp":true,
 		"courseTitle": "My Course Title",

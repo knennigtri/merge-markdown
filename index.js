@@ -2,6 +2,7 @@
 var minimist = require('minimist'),
 fs = require('fs'),
 path = require('path'),
+yaml = require('js-yaml'),
 packageInfo = require("./package.json"),
 merge = require("./merge.js");
 var args = minimist(process.argv.slice(2));
@@ -9,71 +10,55 @@ var args = minimist(process.argv.slice(2));
 const DEFAULT_MANIFEST = "manifest.json";
 
 const EXAMPLE_MANIFEST = `Example `+DEFAULT_MANIFEST+`
-{
-  "input": {
-    "global-frontmatter.md": "",
-    "module1Folder/file1.md": {options},
-    "module2Folder/file2.md": {"noYAML":true,"TOC":true}
-  },
-  "output": "output/myOutput.md",
-  "qa": {
-    "exclude": "frontmatter"
-  },
+---
+  input:
+    global-frontmatter.md: ""
+    module1Folder/file1.md: {options}
+    module2Folder/file2.md: {noYAML: true, TOC: true}
+  output: output/myOutput.md
+  qa: {exclude: frontmatter}
   {options}
-}`;
+---`;
 const MSG_HELP = `Usage: merge-markdown [OPTIONS]
 Options:
-  -m manifestName      [json | folder]
-  --qa                 QA mode.
-  -v                   Verbose output
-  -d                   Debug output
-  -h                  Displays this screen
-  --hme                Displays manifest example
-  --hopts              Displays manifest options help
-  --hqa                Displays qa help
-  --version            Displays version of this package
+  -m manifestPath           Path to input folder, yaml, or json manifest
+  --qa                      QA mode.
+  --version                 Displays version of this package
+  -v                        Verbose output
+  -d                        Debug output
+  -h                        Displays this screen
+  -h [manifest|options|qa]  See examples
 Default manifest: `+DEFAULT_MANIFEST+` unless specified in -m. 
 If there is no manifest, all md files in the folder will be used.
 `;
 const MANIFEST_OPTIONS = `Manifest input file options:
-Supported key/value pairs for {options}:
-  "noYAML": true|false                      optionlly removes YAML. Default=false
-  "TOC": true|false|"TOC title"             optionally adds a TOC to this file with doctoc. Default=false
-  "replace": {                              searches for <!--{key}--> and replaces with value
-      "startStr": "replaceStrStart"         optional. Set a unqiue start str for replace. Default is <!--{
-      "endStr": "replaceStrEnd"             optional. Set a unqiue end str for replace. Default is }-->
-      "timestamp": true|false|"stringVal"   true for todays date or add you own timestamp string
+Supported key/value pairs for {options} within the manifest file:
+  noYAML: true|false                        optionlly removes YAML. Default=false
+  TOC: true|false|"TOC title"               optionally adds a TOC to this file with doctoc. Default=false
+  replace:                                  searches for <!--{key}--> and replaces with value
+      startStr: replaceStrStart             optional. Set a unqiue start str for replace. Default is <!--{
+      endStr: replaceStrEnd                 optional. Set a unqiue end str for replace. Default is }-->
+      timestamp: true|false|"stringVal"     true for todays date or add you own timestamp string
       *: "stringVal"                        replace any key string with the value string
-  }`;
+  `;
 const QA_HELP=`When --qa is set:
-Output will omit all filenames with 'frontmatter' by default
+Output will exclude all filenames with 'frontmatter' by default
 Add a regex to the `+DEFAULT_MANIFEST+` to customize exclusion:
-{
-  "qa": {
-    "exclude": "frontmatter|preamble"
-  }
-}`;
+---
+  qa: {exclude: "(frontmatter|preamble)"}
+---`;
 
 //TODO Figure out how to check and verify module outputs
 var init = function() {
   // Show CLI help
   if (args.h) {
-    console.log(MSG_HELP);
-    return;
-  }
-  //Show manifest input options help
-  if(args.hme) {
-    console.log(EXAMPLE_MANIFEST);
-    return;
-  }
-  //Show manifest input options help
-  if(args.hopts) {
-    console.log(MANIFEST_OPTIONS);
-    return;
-  }
-  //Show manifest input options help
-  if(args.hqa) {
-    console.log(QA_HELP);
+    if(args.h == true){
+       console.log(MSG_HELP);
+       return;
+    }
+    if(args.h.toLowerCase() == "manifest") console.log(EXAMPLE_MANIFEST);
+    if(args.h.toLowerCase() == "options") console.log(MANIFEST_OPTIONS);
+    if(args.h.toLowerCase() == "qa") console.log(QA_HELP);
     return;
   }
 
@@ -98,27 +83,44 @@ var init = function() {
   }
   return; 
 }
-function useManifestFile(inputManifest){
-  if (inputManifest.split('.').pop() != "json"){
+
+/**
+ * This method takes in a json file
+ * @param {*} inputManifestFile 
+ * @returns 
+ */
+function useManifestFile(inputManifestFile){
+  var fileType = inputManifestFile.split('.').pop();
+  if (fileType == null) {
     console.log("Cannot find manifest file or it is not a JSON");
     console.log(MSG_HELP);
     return;
   }
-  console.log("Using Manifest: %s", inputManifest);
-  var manifestJSON = JSON.parse(fs.readFileSync(inputManifest, 'utf8'));
-
+  console.log("Using Manifest: %s", inputManifestFile);
+  var fileContents = fs.readFileSync(inputManifestFile, 'utf8');
+  var manifestJSON = "";
+  try {
+    //Attempt to read the YAML and output JSON
+    var data = yaml.loadAll(fileContents,"json");
+    var yamlContents = JSON.stringify(data[0], null, 2);
+    manifestJSON = JSON.parse(yamlContents);
+  } catch {
+    try {
+      //Attempt to read JSON
+      manifestJSON = JSON.parse(fileContents);
+    } catch(e){
+      console.log("Manifest file does not contain valid YAML or JSON content.");
+      console.log(e);
+    }
+  }
+  
   //Verify manifest has correct properties.
-  if(!manifestJSON.input) {
-    console.log("Manifest is missing input.");
+  if(!manifestJSON.input || !manifestJSON.output) {
+    console.log("Manifest is missing input or output");
     console.log(EXAMPLE_MANIFEST);
     return;
   }
-  if(!manifestJSON.output) {
-    console.log("Manifest is missing output.");
-    console.log(EXAMPLE_MANIFEST);
-    return;
-  }
-  var manifestRelPath = path.dirname(inputManifest);
+  var manifestRelPath = path.dirname(inputManifestFile);
 
   var outputFile = manifestJSON.output;
   if(outputFile.split('.').pop() != "md"){
@@ -133,6 +135,7 @@ function useManifestFile(inputManifest){
   }
   merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
 }
+
 function useFolderPath(inputFolder){
   var defManifest = path.join(inputFolder,DEFAULT_MANIFEST)
   if(fs.existsSync(defManifest)){
