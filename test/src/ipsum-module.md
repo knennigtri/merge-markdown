@@ -14,13 +14,13 @@ Donec ut dui id diam fringilla auctor ac id tellus. Ut venenatis fermentum phare
 <!-- END doctoc -->
 <!--{returnToMainTOC}-->
 
-#### Objective
+#### Objective {#objective-one}
 
 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit.[^nr-1]
 2. Cras placerat nisi in urna eleifend dapibus.
 3. Nunc eget elit sit amet nulla suscipit varius.[^nr-2]
 
-#### Get the Code (h4)
+#### Get the Code {#get-the-code}
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer et ullamcorper ipsum, in efficitur mi. Ut vitae velit et orci eleifend elementum.
 

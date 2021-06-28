@@ -3,7 +3,8 @@ var path = require('path'),
 fs  =  require('fs'),
 concat = require('concat'),
 markdownLinkCheck = require('markdown-link-check'),
-doctoc = require('doctoc/lib/transform');
+doctoc = require('doctoc/lib/transform'),
+validUrl = require('valid-url');
 var v,d,onlyQA;
 var EXT = {
     "linkcheck": ".linkcheck.md",
@@ -21,9 +22,9 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
     var inputJSON = manifestJSON.input;
     var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
     var outputLinkcheckFileStr = outputFileStr.replace(".md",EXT.linkcheck);
-    var outputQAFileStr = outputFileStr.replace(".md",EXT.qa);
     var qaRegex;
     if(onlyQA) qaRegex = new RegExp(manifestJSON.qa.exclude);
+    if(onlyQA && v) console.log("QA exclude regex: " + qaRegex);
 
     //Iterate through all of the input files in manifest apply options
     var fileArr= [];
@@ -32,18 +33,22 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
         var inputFileStr = relPathManifest +"/"+ inputKey;
         console.log("*********"+inputFileStr+"*********");
 
-        if (!fs.existsSync(inputFileStr)){
-            console.warn(inputKey + " does not exist. Skipping.");
-            return;
-        } 
         if(onlyQA && qaRegex.test(inputFileStr)){
             console.warn("Skipping " +inputKey + " for QA");
             return;
         } 
+        if (!fs.existsSync(inputFileStr)){
+            console.warn(inputKey + " does not exist. Skipping.");
+            return;
+        }  
         var origContent = fs.readFileSync(inputFileStr, 'utf-8');
+        
+        //updates all relative asset paths to the relative output location
+        var generatedContent = updateAssetRelPaths(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr));
+        
         //applies gobal generate rules
         if (v) console.log("--applying manifest options--");
-        var generatedContent = applyGeneratedContent(origContent,manifestJSON);
+        generatedContent = applyGeneratedContent(generatedContent,manifestJSON);
         //Applies file specific generate rules
         if (v) console.log("--applying file options--");
         generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey]);
@@ -95,13 +100,19 @@ function createSingleFile(list, outputFileStr){
 
 function applyGeneratedContent(origContent, fileOptions) {
     var scrubbedContent = origContent;
+
+    if(fileOptions == null) return scrubbedContent;
     //Remove YAML
-    if(fileOptions.noYAML){
+    if(fileOptions.hasOwnProperty("noYAML") && fileOptions.noYAML){
         var contentNoYAML = removeYAML(origContent);
         scrubbedContent = contentNoYAML;
     }
+    //Allows for find and replace options in the markdown with ${}
+    if(fileOptions.hasOwnProperty("replace") && fileOptions.replace){
+        scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
+    }
     //Add TOC
-    if(fileOptions.TOC){
+    if(fileOptions.hasOwnProperty("TOC") && fileOptions.TOC){
         var tocTitle = "#### Module Contents";
         if(fileOptions.TOC.toString().toLowerCase() != "true"){
             tocTitle = fileOptions.TOC
@@ -113,15 +124,58 @@ function applyGeneratedContent(origContent, fileOptions) {
             scrubbedContent = outDoctoc.data;
             if (v) console.log("TOC Added");
         }
-    }
-    //Allows for find and replace options in the markdown with ${}
-    if(fileOptions.replace){
-        scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
-    }
+    } 
     return scrubbedContent;
 } 
 
-//Removes YAML at beginning of file
+/** Searches for ![*](relPath) or src="relPath" in a string and replaces the asset
+ * relPath with a new relPath based on the output file. 
+ * @param {*} fileContents String containing relative paths to update
+ * @param {*} inputPath relative input path of fileContents
+ * @param {*} outputPath relative output path of output file
+ * @returns String that contains updated relative paths to the output file
+ */
+function updateAssetRelPaths(fileContents,inputPath, outputPath){
+    var resultContent=[];
+    var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
+
+    //Go through each line that and 
+    var lines = fileContents.split("\n");
+    lines.forEach(line => {
+        var match = line.match(regex);
+        var origAssetRelPath = "";
+        //if found capture relPath
+        if(match != null){
+            var origStr = match[0];
+            if(origStr.startsWith("![")){
+                origAssetRelPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
+            } else if(origStr.startsWith("src=")){
+                origAssetRelPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+            } 
+            if(!validUrl.isUri(origAssetRelPath)){
+                //resolve the asset path and create a new relative path to the output
+                var origAssetPath = path.resolve(inputPath, origAssetRelPath);
+                var newAssetRelPath = path.relative(outputPath,origAssetPath);
+
+                if(v) console.log("origAssetRelPath: "+origAssetRelPath);
+                if(v) console.log("newAssetRelPath: "+newAssetRelPath);
+
+                var newLine = line.replace(origAssetRelPath,newAssetRelPath);
+                resultContent.push(newLine);
+            }else{
+                resultContent.push(line);
+            }
+        }else{
+            resultContent.push(line);
+        }
+    });
+    return resultContent.join("\n");
+}
+
+/** Removes the YAML at the top of a markdown file
+ * @param {*} fileContents String that might contain YAML
+ * @returns String that has YAML removed
+ */
 function removeYAML(fileContents) {
     var resultContent = fileContents;
     var lines = fileContents.split("\n");
@@ -151,7 +205,8 @@ function removeYAML(fileContents) {
     if(startYAML != -1 && endYAML != -1){
         //shows YAML being removed
         if(d) console.log("Removing S("+startYAML+")->E("+endYAML+") YAML:")
-        if(d) console.log(lines.splice(startYAML,1+endYAML-startYAML).join("\n"));
+        var yaml = lines.splice(startYAML,1+endYAML-startYAML).join("\n");
+        if(d) console.log(yaml);
         resultContent = lines.join("\n");
         if (v) console.log("YAML removed");
     } else {
@@ -160,45 +215,30 @@ function removeYAML(fileContents) {
     return  resultContent;
 }
 
+/** Replaces any value with another value. 
+ * Regex values are allowed and will be wrapped with /str/g
+ * @param {*} fileContents - String that contains the replaceable characters
+ * @param {*} replacements - key value pairs that contain the find/replace values.
+ * @returns String that contains the replaced keys with their values
+ */
 function replaceStrings(fileContents,replacements){
     var replacedContent = fileContents;
-    var startStrKey="startStr", endStrKey="endStr";
-    var startStr = replacements[startStrKey] || "<!--{";
-    var endStr = replacements[endStrKey] || "}-->";
     Object.keys(replacements).forEach(function(replaceKey) {
-        var find="",replaceStr="",replace=true;
-        var optionValue = replacements[replaceKey];
-        if(optionValue){
-            find=replaceKey;
-            switch(replaceKey) {
-                case startStrKey:
-                    replace=false;
-                    break;
-                case endStrKey:
-                    replace=false;
-                    break;
-                case "timestamp":
-                    var date_ob = new Date(Date.now());
-                    replaceStr = (date_ob.getMonth() + 1) + "-" + date_ob.getDate() + "-" + date_ob.getFullYear()
-                    if(typeof optionValue != "boolean" && optionValue.toString() != ""){
-                        replaceStr = optionValue;
-                    }
-                    break;
-                default:
-                    replaceStr=optionValue;
-            }
-            if(replace) {
-                var findStr = startStr+find+endStr;
-                if(v) console.log("Replacing: "+findStr+" with: "+replaceStr);
-                replacedContent = replacedContent.replace(findStr,replaceStr);
-            }
-        }   
+        var findRegex = "";
+        findRegex = new RegExp(replaceKey, 'g');
+        var replaceStr = replacements[replaceKey];
+        if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
+        replacedContent = replacedContent.replace(findRegex,replaceStr); 
     });
     return replacedContent;
 }
 
-// function that uses markdown-link-check to validate all URLS and relative links to images
-// https://github.com/tcort/markdown-link-check
+/** Function that uses markdown-link-check to validate all URLS and relative links to images
+ * Writes a file called outputFile.linkcheck.md with the results
+ * https://github.com/tcort/markdown-link-check
+ * @param {*} inputFileStr markdown file name to perform link checking
+ * @param {*} outputFileStr output file name to write the results to
+ */
 function linkCheck(inputFileStr, outputFileStr) {
     var outputFolder = path.dirname(outputFileStr)
     if(!fs.existsSync(outputFolder)){
@@ -212,8 +252,8 @@ function linkCheck(inputFileStr, outputFileStr) {
     var inputFolder = path.dirname(inputFileStr);
     var base = path.join("file://",process.cwd(),inputFolder);
     if(d) console.log("Input Folder Location: "+base);
-    var inputContent = fs.readFileSync(inputFileStr, 'utf-8');
-    markdownLinkCheck(inputContent,
+    var fileContents = fs.readFileSync(inputFileStr, 'utf-8');
+    markdownLinkCheck(fileContents,
         {
             baseUrl: base,
             ignorePatterns: [{ pattern: "^http://localhost" }],
@@ -223,7 +263,6 @@ function linkCheck(inputFileStr, outputFileStr) {
                 return;
             }
             var linkcheckResults = "FILE: " + inputFileStr + " \n";
-            if(d) console.log(linkcheckResults);
             results.forEach(function (result) {
                 var icon = "";
                 switch(result.status) {
@@ -238,8 +277,8 @@ function linkCheck(inputFileStr, outputFileStr) {
                         break;
                   }
                 var statusStr="["+icon+"] " + result.link + " is " + result.status;
-                if(d) console.log(statusStr);
-                if(result.status != "alive"){
+                if(d) linkcheckResults+=" "+ statusStr + " \n";
+                if(!d && result.status != "alive"){
                     linkcheckResults+=" "+ statusStr + " \n";
                 }
             });

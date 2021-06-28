@@ -5,9 +5,12 @@
 		"ipsum-module.md": {"noYAML":true,"TOC":true},
 		"etiam-module.md": {"noYAML":true,"TOC":true}
 	},
-	"output": "+myGuide.md",
+	"output": "output/+myJSONGuide.md",
 	"replace":{
-		"timestamp":true
+		"<!--{timestamp}-->": "05/25/2021",
+		"<!--{returnToMainTOC}-->": "[...back to main TOC](#course-contents)",
+		"<!--{courseTitle}-->": "My Course Title",
+		"<!--{author}-->": "Chuck Grant",
+		"({#(.*?)})": ""
 	}
 }
-

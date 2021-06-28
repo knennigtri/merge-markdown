@@ -1,13 +1,13 @@
 ---
-title: My Example Frontmatter for a single guide
-author: Joe Matters
+title: <!--{courseTitle}-->
+author: <!--{author}-->
 creator: ACME
 subject: Guide for online learning
 editor: https://typora.io/
 typora-copy-images-to: assets/ipsum-module
 ---
 
-# My Example Frontmatter for a single guide
+# <!--{courseTitle}-->
 
 <div class="cover-page"> 
   <img src="assets/cover_image.png"></img>
@@ -27,9 +27,9 @@ Morbi et dolor aliquam, dapibus lectus vel, varius risus. Donec lacus metus, pre
 </br></br>
 Donec nec libero id lorem suscipit elementum. Phasellus dui purus, finibus eget massa imperdiet, posuere lobortis magna. Aenean hendrerit enim id ligula dignissim, ac euismod turpis vehicula. Vivamus ullamcorper risus euismod lectus faucibus molestie quis eget nulla. Sed maximus lorem non varius interdum. Aliquam orci eros, varius a mauris sit amet, varius aliquet lectus. Fusce porttitor nisi lectus, consectetur tincidunt libero dapibus sed. Quisque sed justo lobortis risus porttitor elementum id in nisi.
 </br></br></br></br>
-<div class="last-updated"><!--{returnToMainTOC}--></div>
+<div class="last-updated"><!--{timestamp}--></div>
 </div>
 <div class="page-break"></div>
 
-# Course Contents
+# Course Contents {#course-contents}
 [TOC]
