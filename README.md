@@ -11,12 +11,14 @@ Available on NPM: https://www.npmjs.com/package/merge-markdown
 - [Usage](#usage)
 - [Manifest file format](#manifest-file-format)
   - [Supported {options}](#supported-options)
+  - [QA Mode](#qa-mode)
   - [Examples](#examples)
+    - [YAML used as input](#yaml-used-as-input)
     - [Custom TOC title in a file.](#custom-toc-title-in-a-file)
-    - [Module specific options](#module-specific-options)
+    - [file specific options](#file-specific-options)
     - [QA mode being used](#qa-mode-being-used)
-    - [Replace keys with default replace pattern](#replace-keys-with-default-replace-pattern)
-    - [Global options and replace with a unique pattern](#global-options-and-replace-with-a-unique-pattern)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
