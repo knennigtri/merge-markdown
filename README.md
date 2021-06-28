@@ -14,7 +14,7 @@ Available on NPM: https://www.npmjs.com/package/merge-markdown
   - [QA Mode](#qa-mode)
   - [Examples](#examples)
     - [YAML used as input](#yaml-used-as-input)
-    - [Custom TOC title in a file.](#custom-toc-title-in-a-file)
+    - [JSON used as input](#json-used-as-input)
     - [file specific options](#file-specific-options)
     - [QA mode being used](#qa-mode-being-used)
     - [Replace keys within a single file](#replace-keys-within-a-single-file)
@@ -137,7 +137,7 @@ output: myOutput.md
 }
 ```
 #### QA mode being used
-* Excluding files with `frontmatter` or `file1` in the file name
+Excluding files with `frontmatter` or `file1` in the file name
 ```json
 {
   "input": {
@@ -147,7 +147,7 @@ output: myOutput.md
   },
   "output": "output/myOutput.md",
   "qa": {
-    "exclude": "frontmatter|file1"
+    "exclude": "(frontmatter|file1)"
   }
 }
 ```
@@ -157,8 +157,8 @@ output: myOutput.md
   "input": {
     "folder1/folder1/file1.md": {"replace": {
       "<!--{timestamp}-->": "06/01/2021",
-      "<!--{courseName}-->": "My amazing course",
-      "<!--{endOfSection}-->": "> To learn more on this subject, visit: www.example.com"
+      "<!--{endOfSection}-->": "> To learn more on this subject, visit: www.example.com",
+      "({#(.*?)})": ""
       }},
     "folder2/folder2/file2.md": {"noYAML":true}
   },
@@ -175,6 +175,7 @@ input:
 output: myOutput.md
 replace:
   ${timestamp}: 06/01/2021
+  ({#(.*?)}): ""
 TOC: "#### Chapter contents"
 ---
 ```
