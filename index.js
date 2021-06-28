@@ -7,9 +7,10 @@ packageInfo = require("./package.json"),
 merge = require("./merge.js");
 var args = minimist(process.argv.slice(2));
 
-const DEFAULT_MANIFEST = "manifest.json";
+const DEF_MANIFEST_NAME = "manifest";
+const DEF_MANIFEST_EXTS = ["md","yaml","yml","json"];
 
-const EXAMPLE_MANIFEST = `Example `+DEFAULT_MANIFEST+`
+const EXAMPLE_MANIFEST = `Example yaml in a manifest file:
 ---
   input:
     global-frontmatter.md: ""
@@ -28,8 +29,7 @@ Options:
   -d                        Debug output
   -h                        Displays this screen
   -h [manifest|options|qa]  See examples
-Default manifest: `+DEFAULT_MANIFEST+` unless specified in -m. 
-If there is no manifest, all md files in the folder will be used.
+Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] unless specified in -m.
 `;
 const MANIFEST_OPTIONS = `Manifest input file options:
 Supported key/value pairs for {options} within the manifest file:
@@ -43,12 +43,11 @@ Supported key/value pairs for {options} within the manifest file:
   `;
 const QA_HELP=`When --qa is set:
 Output will exclude all filenames with 'frontmatter' by default
-Add a regex to the `+DEFAULT_MANIFEST+` to customize exclusion:
+Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to customize exclusion:
 ---
   qa: {exclude: "(frontmatter|preamble)"}
 ---`;
 
-//TODO Figure out how to check and verify module outputs
 var init = function() {
   // Show CLI help
   if (args.h) {
@@ -71,15 +70,17 @@ var init = function() {
   //Verify Manifest exists
   var inputManifest = args.m;
   if(!inputManifest){
-      useFolderPath(".");
-  } else if (!fs.existsSync(inputManifest)){
-     console.log("Manifest input is not valid. Choose a json file or folder.");
-     console.log(MSG_HELP);
-      return;
+    console.log("No -m argument given. Using default: "+ DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
+    inputManifest = getDefaultManifest(".");
+  }
+  if (!fs.existsSync(inputManifest)){
+    console.log("Manifest input does not exist. Choose a valid folder or file.");
+    console.log(MSG_HELP);
+   return;
   } else if(fs.lstatSync(inputManifest).isDirectory()){
-     useFolderPath(inputManifest);
+    useFolderPath(inputManifest);
   } else {
-     useManifestFile(inputManifest);
+    useManifestFile(inputManifest);
   }
   return; 
 }
@@ -133,12 +134,12 @@ function useManifestFile(inputManifestFile){
       manifestJSON.qa = {"exclude":"frontmatter"};
     }
   }
-  merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
+ // merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
 }
 
 function useFolderPath(inputFolder){
-  var defManifest = path.join(inputFolder,DEFAULT_MANIFEST)
-  if(fs.existsSync(defManifest)){
+  var defManifest = getDefaultManifest(inputFolder);
+  if(defManifest != ""){
     useManifestFile(defManifest);
     return;
   }
@@ -161,7 +162,20 @@ function useFolderPath(inputFolder){
   });
 
   if (args.v) console.log("generated JSON: "+ JSON.stringify(generatedJSON.input));
-  merge.add(generatedJSON, inputFolder, args.v, args.d, args.qa);
+ // merge.add(generatedJSON, inputFolder, args.v, args.d, args.qa);
+}
+
+function getDefaultManifest(inputFolder){
+  var defManifest = path.join(inputFolder,DEF_MANIFEST_NAME)
+  var i = 0;
+  while(i < DEF_MANIFEST_EXTS.length){
+    var file = defManifest.concat(".",DEF_MANIFEST_EXTS[i]);
+    if(fs.existsSync(file)){
+      return file;
+    }
+    i++;
+  }
+  return "";
 }
 
 exports.init = init;
