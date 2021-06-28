@@ -22,9 +22,9 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
     var inputJSON = manifestJSON.input;
     var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
     var outputLinkcheckFileStr = outputFileStr.replace(".md",EXT.linkcheck);
-    var outputQAFileStr = outputFileStr.replace(".md",EXT.qa);
     var qaRegex;
     if(onlyQA) qaRegex = new RegExp(manifestJSON.qa.exclude);
+    if(onlyQA && v) console.log("QA exclude regex: " + qaRegex);
 
     //Iterate through all of the input files in manifest apply options
     var fileArr= [];
@@ -33,14 +33,14 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
         var inputFileStr = relPathManifest +"/"+ inputKey;
         console.log("*********"+inputFileStr+"*********");
 
-        if (!fs.existsSync(inputFileStr)){
-            console.warn(inputKey + " does not exist. Skipping.");
-            return;
-        } 
         if(onlyQA && qaRegex.test(inputFileStr)){
             console.warn("Skipping " +inputKey + " for QA");
             return;
         } 
+        if (!fs.existsSync(inputFileStr)){
+            console.warn(inputKey + " does not exist. Skipping.");
+            return;
+        }  
         var origContent = fs.readFileSync(inputFileStr, 'utf-8');
         
         //updates all relative asset paths to the relative output location
@@ -101,17 +101,18 @@ function createSingleFile(list, outputFileStr){
 function applyGeneratedContent(origContent, fileOptions) {
     var scrubbedContent = origContent;
 
+    if(fileOptions == null) return scrubbedContent;
     //Remove YAML
-    if(fileOptions.noYAML){
+    if(fileOptions.hasOwnProperty("noYAML") && fileOptions.noYAML){
         var contentNoYAML = removeYAML(origContent);
         scrubbedContent = contentNoYAML;
     }
     //Allows for find and replace options in the markdown with ${}
-    if(fileOptions.replace){
+    if(fileOptions.hasOwnProperty("replace") && fileOptions.replace){
         scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
     }
     //Add TOC
-    if(fileOptions.TOC){
+    if(fileOptions.hasOwnProperty("TOC") && fileOptions.TOC){
         var tocTitle = "#### Module Contents";
         if(fileOptions.TOC.toString().toLowerCase() != "true"){
             tocTitle = fileOptions.TOC
