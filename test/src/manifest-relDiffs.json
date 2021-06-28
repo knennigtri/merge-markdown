@@ -5,7 +5,7 @@
 	},
 	"output": "output/+myRelativeGuide.md",
 	"replace":{
-		"<!--{timestamp}-->":true,
+		"<!--{timestamp}-->": "05/25/2021",
 		"<!--{courseTitle}-->": "My Awesome Title",
 		"<!--{author}-->": "Chuck"
 	}

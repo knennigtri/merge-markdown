@@ -134,7 +134,7 @@ function useManifestFile(inputManifestFile){
       manifestJSON.qa = {"exclude":"frontmatter"};
     }
   }
- // merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
+  merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
 }
 
 function useFolderPath(inputFolder){
@@ -162,7 +162,7 @@ function useFolderPath(inputFolder){
   });
 
   if (args.v) console.log("generated JSON: "+ JSON.stringify(generatedJSON.input));
- // merge.add(generatedJSON, inputFolder, args.v, args.d, args.qa);
+  merge.add(generatedJSON, inputFolder, args.v, args.d, args.qa);
 }
 
 function getDefaultManifest(inputFolder){
