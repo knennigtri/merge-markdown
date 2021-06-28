@@ -5,7 +5,7 @@
 		"ipsum-module.md": {"noYAML":true,"TOC":true},
 		"etiam-module.md": {"noYAML":true,"TOC":true}
 	},
-	"output": "+myJSONGuide.md",
+	"output": "output/+myJSONGuide.md",
 	"replace":{
 		"<!--{timestamp}-->": "05/25/2021",
 		"<!--{returnToMainTOC}-->": "[...back to main TOC](#course-contents)",

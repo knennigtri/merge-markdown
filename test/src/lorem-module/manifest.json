@@ -1,9 +1,9 @@
 {
 	"input": {
-		"lorem-frontmatter.md": "",
+		"../frontmatter.md": "",
 		"lorem-module.md": {"noYAML":true,"TOC":true}
 	},
-	"output": "+moduleGuide.md",
+	"output": "../output/+moduleGuide.md",
 	"qa": {
 		"exclude": "frontmatter"
 	},

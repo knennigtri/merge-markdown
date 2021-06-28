@@ -5,7 +5,7 @@ input:
  lorem-module.md: {noYAML: true, TOC: true}
  ipsum-module.md: {noYAML: true, TOC: true}
  etiam-module.md: {noYAML: true, TOC: true}
-output: +myYAMLGuide.md
+output: output/+myYAMLGuide.md
 qa: {exclude: "(frontmatter|preamble)"}
 replace:
  <!--{timestamp}-->: 05/25/2021

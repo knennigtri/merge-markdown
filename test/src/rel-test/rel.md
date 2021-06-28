@@ -9,9 +9,7 @@ typora-copy-images-to: assets/lorem-module
 
 # Lorem Ipsum One
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur egestas dapibus ex, vel ultrices dui posuere id. In eget vehicula augue, et porttitor justo. Curabitur id vehicula enim. Pellentesque finibus lacus vitae magna aliquam, vitae vulputate nibh molestie. Aliquam ut augue nisi. Vivamus in mauris volutpat, pellentesque orci ultrices, sagittis libero. Proin volutpat enim lorem, a accumsan diam tempor eget. Nunc sed neque sed augue imperdiet ultrices vitae a mi. Suspendisse ultricies arcu at est convallis, ut vehicula felis tincidunt. Nulla facilisi.
-
-*WKND SPA Implementation*
+This is a test that checks different files in different locations with different relative paths.
 
 <!-- START doctoc -->
 <!-- END doctoc -->
@@ -21,12 +19,11 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur egestas dapib
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit.[^o-1] Integer et ullamcorper ipsum, in efficitur mi. Ut vitae velit et orci eleifend elementum. Sed vestibulum tortor lacus, eu aliquet velit luctus fermentum. Suspendisse non sapien nec arcu volutpat accumsan vehicula eget mi. Interdum et malesuada fames ac ante ipsum primis in faucibus. Donec sit amet finibus diam. Vivamus malesuada eu massa pulvinar viverra. Aliquam accumsan ultrices ornare. Etiam sed elementum odio.
 
-### Asset 2
+### Asset 2 in current folder
 ![asset](assets/asset-2.png)
 
-### Asset 3
+### Asset 3 in current folder
 ![asset](assets/asset-3.png)
 
-
-
+### Asset in different folder 
 ![asset](../assets/ipsum-module/asset-2.png)
