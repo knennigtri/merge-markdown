@@ -75,7 +75,11 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
     var mergedFileArr = fileArr.concat(refFileArr);
     
     console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
-    createSingleFile(mergedFileArr, outputFileStr);
+    if(onlyQA){
+        createSingleFile(mergedFileArr, outputFileStr.replace(".md",EXT.qa));    
+    } else {
+        createSingleFile(mergedFileArr, outputFileStr);
+    }
 
     //Remove temp files
     findFiles('./',/\.temp$/,function(tempFilename){
