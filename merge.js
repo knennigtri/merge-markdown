@@ -143,6 +143,8 @@ function updateAssetRelPaths(fileContents,inputPath, outputPath){
     var resultContent=[];
     var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
 
+    if(d) console.log("Rewriting Relative Asset Paths");
+
     //Go through each line that and 
     var lines = fileContents.split("\n");
     lines.forEach(line => {
@@ -161,8 +163,8 @@ function updateAssetRelPaths(fileContents,inputPath, outputPath){
                 var origAssetPath = path.resolve(inputPath, origAssetRelPath);
                 var newAssetRelPath = path.relative(outputPath,origAssetPath);
 
-                if(v) console.log("origAssetRelPath: "+origAssetRelPath);
-                if(v) console.log("newAssetRelPath: "+newAssetRelPath);
+                if(d) console.log("origAssetRelPath: "+origAssetRelPath);
+                if(d) console.log("newAssetRelPath: "+newAssetRelPath);
 
                 var newLine = line.replace(origAssetRelPath,newAssetRelPath);
                 resultContent.push(newLine);
@@ -181,6 +183,7 @@ function updateAssetRelPaths(fileContents,inputPath, outputPath){
  * @returns String that has YAML removed
  */
 function removeYAML(fileContents) {
+    if(d) console.log("Removing YAML content");
     var resultContent = fileContents;
     var lines = fileContents.split("\n");
     var i=0;
@@ -226,6 +229,7 @@ function removeYAML(fileContents) {
  * @returns String that contains the replaced keys with their values
  */
 function replaceStrings(fileContents,replacements){
+    if(d) console.log("Find and Replacing Strings");
     var replacedContent = fileContents;
     Object.keys(replacements).forEach(function(replaceKey) {
         var findRegex = "";
@@ -244,6 +248,7 @@ function replaceStrings(fileContents,replacements){
  * @param {*} outputFileStr output file name to write the results to
  */
 function linkCheck(inputFileStr, outputFileStr) {
+    if(d) console.log("Linkchecking...");
     var outputFolder = path.dirname(outputFileStr)
     if(!fs.existsSync(outputFolder)){
         fs.mkdirSync(outputFolder);
