@@ -1,0 +1,10 @@
+---
+qa: {exclude: "(frontmatter|preamble)"}
+noYAML: true
+replace:
+ <!--{timestamp}-->: 05/25/2021
+ <!--{returnToMainTOC}-->: "[...back to main TOC](#course-contents)"
+ <!--{courseTitle}-->: My Course Title
+ <!--{author}-->: Chuck Grant
+ ({#(.*?)}): ""
+---

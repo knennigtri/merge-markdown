@@ -1,0 +1,17 @@
+---
+input:
+ frontmatter.md: ""
+ preamble.md: ""
+ lorem-module.md: ""
+ ipsum-module.md: ""
+ etiam-module.md: ""
+noYAML: true
+output: output/globalNoYAML-Guide.md
+qa: {exclude: "(frontmatter|preamble)"}
+replace:
+ <!--{timestamp}-->: 05/25/2021
+ <!--{returnToMainTOC}-->: "[...back to main TOC](#course-contents)"
+ <!--{courseTitle}-->: My Course Title
+ <!--{author}-->: Chuck Grant
+ ({#(.*?)}): ""
+---
