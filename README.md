@@ -6,20 +6,22 @@ Available on NPM: https://www.npmjs.com/package/merge-markdown
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported {options}](#supported-options)
-  - [QA Mode](#qa-mode)
-  - [Examples](#examples)
-    - [YAML used as input](#yaml-used-as-input)
-    - [JSON used as input](#json-used-as-input)
-    - [file specific options](#file-specific-options)
-    - [QA mode being used](#qa-mode-being-used)
-    - [Replace keys within a single file](#replace-keys-within-a-single-file)
-    - [Options applied to all files](#options-applied-to-all-files)
-    - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
+- [merge-markdown ![Publish to NPM](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml)](#merge-markdown-)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported {options}](#supported-options)
+    - [QA Mode](#qa-mode)
+    - [Examples](#examples)
+      - [YAML used as input](#yaml-used-as-input)
+      - [JSON used as input](#json-used-as-input)
+      - [file specific options](#file-specific-options)
+      - [QA mode being used](#qa-mode-being-used)
+      - [Replace keys within a single file](#replace-keys-within-a-single-file)
+      - [Options applied to all files](#options-applied-to-all-files)
+      - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -115,7 +117,6 @@ input:
 output: myOutput.md
 ---
 ```
-
 #### JSON used as input
 ```json
 {
@@ -171,13 +172,14 @@ Excluding files with `frontmatter` or `file1` in the file name
 ---
 input:
   frontmatter.md: ""
-  folder1/file1.md: {noYAML: true}
-  file2.md: {noYAML: true}
+  folder1/file1.md: ""
+  file2.md: ""
 output: myOutput.md
 replace:
   ${timestamp}: 06/01/2021
   ({#(.*?)}): ""
 TOC: "#### Chapter contents"
+noYAML: true
 ---
 ```
 #### Options applied to all files in a folder
