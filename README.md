@@ -19,6 +19,7 @@ Available on NPM: https://www.npmjs.com/package/merge-markdown
     - [QA mode being used](#qa-mode-being-used)
     - [Replace keys within a single file](#replace-keys-within-a-single-file)
     - [Options applied to all files](#options-applied-to-all-files)
+    - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -70,15 +71,15 @@ Default manifest: manifest.[md|yaml|yml|json] unless specified in -m.
 `manifest.[md|yaml|yml|json]`:
 This file can be in YAML or JSON format. Relative or absolute paths can be used.
 
-* `input`: json object of markdown files within the local project. These can be relative paths.
-  * `{options}`: Options that can be applied to individual files for merge preperation 
-* `output`: path/name.md of the resultant file of the merge. The path should be the same level deep as the markdown files to maintain asset references.
-* `{options}`: Options can also be applied to all files at a global level
+* `input`: markdown files to be merged. These can be relative or absolute paths. If no `input` is given, all .md files in the same directory as the manifest will be merged.
+  * `{options}`: Options that will be applied to an individual file
+* `output`: path/name.md of the resultant file of the merge. If no  `output` is given, the merged file will be saved in `merged/<curDir>.out.md`.
+* `{options}`: Options applied to all `input` files
 
 ### Supported {options}
-* noYAML: optionlly removes YAML. Default=false
-* TOC: optionally adds a TOC to this file with doctoc. Default=false. See https://www.npmjs.com/package/doctoc#specifying-location-of-toc 
-* replace:
+* `noYAML`: optionlly removes YAML. Default=false
+* `TOC`: optionally adds a TOC to this file with doctoc. Default=false. See https://www.npmjs.com/package/doctoc#specifying-location-of-toc 
+* `replace`:
   * string: Specify a string to find and replace
   * regex: Specify a regex to find and replace
 ```yaml
@@ -173,6 +174,17 @@ input:
   folder1/file1.md: {noYAML: true}
   file2.md: {noYAML: true}
 output: myOutput.md
+replace:
+  ${timestamp}: 06/01/2021
+  ({#(.*?)}): ""
+TOC: "#### Chapter contents"
+---
+```
+#### Options applied to all files in a folder
+```yaml
+---
+output: myOutput.md
+noYAML: true
 replace:
   ${timestamp}: 06/01/2021
   ({#(.*?)}): ""

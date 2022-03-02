@@ -92,8 +92,8 @@ var init = function() {
  */
 function useManifestFile(inputManifestFile){
   var fileType = inputManifestFile.split('.').pop();
-  if (fileType == null) {
-    console.log("Cannot find manifest file or it is not a JSON");
+  if (!DEF_MANIFEST_EXTS.includes(fileType)) {
+    console.log("Manifest extension must be: .["+DEF_MANIFEST_EXTS.join('|')+"]");
     console.log(MSG_HELP);
     return;
   }
@@ -115,16 +115,19 @@ function useManifestFile(inputManifestFile){
     }
   }
   
-  //Verify manifest has correct properties.
-  if(!manifestJSON.input || !manifestJSON.output) {
-    console.log("Manifest is missing input or output");
-    console.log(EXAMPLE_MANIFEST);
-    return;
+  // If the manifest doesn't have an input, build the input with md files in the manifest directory
+  if(!manifestJSON.input){
+    console.log("Manifest is missing input, .md files in same directory as manifest will be used.");
+    var inputList = generateInputListFromFolder(inputManifestFile);
+    manifestJSON.input = inputList;
   }
-  var manifestRelPath = path.dirname(inputManifestFile);
-
-  var outputFile = manifestJSON.output;
-  if(outputFile.split('.').pop() != "md"){
+  // If the manifest doesn't have an output, generate the output name basedd on the manifest directory
+  if(!manifestJSON.output) {
+    console.log("Manifest is missing output. out/curDir.out.md will be used.");
+    manifestJSON.output = generateOutputFileName(inputManifestFile);
+  }
+  
+  if(manifestJSON.output.split('.').pop() != "md"){
     console.log("output needs to be a .md file");
   }
 
@@ -134,9 +137,59 @@ function useManifestFile(inputManifestFile){
       manifestJSON.qa = {"exclude":"frontmatter"};
     }
   }
+
+  var manifestRelPath = path.dirname(inputManifestFile);
   merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
 }
 
+/* Creates a json of all .md files that are:
+* within the inputPath directory directory
+* not the inputPath (if it's a file)
+*/
+function generateInputListFromFolder(inputPath){
+  var inputFolder = "";
+  var inputFile = "";
+  if(fs.lstatSync(inputPath).isFile()){
+    inputFolder = path.dirname(inputPath);
+    inputFile = path.basename(inputPath);
+  } else {
+    inputFolder = inputPath;
+  }
+  var generatedInputJSON = {};
+  //create input
+  fs.readdirSync(inputFolder).forEach (file => {
+    var add = true;
+    if(file.endsWith(".md") && file != inputFile){
+      add = Object.keys(merge.EXT).every(extension =>{
+        if(file.endsWith(merge.EXT[extension])) return false;
+        return true;
+      });
+      if(add) generatedInputJSON[file] = "";
+    }
+  });
+  return generatedInputJSON;
+}
+
+/**
+ * Creates a file name for the output file based on the inputPath
+ */
+function generateOutputFileName(inputPath){
+  var inputFolder = "";
+  if(fs.lstatSync(inputPath).isFile()){
+    inputFolder = path.dirname(inputPath);
+  } else {
+    inputFolder = inputPath;
+  }
+  // get resolved path
+  var pathStr = path.resolve(inputFolder);
+  // get last directory in directory path
+  var outputFileStr = pathStr.match(/([^\/]*)\/*$/)[1];
+  return "merged/" + outputFileStr + merge.EXT.out;
+}
+
+/**
+ * Builds a manifest file with default configurations with the inputFolder path
+ */
 function useFolderPath(inputFolder){
   var defManifest = getDefaultManifest(inputFolder);
   if(defManifest != ""){
@@ -145,26 +198,21 @@ function useFolderPath(inputFolder){
   }
   console.log("No manifest file given. Using "+inputFolder+" folder to create manifest.");
   var generatedJSON = {"input": {},"output": ""};
-  //Create ouput
-  var outputFileStr = inputFolder.match(/([^\/]*)\/*$/)[1];
-  if(outputFileStr == ".") outputFileStr = "merge";
-  generatedJSON.output = outputFileStr + merge.EXT.out;
-  //create input
-  fs.readdirSync(inputFolder).forEach (file => {
-    var add = true;
-    if(file.endsWith(".md")){
-      add = Object.keys(merge.EXT).every(extension =>{
-        if(file.endsWith(merge.EXT[extension])) return false;
-        return true;
-      });
-      if(add) generatedJSON.input[file] = "";
-    }
-  });
+  
+  //Create ouput file name
+  generatedJSON.output = generateOutputFileName(inputFolder);
 
-  if (args.v) console.log("generated JSON: "+ JSON.stringify(generatedJSON.input));
+  //Generate the input with all .md files in the inputFolder
+  var inputList = generateInputListFromFolder(inputFolder);
+  generatedJSON.input = inputList;
+
+  if (args.v) console.log("generated Manifest: "+ JSON.stringify(generatedJSON));
   merge.add(generatedJSON, inputFolder, args.v, args.d, args.qa);
 }
 
+/**
+ * Returns a file manifest.[md|yml|yaml|json] if it exists in the inputFolder directory
+ */
 function getDefaultManifest(inputFolder){
   var defManifest = path.join(inputFolder,DEF_MANIFEST_NAME)
   var i = 0;
