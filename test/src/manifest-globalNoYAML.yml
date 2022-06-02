@@ -13,5 +13,6 @@ replace:
  <!--{returnToMainTOC}-->: "[...back to main TOC](#course-contents)"
  <!--{courseTitle}-->: My Course Title
  <!--{author}-->: Chuck Grant
+ <!--#-->: ""
  ({#(.*?)}): ""
 ---

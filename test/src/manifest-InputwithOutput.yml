@@ -1,5 +1,6 @@
 ---
 qa: {exclude: "(frontmatter|preamble)"}
+output: "+manifest-output.md"
 noYAML: true
 replace:
  <!--{timestamp}-->: 05/25/2021

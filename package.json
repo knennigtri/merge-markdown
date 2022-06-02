@@ -1,6 +1,6 @@
 {
   "name": "merge-markdown",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Creates a single markdown file (with TOC) from several markdown files",
   "repository": {
     "type": "git",
@@ -8,9 +8,12 @@
   },
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
-    "default": "merge-markdown -m test/src/manifest.json",
-    "mdTest": "merge-markdown -m test/src/manifest.yml",
-    "subFolder": "merge-markdown -m test/src/manifest-subfolder.json",
+    "m-json": "merge-markdown -m test/src/manifest.json",
+    "m-yaml": "merge-markdown -m test/src/manifest.yml",
+    "m-noInputwithOutput": "merge-markdown -m test/src/manifest-InputwithOutput.yml",
+    "m-noIO": "merge-markdown -m test/src/manifest-noIO.yml",
+    "m-subfolders": "merge-markdown -m test/src/manifest-subfolder.json",
+    "noManifest": "merge-markdown -m test/src",
     "yamlTest": "merge-markdown -m test/src/yaml-test",
     "readmeTOC": "doctoc README.md --github --title='# Contents'"
   },
