@@ -6,8 +6,11 @@
 name: Publish to GHP
 
 on:
-  push:
-    branches: main
+  pull_request:
+    types:
+      - closed
+    paths:
+      - 'package.json'
 
 jobs:
   build:
@@ -24,6 +27,7 @@ jobs:
       - run: npm test
   publish-ghp:
     needs: build
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions: 
       contents: read
