@@ -16,10 +16,10 @@ jobs:
       #     registry-url: 'https://registry.npmjs.org'
       #     scope: '@jamesives'
 
-      - name: Configure Git
-        run: |
-          git config user.email "knennig213@gmail.com"
-          git config user.name "knennigtri"
+      # - name: Configure Git
+      #   run: |
+      #     git config user.email "knennig213@gmail.com"
+      #     git config user.name "knennigtri"
 
       # - name: Install Yarn
       #   run: npm install -g yarn
@@ -48,6 +48,7 @@ jobs:
           ~/.npmrc
 
       # Publish to GitHub Packages
+      - run: npm ci
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
