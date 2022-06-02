@@ -32,8 +32,8 @@ jobs:
   #      registry-url: 'https://registry.npmjs.org'
   #  - run: npm ci
   #  - run: npm publish
-  #    env:
-  #      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - uses: actions/setup-node@v3
       with:
         registry-url: 'https://npm.pkg.github.com'
