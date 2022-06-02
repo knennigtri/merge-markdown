@@ -4,8 +4,11 @@
 name: Publish to NPM
 
 on:
-  push:
-    branches: main
+  pull_request:
+    types:
+      - closed
+    paths:
+      - 'package.json'
 
 jobs:
   build:
@@ -23,6 +26,7 @@ jobs:
 
   publish-npm:
     needs: build
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions: 
       contents: read

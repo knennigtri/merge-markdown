@@ -23,20 +23,22 @@ Available on GPR: https://github.com/knennigtri/merge-markdown/packages/1458049
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported {options}](#supported-options)
-  - [QA Mode](#qa-mode)
-  - [Examples](#examples)
-    - [YAML used as input](#yaml-used-as-input)
-    - [JSON used as input](#json-used-as-input)
-    - [file specific options](#file-specific-options)
-    - [QA mode being used](#qa-mode-being-used)
-    - [Replace keys within a single file](#replace-keys-within-a-single-file)
-    - [Options applied to all files](#options-applied-to-all-files)
-    - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
+- [merge-markdown](#merge-markdown)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported {options}](#supported-options)
+    - [QA Mode](#qa-mode)
+    - [Examples](#examples)
+      - [YAML used as input](#yaml-used-as-input)
+      - [JSON used as input](#json-used-as-input)
+      - [file specific options](#file-specific-options)
+      - [QA mode being used](#qa-mode-being-used)
+      - [Replace keys within a single file](#replace-keys-within-a-single-file)
+      - [Options applied to all files](#options-applied-to-all-files)
+      - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -44,7 +46,7 @@ Available on GPR: https://github.com/knennigtri/merge-markdown/packages/1458049
 To install the command line tool globally, run:
 
 ```shell
-npm install -g merge-markdown
+npm install -g @knennigtri/merge-markdown
 ```
 
 ## Command Line Tool
