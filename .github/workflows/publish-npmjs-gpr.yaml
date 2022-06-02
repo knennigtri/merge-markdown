@@ -1,10 +1,7 @@
 name: publish-to-npm
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'The updated registry version number.'
-        required: true
+  push:
+    branches: main
 
 jobs:
   build:
@@ -24,14 +21,14 @@ jobs:
           git config user.email "knennig213@gmail.com"
           git config user.name "knennigtri"
 
-      - name: Install Yarn
-        run: npm install -g yarn
+      # - name: Install Yarn
+      #   run: npm install -g yarn
 
-      - run: yarn install --frozen-lockfile
-      - run: yarn build
-      - run: git stash
-      - run: npm version ${{ github.event.inputs.version }} -m "Release ${{ github.event.inputs.version }} 📣"
-      - run: git push
+      # - run: yarn install --frozen-lockfile
+      # - run: yarn build
+      # - run: git stash
+      # - run: npm version ${{ github.event.inputs.version }} -m "Release ${{ github.event.inputs.version }} 📣"
+      # - run: git push
 
       # Publish to npm
       # - run: npm publish --access public
