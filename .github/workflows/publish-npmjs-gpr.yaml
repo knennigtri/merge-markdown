@@ -49,6 +49,6 @@ jobs:
 
       # Publish to GitHub Packages
       - run: npm ci
-      - run: npm publish
+      - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
