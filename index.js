@@ -115,20 +115,20 @@ function useManifestFile(inputManifestFile){
     }
   }
   
-  // If the manifest doesn't have an input, build the input with md files in the manifest directory
-  if(!manifestJSON.input){
-    console.log("Manifest is missing input, .md files in same directory as manifest will be used.");
-    var inputList = generateInputListFromFolder(inputManifestFile);
-    manifestJSON.input = inputList;
-  }
   // If the manifest doesn't have an output, generate the output name basedd on the manifest directory
   if(!manifestJSON.output) {
     console.log("Manifest is missing output. out/curDir.out.md will be used.");
     manifestJSON.output = generateOutputFileName(inputManifestFile);
   }
-  
   if(manifestJSON.output.split('.').pop() != "md"){
     console.log("output needs to be a .md file");
+  }
+
+  // If the manifest doesn't have an input, build the input with md files in the manifest directory
+  if(!manifestJSON.input){
+    console.log("Manifest is missing input, .md files in same directory as manifest will be used.");
+    var inputList = generateInputListFromFolder(inputManifestFile, manifestJSON.output);
+    manifestJSON.input = inputList;
   }
 
   if(args.qa){
@@ -146,7 +146,7 @@ function useManifestFile(inputManifestFile){
 * within the inputPath directory directory
 * not the inputPath (if it's a file)
 */
-function generateInputListFromFolder(inputPath){
+function generateInputListFromFolder(inputPath, outputFileStr){
   var inputFolder = "";
   var inputFile = "";
   if(fs.lstatSync(inputPath).isFile()){
@@ -159,7 +159,8 @@ function generateInputListFromFolder(inputPath){
   //create input
   fs.readdirSync(inputFolder).forEach (file => {
     var add = true;
-    if(file.endsWith(".md") && file != inputFile){
+    //Make sure the file ends in .md, is not a folder, and not the output file name
+    if(file.endsWith(".md") && file != inputFile && outputFileStr && !outputFileStr.includes(file)){
       add = Object.keys(merge.EXT).every(extension =>{
         if(file.endsWith(merge.EXT[extension])) return false;
         return true;
@@ -203,7 +204,7 @@ function useFolderPath(inputFolder){
   generatedJSON.output = generateOutputFileName(inputFolder);
 
   //Generate the input with all .md files in the inputFolder
-  var inputList = generateInputListFromFolder(inputFolder);
+  var inputList = generateInputListFromFolder(inputFolder, "");
   generatedJSON.input = inputList;
 
   if (args.v) console.log("generated Manifest: "+ JSON.stringify(generatedJSON));
