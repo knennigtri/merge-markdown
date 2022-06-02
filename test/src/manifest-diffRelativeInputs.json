@@ -4,9 +4,5 @@
 		"lorem-module/lorem-module.md": {"noYAML":true,"TOC":true},
 		"ipsum-module/ipsum-module.md": {"noYAML":true,"TOC":true}
 	},
-	"output": "output/+myGuide.md",
-	"replace":{
-		"<!--{timestamp}-->": "05/25/2021",
-		"returnToMainTOC": "[...back to main TOC](#course-contents)"
-	}
+	"output": "output/+myGuide.md"
 }

@@ -5,12 +5,12 @@ input:
  lorem-module.md: ""
  ipsum-module.md: ""
  etiam-module.md: ""
-noYAML: true
-output: output/globalNoYAML-Guide.md
+output: merge/onlyGlobalOptions-Guide.md
 qa: {exclude: "(frontmatter|preamble)"}
+noYAML: true
 replace:
  <!--{timestamp}-->: 05/25/2021
- <!--{returnToMainTOC}-->: "[...back to main TOC](#course-contents)"
+ <!--{returnToMainTOC}-->: "[Return to Course Contents](#course-contents)"
  <!--{courseTitle}-->: My Course Title
  <!--{author}-->: Chuck Grant
  <!--#-->: ""

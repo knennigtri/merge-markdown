@@ -1,10 +1,9 @@
 ---
 qa: {exclude: "(frontmatter|preamble)"}
-output: "+manifest-output.md"
 noYAML: true
 replace:
  <!--{timestamp}-->: 05/25/2021
- <!--{returnToMainTOC}-->: "[...back to main TOC](#course-contents)"
+ <!--{returnToMainTOC}-->: "[Return to Course Contents](#course-contents)"
  <!--{courseTitle}-->: My Course Title
  <!--{author}-->: Chuck Grant
  <!--#-->: ""

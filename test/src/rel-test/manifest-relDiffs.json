@@ -3,7 +3,7 @@
 		"rel.md": {"noYAML":true,"TOC":true},
 		"../ipsum-module.md": {"noYAML":true,"TOC":true}
 	},
-	"output": "../output/+myRelativeGuide.md",
+	"output": "../merge/myRelativeGuide.md",
 	"replace":{
 		"<!--{timestamp}-->": "05/25/2021",
 		"<!--{courseTitle}-->": "My Awesome Title",

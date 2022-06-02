@@ -1,0 +1,4 @@
+---
+qa: {exclude: "(frontmatter|preamble)"}
+output: "+manifest-output.md"
+---
