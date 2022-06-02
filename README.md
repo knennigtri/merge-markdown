@@ -1,27 +1,42 @@
-# merge-markdown [![Publish to NPM](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml) [![Publish to GHP](https://github.com/knennigtri/merge-markdown/actions/workflows/ghp-publish.yml/badge.svg)](https://github.com/knennigtri/merge-markdown/actions/workflows/ghp-publish.yml)
-Takes in a list of markdown files and merges them together
-Available on NPM: https://www.npmjs.com/package/merge-markdown
+# merge-markdown 
+[![Publish to NPM](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml) [![Publish to GHP](https://github.com/knennigtri/merge-markdown/actions/workflows/ghp-publish.yml/badge.svg)](https://github.com/knennigtri/merge-markdown/actions/workflows/ghp-publish.yml)
+
+Takes in a list of markdown files and merges them into a single output file with these advantages:
+* Merge all md files in a folder
+* auto-resolution of all relative links in files for assets, other markdown files no matter their location locally
+* built in link checker of final file
+* Use a Manifest file (json/yaml) for:
+  * Specify the input list of files (relative or absolute)
+  * Specify the output file (relative or absolute)
+  * QA feature for optional file exclusions for reviewing
+  * Per input file or globally:
+    * Find/replace with regex (ex: names, titles, chapter #s, timestamps, etc)
+    * Create TOC with optional Title
+    * Remove yaml from top of md file
+
+
+Available on NPM: https://www.npmjs.com/package/@knennigtri/merge-markdown
+
+Available on GPR: https://github.com/knennigtri/merge-markdown/packages/1458049 
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [merge-markdown ![Publish to NPM](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml)](#merge-markdown-)
-- [Contents](#contents)
-  - [Installation](#installation)
-  - [Command Line Tool](#command-line-tool)
-  - [Usage](#usage)
-  - [Manifest file format](#manifest-file-format)
-    - [Supported {options}](#supported-options)
-    - [QA Mode](#qa-mode)
-    - [Examples](#examples)
-      - [YAML used as input](#yaml-used-as-input)
-      - [JSON used as input](#json-used-as-input)
-      - [file specific options](#file-specific-options)
-      - [QA mode being used](#qa-mode-being-used)
-      - [Replace keys within a single file](#replace-keys-within-a-single-file)
-      - [Options applied to all files](#options-applied-to-all-files)
-      - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
+- [Installation](#installation)
+- [Command Line Tool](#command-line-tool)
+- [Usage](#usage)
+- [Manifest file format](#manifest-file-format)
+  - [Supported {options}](#supported-options)
+  - [QA Mode](#qa-mode)
+  - [Examples](#examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [file specific options](#file-specific-options)
+    - [QA mode being used](#qa-mode-being-used)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
