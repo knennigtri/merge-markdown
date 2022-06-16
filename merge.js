@@ -15,7 +15,7 @@ var EXT = {
 exports.EXT = EXT;
 
 
-exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
+var markdownMerge = function(manifestJSON, relPathManifest, verbose ,debug, qaContent){
     v = verbose || false;
     d = debug || false;
     onlyQA = qaContent || false;
@@ -76,15 +76,10 @@ exports.add = function(manifestJSON, relPathManifest, verbose,debug,qaContent){
     
     console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
     if(onlyQA){
-        createSingleFile(mergedFileArr, outputFileStr.replace(".md",EXT.qa));    
-    } else {
-        createSingleFile(mergedFileArr, outputFileStr);
+        outputFileStr = outputFileStr.replace(".md",EXT.qa);
     }
-
-    //Remove temp files
-    findFiles('./',/\.temp$/,function(tempFilename){
-        fs.unlinkSync(tempFilename);
-    });
+    
+   return createSingleFile(mergedFileArr, outputFileStr);
 }
 
 function createSingleFile(list, outputFileStr){
@@ -97,9 +92,14 @@ function createSingleFile(list, outputFileStr){
     if(!fs.existsSync(outputPath)){
         fs.mkdirSync(outputPath);
     }
-    concat(list, outputFileStr).then(result =>
-        console.log(outputFileStr + " has been created.")
-    );
+    concat(list, outputFileStr);
+
+    //Remove temp files
+    findFiles('./',/\.temp$/,function(tempFilename){
+        fs.unlinkSync(tempFilename);
+    });
+    
+    return outputFileStr;
 }
 
 function applyGeneratedContent(origContent, fileOptions) {
@@ -316,3 +316,5 @@ function findFiles(startPath,filter,callback){
         else if (filter.test(filename)) callback(filename);
     };
 }
+
+exports.markdownMerge = markdownMerge;
