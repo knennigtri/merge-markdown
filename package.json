@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Creates a single markdown file (with TOC) from several markdown files",
   "repository": {
     "type": "git",
@@ -11,7 +11,7 @@
     "build": "npm run readmeTOC && npm ci",
     "m-json": "merge-markdown -m test/src/manifest.json",
     "m-yaml": "merge-markdown -m test/src/manifest.yml",
-    "m-diffRelativeInputs": "merge-markdown -m test/src/manifest-diffRelativeInputs.yml",
+    "m-diffRelativeInputs": "merge-markdown -m test/src/manifest-diffRelativeInputs.json",
     "m-noInput-noOutput": "merge-markdown -m test/src/manifest-noInput-noOutput.yml",
     "m-noInput-withOutput": "merge-markdown -m test/src/manifest-noInput-withOutput.yml",
     "m-onlyGlobalOptions": "merge-markdown -m test/src/manifest-noInput-withOutput.yml",
@@ -19,6 +19,8 @@
     "noManifest": "merge-markdown -m test/src",
     "yamlTest": "merge-markdown -m test/src/yaml-test",
     "relTest": "merge-markdown -m test/src/rel-test",
+    "test-manifest": "npm run m-json && npm run m-yaml && npm run m-diffRelativeInputs && npm run m-noInput-noOutput && npm run m-noInput-withOutput && npm run m-onlyGlobalOptions && npm run m-noInput-withInput-noOutput",
+    "full-test": "npm run test-manifest && npm run noManifest && npm run yamlTest && npm run relTest",
     "readmeTOC": "doctoc README.md --github --title='# Contents'"
   },
   "main": "index.js",
@@ -32,12 +34,10 @@
   "license": "ISC",
   "dependencies": {
     "concat": "^1.0.3",
-    "doctoc": "^2.0.0",
-    "gulp": "^4.0.2",
-    "gulp-replace": "^1.1.3",
+    "doctoc": "^2.2.0",
     "js-yaml": "^4.1.0",
-    "markdown-link-check": "^3.8.7",
-    "minimist": "^1.2.5",
+    "markdown-link-check": "^3.10.2",
+    "minimist": "^1.2.6",
     "valid-url": "^1.0.9"
   },
   "bin": {
