@@ -182,8 +182,6 @@ var manifestJSON = function(inputManifestFile){
   return manifestJSON;
 }
 
-
-
 /* Creates a json of all .md files that are:
 * within the inputPath directory directory
 * not the inputPath (if it's a file)
