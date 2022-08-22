@@ -30,6 +30,8 @@ Options:
   -d                        Debug output
   -h                        Displays this screen
   -h [manifest|options|qa]  See examples
+  --pdf                     Merged markdown file to pdf
+  --html                    Merged mardown file to html
 Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] unless specified in -m.
 `;
 const MANIFEST_OPTIONS = `Manifest input file options:
@@ -41,7 +43,9 @@ Supported key/value pairs for {options} within the manifest file:
       endStr: replaceStrEnd                 optional. Set a unqiue end str for replace. Default is }-->
       timestamp: true|false|"stringVal"     true for todays date or add you own timestamp string
       *: "stringVal"                        replace any key string with the value string
-  `;
+Supported key/value pairs only supported at a manifest level and not module level:
+  mergedTOC: true|false                     TOC built by doctoc at the beginning of the merged file
+      `;
 const QA_HELP=`When --qa is set:
 Output will exclude all filenames with 'frontmatter' by default
 Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to customize exclusion:
