@@ -5,7 +5,7 @@ var path = require('path');
 var yaml = require('js-yaml');
 var packageInfo = require("./package.json");
 var merge = require("./merge.js");
-var generatePDF = require("./topdf/generate-pdf.js");
+var mergedContent = require("./mergedContent.js");
 var args = minimist(process.argv.slice(2));
 
 const DEF_MANIFEST_NAME = "manifest";
@@ -49,7 +49,7 @@ Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to cu
   qa: {exclude: "(frontmatter|preamble)"}
 ---`;
 
-var  argManifest, argQA, argHelp, argVersion, argVerbose, argDebug, argToPDF;
+var  argManifest, argQA, argHelp, argVersion, argVerbose, argDebug, argToHTML, argToPDF;
 /**
  * 
  * @param {*} manifestParam manifest file or folder of .md files
@@ -63,6 +63,7 @@ var init = function(manifestParam, qaParam) {
   argVerbose = args.v;
   argDebug = args.d;
   argQA = qaParam || args.qa;
+  argToHTML = args.html
   argToPDF = args.pdf
 
   // Show CLI help
@@ -96,19 +97,20 @@ var init = function(manifestParam, qaParam) {
   } else if(fs.lstatSync(inputManifest).isDirectory()){
     useFolderPath(inputManifest);
   } else {
-    mergeWithManifestFile(inputManifest,function(err, outputName){
-      if(err) throw err;
-      console.log(outputName + " created.");
-    });
+    mergeWithManifestFile(inputManifest,argVerbose,argDebug,argQA);
   }
 
+  if (argToHTML) {
+    if(!argManifest){
+      console.log("No -m argument given. Output PDF will use default css and latexTemplate.");
+    }
+    mergedContent.build(argManifest,'html');
+  }
   if (argToPDF) {
     if(!argManifest){
-      console.log("No -m argument given. Output PDF will use default CSS.")
-    } else {
-      console.log("building pdf...");
+      console.log("No -m argument given. Output PDF will use default css and latexTemplate.");
     }
-    generatePDF.build(argManifest);
+    mergedContent.build(argManifest,'pdf');
   }
 
   return; 
@@ -117,10 +119,10 @@ var init = function(manifestParam, qaParam) {
 /**
  * This method takes a valid manifest file and sends it to the merger
  */
-var mergeWithManifestFile = function(inputManifestFile, qaParam, callback){
+var mergeWithManifestFile = function(inputManifestFile, verboseParam, debugParam, qaParam){
   var jsonObj = manifestJSON(inputManifestFile);
   var manifestRelPath = path.dirname(inputManifestFile);
-  callback(false, merge.markdownMerge(jsonObj, manifestRelPath, argVerbose, argDebug, qaParam)); 
+  merge.markdownMerge(jsonObj, manifestRelPath, verboseParam, debugParam, qaParam); 
 }
 
 /**

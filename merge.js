@@ -78,11 +78,13 @@ var markdownMerge = function(manifestJSON, relPathManifest, verbose ,debug, qaCo
     if(onlyQA){
         outputFileStr = outputFileStr.replace(".md",EXT.qa);
     }
-    
-   return createSingleFile(mergedFileArr, outputFileStr);
+    if(manifestJSON.mergedTOC){
+        return createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
+    }
+    return createSingleFile(mergedFileArr, outputFileStr);
 }
 
-function createSingleFile(list, outputFileStr){
+async function createSingleFile(list, outputFileStr, doctocOptions){
     if (d) console.log("Creating single file");
     if(list == null || list == ""){
         console.log("List to merge is not valid. Aborting..");
@@ -98,7 +100,20 @@ function createSingleFile(list, outputFileStr){
     findFiles('./',/\.temp$/,function(tempFilename){
         fs.unlinkSync(tempFilename);
     });
+
     
+    if(doctocOptions){
+        var promise = new Promise((res, rej) => {
+            setTimeout(() => res("Now it's done!"), 500)
+        });
+        var wait = await promise; 
+
+        var mergedContent = fs.readFileSync(outputFileStr, 'utf-8');
+        fs.rmSync(outputFileStr);
+        // Write TOC with doctoc
+        var outDoctoc = doctoc(mergedContent,"github.com",3,"",false,"",false,true);
+        fs.writeFileSync(outputFileStr, outDoctoc.data, 'utf-8');
+    }
     return outputFileStr;
 }
 
@@ -118,6 +133,7 @@ function applyGeneratedContent(origContent, fileOptions) {
     //Add TOC
     if(fileOptions.hasOwnProperty("TOC") && fileOptions.TOC){
         var tocTitle = "#### Module Contents";
+        var outDoctoc = "";
         if(fileOptions.TOC.toString().toLowerCase() != "true"){
             tocTitle = fileOptions.TOC
         } 
