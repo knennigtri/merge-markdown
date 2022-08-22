@@ -23,22 +23,22 @@ Available on GPR: https://github.com/knennigtri/merge-markdown/packages/1458049
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [merge-markdown](#merge-markdown)
-- [Contents](#contents)
-  - [Installation](#installation)
-  - [Command Line Tool](#command-line-tool)
-  - [Usage](#usage)
-  - [Manifest file format](#manifest-file-format)
-    - [Supported {options}](#supported-options)
-    - [QA Mode](#qa-mode)
-    - [Examples](#examples)
-      - [YAML used as input](#yaml-used-as-input)
-      - [JSON used as input](#json-used-as-input)
-      - [file specific options](#file-specific-options)
-      - [QA mode being used](#qa-mode-being-used)
-      - [Replace keys within a single file](#replace-keys-within-a-single-file)
-      - [Options applied to all files](#options-applied-to-all-files)
-      - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
+- [Installation](#installation)
+- [Command Line Tool](#command-line-tool)
+- [Usage](#usage)
+- [Manifest file format](#manifest-file-format)
+  - [Supported {options}](#supported-options)
+  - [QA Mode](#qa-mode)
+  - [Add a TOC in the merged file](#add-a-toc-in-the-merged-file)
+  - [Output to PDF or HTML](#output-to-pdf-or-html)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [file specific options](#file-specific-options)
+    - [QA mode being used](#qa-mode-being-used)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Options applied to all files in a folder](#options-applied-to-all-files-in-a-folder)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -69,6 +69,10 @@ merge-markdown -m path/to/files
 With QA
 ```shell
 merge-markdown -m myManifest.md --qa
+```
+Output to PDF
+```shell
+merge-markdown -m myManifest.md --pdf
 ```
 
 ## Usage
@@ -122,7 +126,42 @@ Add a regex to the manifest.json to customize exclusion:
 ---
 ```
 
-### Examples
+### Add a TOC in the merged file
+Enable in manifest.md:
+```yaml
+ mergedTOC: true
+```
+Set where you would like for the TOC to exist:
+```html
+<div class="toc" >
+  <div>Course Contents</div>
+  <!-- START auto-update -->
+  <!-- START doctoc -->
+  <!-- END doctoc -->
+  <!-- END auto-update -->
+</div>
+```
+
+### Output to PDF or HTML
+When outputting to PDF or HTML, css and a latex template can be optionally used. Pandoc and wkhtmltopdf are used to generate the HTML and PDF output. First, output to HTML
+```shell
+ merge-markdown -m manifest.md --html
+```
+If you need to modify the HTML output, you can use a latex template of your own:
+```yaml
+ latexTemplate: path/to/my/latex/template.latex
+```
+You can then write your own css against the HTML since the PDF is generated based on HTML output. The end result should be a single css file to be referenced:
+```yaml
+ css: path/to/my/css/main.css
+```
+You can Finally you can generate your PDF output:
+```shell
+ merge-markdown -m manifest.md --pdf
+```
+Example files can be found in [test/pdf/src](test/pdf/src). You can also checkout a [working project](https://github.com/knennigtri/example-webpack-project) for css development using webpack.
+
+### Manifest Examples
 
 #### YAML used as input
 ```yaml
