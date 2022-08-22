@@ -4,10 +4,7 @@ author: <!--{author}-->
 creator: ACME
 subject: Guide for online learning
 editor: https://typora.io/
-typora-copy-images-to: assets/ipsum-module
 ---
-
-# <!--{courseTitle}-->
 
 <div class="cover-page"> 
   <img src="assets/cover_image.png"></img>
