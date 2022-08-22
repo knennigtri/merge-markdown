@@ -1,10 +1,11 @@
 "use strict";
-var minimist = require('minimist'),
-fs = require('fs'),
-path = require('path'),
-yaml = require('js-yaml'),
-packageInfo = require("./package.json"),
-merge = require("./merge.js");
+var minimist = require('minimist');
+var fs = require('fs');
+var path = require('path');
+var yaml = require('js-yaml');
+var packageInfo = require("./package.json");
+var merge = require("./merge.js");
+var generatePDF = require("./topdf/generate-pdf.js");
 var args = minimist(process.argv.slice(2));
 
 const DEF_MANIFEST_NAME = "manifest";
@@ -48,7 +49,7 @@ Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to cu
   qa: {exclude: "(frontmatter|preamble)"}
 ---`;
 
-var  argManifest, argQA, argHelp, argVersion, argVerbose, argDebug;
+var  argManifest, argQA, argHelp, argVersion, argVerbose, argDebug, argToPDF;
 /**
  * 
  * @param {*} manifestParam manifest file or folder of .md files
@@ -59,10 +60,10 @@ var init = function(manifestParam, qaParam) {
   argHelp =  args.h;
   argVersion = args.version;
   argManifest = manifestParam || args.m;
-  console.log("M: " + argManifest);
   argVerbose = args.v;
   argDebug = args.d;
   argQA = qaParam || args.qa;
+  argToPDF = args.pdf
 
   // Show CLI help
   if (argHelp) {
@@ -100,20 +101,23 @@ var init = function(manifestParam, qaParam) {
       console.log(outputName + " created.");
     });
   }
+
+  if (argToPDF) {
+    if(!argManifest){
+      console.log("No -m argument given. Output PDF will use default CSS.")
+    } else {
+      console.log("building pdf...");
+    }
+    generatePDF.build(argManifest);
+  }
+
   return; 
 }
 
-// var myCallback = function(err, outputName){
-//   if(err) throw err;
-//   console.log(outputName + " created.");
-// }
-
 /**
  * This method takes a valid manifest file and sends it to the merger
- * @param {*} inputManifestFile 
- * @returns 
  */
- var mergeWithManifestFile = function(inputManifestFile, qaParam, callback){
+var mergeWithManifestFile = function(inputManifestFile, qaParam, callback){
   var jsonObj = manifestJSON(inputManifestFile);
   var manifestRelPath = path.dirname(inputManifestFile);
   callback(false, merge.markdownMerge(jsonObj, manifestRelPath, argVerbose, argDebug, qaParam)); 
@@ -121,8 +125,6 @@ var init = function(manifestParam, qaParam) {
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
- * @param {*} inputManifestFile 
- * @returns 
  */
 var manifestJSON = function(inputManifestFile){
   var fileType = inputManifestFile.split('.').pop();

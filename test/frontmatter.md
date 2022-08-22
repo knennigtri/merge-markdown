@@ -13,6 +13,13 @@ typora-copy-images-to: assets/ipsum-module
   <img src="assets/cover_image.png"></img>
   <a href="#">Learn more about courses here</a>
 </div>
+<div class="cover-page cover-text">
+  <div class="type"> <!--{courseType}--> </div>
+  <div class="title"> <!--{courseTitle}--> </div>
+  <div class="creator"> <!--{courseCreator}--> </div>
+</div>
+<div class="page-break"></div>
+
 <div class="copyright"> 
 ©2021 ACME. All rights reserved. 
 </br>
@@ -31,5 +38,11 @@ Donec nec libero id lorem suscipit elementum. Phasellus dui purus, finibus eget 
 </div>
 <div class="page-break"></div>
 
-# Course Contents {#course-contents}
-[TOC]
+<div class="toc" >
+  <div>Course Contents</div>
+  <!-- START auto-update -->
+  <!-- START doctoc -->
+  <!-- END doctoc -->
+  <!-- END auto-update -->
+</div>
+<div class="page-break"></div>

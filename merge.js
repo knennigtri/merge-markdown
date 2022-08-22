@@ -1,10 +1,10 @@
 "use strict";
-var path = require('path'),
-fs  =  require('fs'),
-concat = require('concat'),
-markdownLinkCheck = require('markdown-link-check'),
-doctoc = require('doctoc/lib/transform'),
-validUrl = require('valid-url');
+var path = require('path');
+var fs  =  require('fs');
+var concat = require('concat');
+var markdownLinkCheck = require('markdown-link-check');
+var doctoc = require('doctoc/lib/transform');
+var validUrl = require('valid-url');
 var v,d,onlyQA;
 var EXT = {
     "linkcheck": ".linkcheck.md",

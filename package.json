@@ -9,19 +9,19 @@
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
     "build": "npm run readmeTOC && npm ci",
-    "m-json": "merge-markdown -m test/src/manifest.json",
-    "m-yaml": "merge-markdown -m test/src/manifest.yml",
-    "m-diffRelativeInputs": "merge-markdown -m test/src/manifest-diffRelativeInputs.json",
-    "m-noInput-noOutput": "merge-markdown -m test/src/manifest-noInput-noOutput.yml",
-    "m-noInput-withOutput": "merge-markdown -m test/src/manifest-noInput-withOutput.yml",
-    "m-onlyGlobalOptions": "merge-markdown -m test/src/manifest-noInput-withOutput.yml",
-    "m-noInput-withInput-noOutput": "merge-markdown -m test/src/manifest-withInput-noOutput.yml",
-    "noManifest": "merge-markdown -m test/src",
-    "yamlTest": "merge-markdown -m test/src/yaml-test",
-    "relTest": "merge-markdown -m test/src/rel-test",
+    "readmeTOC": "doctoc README.md --github --title='# Contents'",
+    "m-json": "merge-markdown -m test/markdown/src/manifest.json",
+    "m-yaml": "merge-markdown -m test/markdown/src/manifest.yml",
+    "m-diffRelativeInputs": "merge-markdown -m test/markdown/src/manifest-diffRelativeInputs.json",
+    "m-noInput-noOutput": "merge-markdown -m test/markdown/src/manifest-noInput-noOutput.yml",
+    "m-noInput-withOutput": "merge-markdown -m test/markdown/src/manifest-noInput-withOutput.yml",
+    "m-onlyGlobalOptions": "merge-markdown -m test/markdown/src/manifest-noInput-withOutput.yml",
+    "m-noInput-withInput-noOutput": "merge-markdown -m test/markdown/src/manifest-withInput-noOutput.yml",
+    "noManifest": "merge-markdown -m test/markdown/src",
+    "yamlTest": "merge-markdown -m test/markdown/src/yaml-test",
+    "relTest": "merge-markdown -m test/markdown/src/rel-test",
     "test-manifest": "npm run m-json && npm run m-yaml && npm run m-diffRelativeInputs && npm run m-noInput-noOutput && npm run m-noInput-withOutput && npm run m-onlyGlobalOptions && npm run m-noInput-withInput-noOutput",
-    "full-test": "npm run test-manifest && npm run noManifest && npm run yamlTest && npm run relTest",
-    "readmeTOC": "doctoc README.md --github --title='# Contents'"
+    "full-test": "npm run test-manifest && npm run noManifest && npm run yamlTest && npm run relTest"
   },
   "main": "index.js",
   "keywords": [
@@ -38,7 +38,9 @@
     "js-yaml": "^4.1.0",
     "markdown-link-check": "^3.10.2",
     "minimist": "^1.2.6",
-    "valid-url": "^1.0.9"
+    "node-pandoc": "^0.3.0",
+    "valid-url": "^1.0.9",
+    "wkhtmltopdf": "^0.4.0"
   },
   "bin": {
     "merge-markdown": "bin/global.js"
