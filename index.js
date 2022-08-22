@@ -1,10 +1,11 @@
 "use strict";
-var minimist = require('minimist'),
-fs = require('fs'),
-path = require('path'),
-yaml = require('js-yaml'),
-packageInfo = require("./package.json"),
-merge = require("./merge.js");
+var minimist = require('minimist');
+var fs = require('fs');
+var path = require('path');
+var yaml = require('js-yaml');
+var packageInfo = require("./package.json");
+var merge = require("./merge.js");
+var mergedContent = require("./mergedContent.js");
 var args = minimist(process.argv.slice(2));
 
 const DEF_MANIFEST_NAME = "manifest";
@@ -29,6 +30,8 @@ Options:
   -d                        Debug output
   -h                        Displays this screen
   -h [manifest|options|qa]  See examples
+  --pdf                     Merged markdown file to pdf
+  --html                    Merged mardown file to html
 Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] unless specified in -m.
 `;
 const MANIFEST_OPTIONS = `Manifest input file options:
@@ -40,7 +43,9 @@ Supported key/value pairs for {options} within the manifest file:
       endStr: replaceStrEnd                 optional. Set a unqiue end str for replace. Default is }-->
       timestamp: true|false|"stringVal"     true for todays date or add you own timestamp string
       *: "stringVal"                        replace any key string with the value string
-  `;
+Supported key/value pairs only supported at a manifest level and not module level:
+  mergedTOC: true|false                     TOC built by doctoc at the beginning of the merged file
+      `;
 const QA_HELP=`When --qa is set:
 Output will exclude all filenames with 'frontmatter' by default
 Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to customize exclusion:
@@ -48,27 +53,43 @@ Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to cu
   qa: {exclude: "(frontmatter|preamble)"}
 ---`;
 
-var init = function() {
+var  argManifest, argQA, argHelp, argVersion, argVerbose, argDebug, argToHTML, argToPDF;
+/**
+ * 
+ * @param {*} manifestParam manifest file or folder of .md files
+ * @param {*} qaParam boolean to turn on QA mode
+ * @returns 
+ */
+var init = function(manifestParam, qaParam) {
+  argHelp =  args.h;
+  argVersion = args.version;
+  argManifest = manifestParam || args.m;
+  argVerbose = args.v;
+  argDebug = args.d;
+  argQA = qaParam || args.qa;
+  argToHTML = args.html
+  argToPDF = args.pdf
+
   // Show CLI help
-  if (args.h) {
-    if(args.h == true){
+  if (argHelp) {
+    if(argHelp == true){
        console.log(MSG_HELP);
        return;
     }
-    if(args.h.toLowerCase() == "manifest") console.log(EXAMPLE_MANIFEST);
-    if(args.h.toLowerCase() == "options") console.log(MANIFEST_OPTIONS);
-    if(args.h.toLowerCase() == "qa") console.log(QA_HELP);
+    if(argHelp.toLowerCase() == "manifest") console.log(EXAMPLE_MANIFEST);
+    if(argHelp.toLowerCase() == "options") console.log(MANIFEST_OPTIONS);
+    if(argHelp.toLowerCase() == "qa") console.log(QA_HELP);
     return;
   }
 
   // Show version
-  if (args.version) {
+  if (argVersion) {
     console.log(packageInfo.version);
     return;
   }
 
   //Verify Manifest exists
-  var inputManifest = args.m;
+  var inputManifest = argManifest;
   if(!inputManifest){
     console.log("No -m argument given. Using default: "+ DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
     inputManifest = getDefaultManifest(".");
@@ -80,17 +101,38 @@ var init = function() {
   } else if(fs.lstatSync(inputManifest).isDirectory()){
     useFolderPath(inputManifest);
   } else {
-    useManifestFile(inputManifest);
+    mergeWithManifestFile(inputManifest,argVerbose,argDebug,argQA);
   }
+
+  if (argToHTML) {
+    if(!argManifest){
+      console.log("No -m argument given. Output PDF will use default css and latexTemplate.");
+    }
+    mergedContent.build(argManifest,'html');
+  }
+  if (argToPDF) {
+    if(!argManifest){
+      console.log("No -m argument given. Output PDF will use default css and latexTemplate.");
+    }
+    mergedContent.build(argManifest,'pdf');
+  }
+
   return; 
 }
 
 /**
- * This method takes in a json file
- * @param {*} inputManifestFile 
- * @returns 
+ * This method takes a valid manifest file and sends it to the merger
  */
-function useManifestFile(inputManifestFile){
+var mergeWithManifestFile = function(inputManifestFile, verboseParam, debugParam, qaParam){
+  var jsonObj = manifestJSON(inputManifestFile);
+  var manifestRelPath = path.dirname(inputManifestFile);
+  merge.markdownMerge(jsonObj, manifestRelPath, verboseParam, debugParam, qaParam); 
+}
+
+/**
+ * Creates a valid manifest JSON based on input (or no input)
+ */
+var manifestJSON = function(inputManifestFile){
   var fileType = inputManifestFile.split('.').pop();
   if (!DEF_MANIFEST_EXTS.includes(fileType)) {
     console.log("Manifest extension must be: .["+DEF_MANIFEST_EXTS.join('|')+"]");
@@ -131,15 +173,13 @@ function useManifestFile(inputManifestFile){
     manifestJSON.input = inputList;
   }
 
-  if(args.qa){
+  if(argQA){
     if (!manifestJSON.qa || !manifestJSON.qa.exclude){
       console.log("No exclude patterns given for QA. Using default `frontmatter` for exclusion.")
       manifestJSON.qa = {"exclude":"frontmatter"};
     }
   }
-
-  var manifestRelPath = path.dirname(inputManifestFile);
-  merge.add(manifestJSON, manifestRelPath, args.v, args.d, args.qa);  
+  return manifestJSON;
 }
 
 /* Creates a json of all .md files that are:
@@ -155,12 +195,13 @@ function generateInputListFromFolder(inputPath, outputFileStr){
   } else {
     inputFolder = inputPath;
   }
+  if (argVerbose) console.log("inputFolder: " + inputFolder);
   var generatedInputJSON = {};
   //create input
   fs.readdirSync(inputFolder).forEach (file => {
     var add = true;
     //Make sure the file ends in .md, is not a folder, and not the output file name
-    if(file.endsWith(".md") && file != inputFile && outputFileStr && !outputFileStr.includes(file)){
+    if(file.endsWith(".md") && file != inputFile && !outputFileStr.includes(file)){
       add = Object.keys(merge.EXT).every(extension =>{
         if(file.endsWith(merge.EXT[extension])) return false;
         return true;
@@ -194,7 +235,7 @@ function generateOutputFileName(inputPath){
 function useFolderPath(inputFolder){
   var defManifest = getDefaultManifest(inputFolder);
   if(defManifest != ""){
-    useManifestFile(defManifest);
+    mergeWithManifestFile(defManifest);
     return;
   }
   console.log("No manifest file given. Using "+inputFolder+" folder to create manifest.");
@@ -207,8 +248,8 @@ function useFolderPath(inputFolder){
   var inputList = generateInputListFromFolder(inputFolder, "");
   generatedJSON.input = inputList;
 
-  if (args.v) console.log("generated Manifest: "+ JSON.stringify(generatedJSON));
-  merge.add(generatedJSON, inputFolder, args.v, args.d, args.qa);
+  if (argVerbose) console.log("generated Manifest: "+ JSON.stringify(generatedJSON));
+  merge.markdownMerge(generatedJSON, inputFolder, argVerbose, argDebug, argQA);
 }
 
 /**
@@ -228,3 +269,5 @@ function getDefaultManifest(inputFolder){
 }
 
 exports.init = init;
+exports.manifestJSON = manifestJSON;
+exports.mergeWithManifestFile = mergeWithManifestFile;

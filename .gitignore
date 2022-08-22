@@ -4,6 +4,7 @@
 output/
 Output/
 notes.txt
+*+*
 
 # Logs
 logs
@@ -81,3 +82,4 @@ typings/
 
 # FuseBox cache
 .fusebox/
+
