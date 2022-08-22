@@ -149,13 +149,9 @@ function applyGeneratedContent(origContent, fileOptions) {
 } 
 
 /** Searches for ![*](relPath) or src="relPath" in a string and replaces the asset
- * relPath with a new relPath based on the output file. 
- * @param {*} fileContents String containing relative paths to update
- * @param {*} inputPath relative input path of fileContents
- * @param {*} outputPath relative output path of output file
- * @returns String that contains updated relative paths to the output file
+ * relPath with an absolute one
  */
-function updateAssetRelPaths(fileContents,inputPath, outputPath){
+function updateAssetRelPaths(fileContents,inputPath){
     var resultContent=[];
     var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
 
@@ -175,14 +171,13 @@ function updateAssetRelPaths(fileContents,inputPath, outputPath){
                 origAssetRelPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
             } 
             if(!validUrl.isUri(origAssetRelPath)){
-                //resolve the asset path and create a new relative path to the output
+                //resolve the asset path
                 var origAssetPath = path.resolve(inputPath, origAssetRelPath);
-                var newAssetRelPath = path.relative(outputPath,origAssetPath);
 
                 if(d) console.log("origAssetRelPath: "+origAssetRelPath);
-                if(d) console.log("newAssetRelPath: "+newAssetRelPath);
+                if(d) console.log("origAssetPath: "+origAssetPath);
 
-                var newLine = line.replace(origAssetRelPath,newAssetRelPath);
+                var newLine = line.replace(origAssetRelPath,origAssetPath);
                 resultContent.push(newLine);
             }else{
                 resultContent.push(line);

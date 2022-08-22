@@ -78,7 +78,6 @@ function toPDF(){
         enableLocalFileAccess: true,
         disableSmartShrinking: true
     }
-    // TODO currently it's outputting the pdf into the working directory rather than the absolute directory.
     wkhtmltopdf(fs.createReadStream(pandocOutputFileABS), options, function (err, result) {
         if (err) {
         console.error('WKHTMLTOPDF Oh Nos: ',err);
