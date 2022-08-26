@@ -111,7 +111,8 @@ async function createSingleFile(list, outputFileStr, doctocOptions){
         var mergedContent = fs.readFileSync(outputFileStr, 'utf-8');
         fs.rmSync(outputFileStr);
         // Write TOC with doctoc
-        var outDoctoc = doctoc(mergedContent,"github.com",3,"",false,"",false,true);
+        //(files, mode, maxHeaderLevel, title, notitle, entryPrefix, processAll, stdOut, updateOnly)
+        var outDoctoc = doctoc(mergedContent,"github.com",3,"",false,"",false,true, false);
         fs.writeFileSync(outputFileStr, outDoctoc.data, 'utf-8');
     }
     return outputFileStr;
@@ -137,9 +138,9 @@ function applyGeneratedContent(origContent, fileOptions) {
         if(fileOptions.TOC.toString().toLowerCase() != "true"){
             tocTitle = fileOptions.TOC
         } 
-        // Write TOC with doctoc
         // https://github.com/thlorenz/doctoc
-        var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
+        //(files, mode, maxHeaderLevel, title, notitle, entryPrefix, processAll, stdOut, updateOnly)
+        var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true,false);
         if(outDoctoc.data != null){
             scrubbedContent = outDoctoc.data;
             if (v) console.log("TOC Added");
