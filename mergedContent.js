@@ -68,11 +68,11 @@ function toHTML(mode){
 function toPDF(){
     var options = {
         output: pdfOutputFileABS,
-        B: "1in",
-        T: "1in",
-        L: ".7in",
-        R: ".7in",
-        s: "Letter",
+        marginBottom: "1in",
+        marginTop: "1in",
+        marginLeft: ".7in",
+        marginRight: ".7in",
+        pageSize: "Letter",
         footerLine: true,
         footerCenter: "Page [page]",
         enableLocalFileAccess: true,
