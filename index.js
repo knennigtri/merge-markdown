@@ -111,15 +111,13 @@ var init = function(manifestParam, qaParam) {
 
   if(manifestJSON && manifestJSON.length != 0){
     //print out manifest to be used
-    if (argDebug) console.log(JSON.stringify(manifestJSON));
-    merge.markdownMerge(manifestJSON, manifestRelPath, argVerbose, argDebug, args.qa); 
+    if (argDebug) console.log(JSON.stringify(manifestJSON, null, 2));
+    //merge.markdownMerge(manifestJSON, manifestRelPath, argVerbose, argDebug, args.qa); 
   } else {
     console.log("Manifest input does not exist. Choose a valid folder or file.");
     console.log(MSG_HELP);
     return;
-  }
-  return;
-    
+  } 
 
   //TODO Allow for PDF creation without a manifest
   //TODO Allow for qa mode (different output name)
