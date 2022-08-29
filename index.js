@@ -1,12 +1,11 @@
 "use strict";
+var merge = require("./merge.js");
+var mergedContent = require("./presentation.js");
 var minimist = require('minimist');
 var fs = require('fs');
 var path = require('path');
 var yaml = require('js-yaml');
 var packageInfo = require("./package.json");
-var merge = require("./merge.js");
-var mergedContent = require("./mergedContent.js");
-const { exit } = require('process');
 var args = minimist(process.argv.slice(2));
 var debug = require('debug')('index');
 var debugInput = require('debug')('index:input');
@@ -127,21 +126,17 @@ var init = function(manifestParam, qaParam) {
     console.log(EXAMPLE_MANIFEST);
     return;
   } 
-  return;
 
   //TODO Allow for PDF creation without a manifest
   //TODO Allow for qa mode (different output name)
-  if (argToHTML) {
-    if(!argManifest){
-      console.log("No -m argument given. Output PDF will use default css and latexTemplate.");
+  if(manifestJSON){
+    if (argToHTML) {
+      mergedContent.build(manifestJSON, manifestRelPath, 'html');
+    } else if(argToPDF) {
+      mergedContent.build(manifestJSON, manifestRelPath, 'pdf');
     }
-    mergedContent.build(argManifest,'html',pandocJSON);
-  }
-  if (argToPDF) {
-    if(!argManifest){
-      console.log("No -m argument given. Output PDF will use default css and latexTemplate.");
-    }
-    mergedContent.build(argManifest,'pdf',pandocJSON, wkhtmltopdfJSON);
+  } else {
+    console.log("No manifest JSON given. Output will use defaults");
   }
 
   return; 
