@@ -83,9 +83,14 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
         outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
     if(manifestJSON.mergedTOC){
-        return createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
+        outputFileStr = createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
     }
-    return createSingleFile(mergedFileArr, outputFileStr);
+    outputFileStr = createSingleFile(mergedFileArr, outputFileStr);
+    
+    //cleanup 
+    removeTempFiles(mergedFileArr);
+
+    return outputFileStr
 }
 
 async function createSingleFile(list, outputFileStr, doctocOptions){
@@ -99,12 +104,6 @@ async function createSingleFile(list, outputFileStr, doctocOptions){
         fs.mkdirSync(outputPath);
     }
     concat(list, outputFileStr);
-
-    //Remove temp files
-    findFiles('./',/\.temp$/,function(tempFilename){
-        fs.unlinkSync(tempFilename);
-    });
-
     
     if(doctocOptions){
         var promise = new Promise((res, rej) => {
@@ -329,22 +328,10 @@ function updateExtension(fileStr, newExt){
     return fileStr +newExt;
 }
 
-//TODO Make better
-// Helper method to find all .temp files and do something with them
-function findFiles(startPath,filter,callback){
-    if (!fs.existsSync(startPath)){
-        console.log("no dir ",startPath);
-        return;
-    }
-    var files=fs.readdirSync(startPath);
-    for(var i=0;i<files.length;i++){
-        var filename=path.join(startPath,files[i]);
-        var stat = fs.lstatSync(filename);
-        if (stat.isDirectory()){
-            findFiles(filename,filter,callback); //recurse
-        }
-        else if (filter.test(filename)) callback(filename);
-    };
+function removeTempFiles(fileArr){
+    fileArr.forEach(element => {
+        fs.unlinkSync(element);
+    });
 }
 
 exports.markdownMerge = markdownMerge;
