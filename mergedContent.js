@@ -13,7 +13,7 @@ var pdfOutputFileABS = ""
 var cssFileABS = "";
 var latexTemplateABS = "";
 
-var build = async function(manifest, mode){
+var build = async function(manifest, mode, argDebug, argVerbose){
 
     var manifestABS = path.resolve(manifest);
 
@@ -48,13 +48,7 @@ var build = async function(manifest, mode){
 }
 
 function toHTML(mode){
-    var pandocArgs = "-o " + pandocOutputFileABS;
-    if(cssFileABS){
-        pandocArgs += " -c "+cssFileABS;
-    }
-    if(latexTemplateABS){
-        pandocArgs += " --template "+latexTemplateABS;
-    }
+    var pandocArgs = buildPandocArgs(mPandocParams, pandocOutputFileABS);
     nodePandoc(mmOutputFileABS, pandocArgs, function (err, result) {
         if (err) {
         console.error('PANDOC Oh Nos: ',err);
@@ -66,18 +60,7 @@ function toHTML(mode){
 }
 
 function toPDF(){
-    var options = {
-        output: pdfOutputFileABS,
-        marginBottom: "1in",
-        marginTop: "1in",
-        marginLeft: ".7in",
-        marginRight: ".7in",
-        pageSize: "Letter",
-        footerLine: true,
-        footerCenter: "Page [page]",
-        enableLocalFileAccess: true,
-        disableSmartShrinking: true
-    }
+    var options = buildWkhtmltopdfOptions(mPandocParams, pdfOutputFileABS);
     wkhtmltopdf(fs.createReadStream(pandocOutputFileABS), options, function (err, result) {
         if (err) {
         console.error('WKHTMLTOPDF Oh Nos: ',err);
@@ -87,6 +70,65 @@ function toPDF(){
         renameToFinalTitle();
         return result;
     });
+}
+
+//TODO test this
+function buildPandocArgs(jsonObj, fileName){
+    var cliArgs = "";
+    defaultOut = "-o " + fileName;
+    Objects.keys(jsonObj).forEach(function eachKey(key) { 
+        cliArgs += " " + jsonObj[key];
+    });
+    //if no specified output name was given, use the default
+    if(!cliArgs.includes("-o")){
+        cliArgs += " " + defaultOut;
+    }
+    if(debug) console.log("Pandoc Args: " + cliArgs);
+    return cliArgs;
+}
+
+//TODO test this
+function buildWkhtmltopdfOptions(jsonObj, fileName){
+    var options = {
+        output: fileName,
+        enableLocalFileAccess: true,
+        disableSmartShrinking: true,
+        marginBottom: "1in",
+        marginTop: "1in",
+        marginLeft: ".7in",
+        marginRight: ".7in",
+        pageSize: "Letter",
+        footerLine: true,
+        footerCenter: "Page [page]"
+    }
+    Objects.keys(jsonObj).forEach(function eachKey(key) { 
+        if(key == 'output'){
+            options.output = jsonObj[key];
+        }
+        if(key == 'marginBottom' || key == 'B'){
+            options.marginBottom = jsonObj[key];
+        }
+        if(key == 'marginTop' || key == 'T'){
+            options.marginBottom = jsonObj[key];
+        }
+        if(key == 'marginLeft' || key == 'L'){
+            options.marginBottom = jsonObj[key];
+        }
+        if(key == 'marginRight' || key == 'R'){
+            options.marginBottom = jsonObj[key];
+        }
+        if(key == 'pageSize' || key == 's'){
+            options.marginBottom = jsonObj[key];
+        }
+        if(key == 'footerLine'){
+            options.marginBottom = jsonObj[key];
+        }
+        if(key == 'footerCenter'){
+            options.marginBottom = jsonObj[key];
+        }
+    });
+    if(debug) console.log("wkhtmltopdf Args: " + JSON.stringify(options));
+    return options;
 }
 
 function renameToFinalTitle(){
