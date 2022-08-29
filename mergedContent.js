@@ -13,7 +13,7 @@ var pdfOutputFileABS = ""
 var cssFileABS = "";
 var latexTemplateABS = "";
 
-var build = async function(manifest, mode, argDebug, argVerbose){
+var build = async function(manifest, mode, argVerbose, argDebug){
 
     var manifestABS = path.resolve(manifest);
 

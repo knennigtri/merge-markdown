@@ -6,7 +6,13 @@ var yaml = require('js-yaml');
 var packageInfo = require("./package.json");
 var merge = require("./merge.js");
 var mergedContent = require("./mergedContent.js");
+const { exit } = require('process');
 var args = minimist(process.argv.slice(2));
+var debug = require('debug')('index');
+var debugInput = require('debug')('index:input');
+var debugManifest = require('debug')('index:manifest');
+var debugmanifestJson = require('debug')('index:manifest:json');
+var debugManifestGenerate = require('debug')('index:manifest:generate');
 
 const DEF_MANIFEST_NAME = "manifest";
 const DEF_MANIFEST_EXTS = ["md","yaml","yml","json"];
@@ -26,8 +32,6 @@ Options:
   -m manifestPath           Path to input folder, yaml, or json manifest
   --qa                      QA mode.
   --version                 Displays version of this package
-  -v                        Verbose output
-  -d                        Debug output
   -h                        Displays this screen
   -h [manifest|options|qa]  See examples
   --pdf                     Merged markdown file to pdf
@@ -53,7 +57,6 @@ Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to cu
   qa: {exclude: "(frontmatter|preamble)"}
 ---`;
 
-var argVerbose, argDebug;
 /**
  * 
  * @param {*} manifestParam manifest file or folder of .md files
@@ -67,8 +70,6 @@ var init = function(manifestParam, qaParam) {
   var argVersion = args.v || args.version;
   var argToHTML = args.html
   var argToPDF = args.pdf
-  argVerbose = args.verbose;
-  argDebug = args.d || args.debug;
 
   // Show CLI help
   if (argHelp) {
@@ -93,15 +94,23 @@ var init = function(manifestParam, qaParam) {
   var manifestRelPath = "";
   //if -m is given use the file/folder
   if(argManifest && argManifest[0] != undefined && argManifest[0] != ""){
-    if(fs.lstatSync(argManifest).isDirectory()){
-      if (argDebug) console.log("Using directory for manifest");
-      manifestJSON = useFolderPath(argManifest, args.qa);
-      manifestRelPath = argManifest;
+    try {
+      var fsStat = fs.lstatSync(argManifest)
+      if(fsStat.isDirectory()){
+        debugInput("Using directory for manifest");
+        manifestJSON = useFolderPath(argManifest, args.qa);
+        manifestRelPath = argManifest;
+      }
+      if(fsStat.isFile()){
+        debugInput("Using file manifest");
+        manifestJSON = getManifestJSON(argManifest, args.qa);
+        manifestRelPath = path.dirname(argManifest);
+      }
     }
-    if(fs.lstatSync(argManifest).isFile()){
-      if (argDebug) console.log("Using file manifest");
-      manifestJSON = getManifestJSON(argManifest, args.qa);
-      manifestRelPath = path.dirname(argManifest);
+    catch (err) {
+      console.log("Manifest input does not exist. Choose a valid folder or file.");
+      console.log(MSG_HELP);
+      return;
     }
   } else { //if there is no -m check for a default manifest file
     console.log("No -m argument given. Using default: "+ DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
@@ -111,13 +120,14 @@ var init = function(manifestParam, qaParam) {
 
   if(manifestJSON && manifestJSON.length != 0){
     //print out manifest to be used
-    if (argDebug) console.log(JSON.stringify(manifestJSON, null, 2));
-    //merge.markdownMerge(manifestJSON, manifestRelPath, argVerbose, argDebug, args.qa); 
+    debugManifest(JSON.stringify(manifestJSON, null, 2));
+    merge.markdownMerge(manifestJSON, manifestRelPath, args.qa); 
   } else {
-    console.log("Manifest input does not exist. Choose a valid folder or file.");
-    console.log(MSG_HELP);
+    console.log("Cannot read manifest.");
+    console.log(EXAMPLE_MANIFEST);
     return;
   } 
+  return;
 
   //TODO Allow for PDF creation without a manifest
   //TODO Allow for qa mode (different output name)
@@ -139,6 +149,7 @@ var init = function(manifestParam, qaParam) {
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
+ * DEBUG=index:manifest:json
  */
 var getManifestJSON = function(inputManifestFile, qaMode){
   var fileType = inputManifestFile.split('.').pop();
@@ -147,7 +158,7 @@ var getManifestJSON = function(inputManifestFile, qaMode){
     console.log(MSG_HELP);
     return;
   }
-  console.log("Using Manifest: %s", inputManifestFile);
+  console.log("Found manifest to use: %s", inputManifestFile);
   var fileContents = fs.readFileSync(inputManifestFile, 'utf8');
   var jsonObj = "";
   try {
@@ -156,19 +167,20 @@ var getManifestJSON = function(inputManifestFile, qaMode){
     var yamlContents = JSON.stringify(data[0], null, 2);
     jsonObj = JSON.parse(yamlContents);
   } catch {
+    debugmanifestJson("Could not read YAML, attemping JSON")
     try {
       //Attempt to read JSON
       jsonObj = JSON.parse(fileContents);
     } catch(e){
       console.log("Manifest file does not contain valid YAML or JSON content.");
-      console.log(e);
+      return;
     }
   }
-  
+
   // If the manifest doesn't have an output, generate the output name basedd on the manifest directory
   if(!jsonObj.output) {
     console.log("Manifest is missing output. out/curDir.out.md will be used.");
-    jsonObj.output = generateOutputFileName(inputManifestFile);
+    jsonObj.output = generateFileNameFromFolder(inputManifestFile);
   }
   if(jsonObj.output.split('.').pop() != "md"){
     console.log("output needs to be a .md file");
@@ -191,8 +203,8 @@ var getManifestJSON = function(inputManifestFile, qaMode){
 }
 
 /* Creates a json of all .md files that are:
-* within the inputPath directory directory
-* not the inputPath (if it's a file)
+* within the inputPath directory
+* DEBUG=index:manifest:generate
 */
 function generateInputListFromFolder(inputPath, outputFileStr){
   var inputFolder = "";
@@ -203,7 +215,7 @@ function generateInputListFromFolder(inputPath, outputFileStr){
   } else {
     inputFolder = inputPath;
   }
-  if (argVerbose) console.log("inputFolder: " + inputFolder);
+  debugManifestGenerate("inputFolder: " + inputFolder);
   var generatedInputJSON = {};
   //create input
   fs.readdirSync(inputFolder).forEach (file => {
@@ -221,9 +233,17 @@ function generateInputListFromFolder(inputPath, outputFileStr){
 }
 
 /**
- * Creates a file name for the output file based on the inputPath
+ * Creates a file name for the output based on the inputPath
+ * default extension is md
+ * DEBUG=index:manifest:generate
  */
-function generateOutputFileName(inputPath){
+function generateFileNameFromFolder(inputPath, extension){
+  var ext = "md";
+  //if there is a leading . remove it
+  if(extension){
+    if(extension.charAt(0) == ".") extension = extension.substring(1);
+    ext = extension;
+  }
   var inputFolder = "";
   if(fs.lstatSync(inputPath).isFile()){
     inputFolder = path.dirname(inputPath);
@@ -233,13 +253,14 @@ function generateOutputFileName(inputPath){
   // get resolved path
   var pathStr = path.resolve(inputFolder);
   // get last directory in directory path
-  var outputFileStr = pathStr.match(/([^\/]*)\/*$/)[1];
-  return "merged/" + outputFileStr + merge.EXT.out;
+  var fileStr = pathStr.match(/([^\/]*)\/*$/)[1];
+  return "merged/" + fileStr + "." + ext;
 }
 
 /**
  * Returns a manifest JSON based on the inputFolder. 
  * Checks for default manifest before generating one.
+ * DEBUG=index:manifest:generate
  */
 function useFolderPath(inputFolder, qaMode){
   var defManifest = getDefaultManifestJSON(inputFolder, qaMode);
@@ -250,13 +271,13 @@ function useFolderPath(inputFolder, qaMode){
   var generatedJSON = {"input": {},"output": ""};
   
   //Create ouput file name
-  generatedJSON.output = generateOutputFileName(inputFolder);
+  generatedJSON.output = generateFileNameFromFolder(inputFolder, merge.EXT.out);
 
   //Generate the input with all .md files in the inputFolder
   var inputList = generateInputListFromFolder(inputFolder, "");
   generatedJSON.input = inputList;
 
-  if (argVerbose) console.log("generated Manifest: "+ JSON.stringify(generatedJSON));
+  debugManifestGenerate("Manifest Generated");
   return generatedJSON;
 }
 
@@ -269,7 +290,7 @@ function getDefaultManifestJSON(inputFolder, qaMode){
   while(i < DEF_MANIFEST_EXTS.length){
     var file = defManifest.concat(".",DEF_MANIFEST_EXTS[i]);
     if(fs.existsSync(file)){
-      if (argDebug) console.log("Found default "+DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
+      debug("Found default "+DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
       return getManifestJSON(file, qaMode);
     }
     i++;
