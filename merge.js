@@ -84,8 +84,9 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
     }
     if(manifestJSON.mergedTOC){
         outputFileStr = createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
+    } else {
+        outputFileStr = createSingleFile(mergedFileArr, outputFileStr);
     }
-    outputFileStr = createSingleFile(mergedFileArr, outputFileStr);
     
     //cleanup 
     removeTempFiles(mergedFileArr);
@@ -93,7 +94,7 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
     return outputFileStr
 }
 
-async function createSingleFile(list, outputFileStr, doctocOptions){
+function createSingleFile(list, outputFileStr, doctocOptions){
     debug("Creating single file");
     if(list == null || list == ""){
         console.log("List to merge is not valid. Aborting..");
@@ -103,22 +104,19 @@ async function createSingleFile(list, outputFileStr, doctocOptions){
     if(!fs.existsSync(outputPath)){
         fs.mkdirSync(outputPath);
     }
-    concat(list, outputFileStr);
-    
-    if(doctocOptions){
-        var promise = new Promise((res, rej) => {
-            setTimeout(() => res("Now it's done!"), 500)
-        });
-        var wait = await promise; 
-
-        var mergedContent = fs.readFileSync(outputFileStr, 'utf-8');
-        fs.rmSync(outputFileStr);
-        // Write TOC with doctoc
-        //(files, mode, maxHeaderLevel, title, notitle, entryPrefix, processAll, stdOut, updateOnly)
-        var outDoctoc = doctoc(mergedContent,"github.com",3,"",false,"",false,true, false);
-        fs.writeFileSync(outputFileStr, outDoctoc.data, 'utf-8');
-    }
-    return outputFileStr;
+    concat(list, outputFileStr).then(result => {
+        if(doctocOptions){
+            fs.readFile(outputFileStr, 'utf-8', function (err, data) {
+                var outDoctoc = doctoc(data,"github.com",3,"",false,"",false,true, false);
+                fs.writeFile(outputFileStr, outDoctoc.data, 'utf-8', function (err) {
+                    if (err) return console.log(err);
+                    return outputFileStr;
+                });
+            });
+        } else {
+            return outputFileStr;
+        }
+    });
 }
 
 function applyContentOptions(origContent, fileOptions) {
