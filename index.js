@@ -31,10 +31,10 @@ Options:
   -m manifestPath           Path to input folder, yaml, or json manifest
   --qa                      QA mode.
   --version                 Displays version of this package
+  --pdf                     Output to PDF
+  --html                    Output to HTML
   -h                        Displays this screen
   -h [manifest|options|qa]  See examples
-  --pdf                     Merged markdown file to pdf
-  --html                    Merged mardown file to html
 Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] unless specified in -m.
 `;
 const MANIFEST_OPTIONS = `Manifest input file options:
@@ -48,6 +48,10 @@ Supported key/value pairs for {options} within the manifest file:
       *: "stringVal"                        replace any key string with the value string
 Supported key/value pairs only supported at a manifest level and not module level:
   mergedTOC: true|false                     TOC built by doctoc at the beginning of the merged file
+  pandoc:
+    option: <value>                         Pandoc arguments should be added to <value>
+  wkhtmltopdf:
+    option: <value>                         wkhtmltopdf options can be added based on node-wkhtmltopdf
       `;
 const QA_HELP=`When --qa is set:
 Output will exclude all filenames with 'frontmatter' by default

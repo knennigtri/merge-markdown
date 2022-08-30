@@ -1,7 +1,7 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "0.3.0",
-  "description": "Creates a single markdown file (with TOC) from several markdown files",
+  "version": "1.0.0",
+  "description": "Creates a single markdown file (with TOC) from several markdown files and optionally add html/pdf presentation",
   "repository": {
     "type": "git",
     "url": "git@github.com:knennigtri/merge-markdown.git"
@@ -10,19 +10,18 @@
   "scripts": {
     "build": "npm run readmeTOC && npm ci",
     "readmeTOC": "doctoc README.md --github --title='# Contents'",
-    "m-json": "merge-markdown -m test/markdown/src/manifest.json",
-    "m-yaml": "merge-markdown -m test/markdown/src/manifest.yml",
-    "m-diffRelativeInputs": "merge-markdown -m test/markdown/src/manifest-diffRelativeInputs.json",
-    "m-noInput-noOutput": "merge-markdown -m test/markdown/src/manifest-noInput-noOutput.yml",
-    "m-noInput-withOutput": "merge-markdown -m test/markdown/src/manifest-noInput-withOutput.yml",
+    "m-extTest": "merge-markdown -m test/markdown/src/manifest.json; merge-markdown -m test/markdown/src/manifest.yml",
+    "m-ioTest": "merge-markdown -m test/markdown/src/manifest-noIO.yml; merge-markdown -m test/markdown/src/manifest-noInput.yml; merge-markdown -m test/markdown/src/manifest-noOutput.yml",
     "m-onlyGlobalOptions": "merge-markdown -m test/markdown/src/manifest-noInput-withOutput.yml",
-    "m-noInput-withInput-noOutput": "merge-markdown -m test/markdown/src/manifest-withInput-noOutput.yml",
-    "noManifest": "merge-markdown -m test/markdown/src",
-    "yamlTest": "merge-markdown -m test/markdown/src/yaml-test",
-    "relTest": "merge-markdown -m test/markdown/src/rel-test",
-    "test-manifest": "npm run m-json && npm run m-yaml && npm run m-diffRelativeInputs && npm run m-noInput-noOutput && npm run m-noInput-withOutput && npm run m-onlyGlobalOptions && npm run m-noInput-withInput-noOutput",
-    "full-test": "npm run test-manifest && npm run noManifest && npm run yamlTest && npm run relTest",
-    "wkhtmltopdf": "wkhtmltopdf -T 1in -B 1in -L .7in -R .7in --page-size Letter --footer-line --footer-center 'Page [page]' --enable-local-file-access --disable-smart-shrinking /Users/nennig/Documents/GitHub/knennigtri/merge-markdown/test/pdf/src/merged/+Lorem-Ipsum-Docs.html /Users/nennig/Documents/GitHub/knennigtri/merge-markdown/test/pdf/src/merged/+Lorem-Ipsum-Docs.pdf"
+    "o-noManifest": "merge-markdown -m test/markdown/src",
+    "o-yamlTest": "merge-markdown -m test/markdown/src/yaml-test",
+    "p-pdfTest": "merge-markdown -m test/pdf/src/manifest.md --pdf; merge-markdown -m test/pdf/src/manifest-noPresentation.md --pdf",
+    "p-htmlTest": "merge-markdown -m test/pdf/src/manifest.md --html; merge-markdown -m test/pdf/src/manifest-noPresentation.md --html",
+    "test-manifest": "npm run m-extTest && npm run m-ioTest && npm run m-onlyGlobalOptions",
+    "test-other": "npm run o-noManifest && npm run o-yamlTest",
+    "test-presentation": "npm run p-pdfTest && npm run p-htmlTest",
+    "test-all": "npm run test-manifest && npm run test-other && npm run test-presentation",
+    "wkhtmltopdf": "wkhtmltopdf -T 1in -B 1in -L .7in -R .7in --page-size Letter --footer-line --footer-center 'Page [page]' --enable-local-file-access --disable-smart-shrinking test/pdf/src/merged/presentationAdded.html test/pdf/src/merged/presentationAdded.pdf"
   },
   "main": "index.js",
   "keywords": [
