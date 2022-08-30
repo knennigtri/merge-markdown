@@ -21,7 +21,8 @@
     "yamlTest": "merge-markdown -m test/markdown/src/yaml-test",
     "relTest": "merge-markdown -m test/markdown/src/rel-test",
     "test-manifest": "npm run m-json && npm run m-yaml && npm run m-diffRelativeInputs && npm run m-noInput-noOutput && npm run m-noInput-withOutput && npm run m-onlyGlobalOptions && npm run m-noInput-withInput-noOutput",
-    "full-test": "npm run test-manifest && npm run noManifest && npm run yamlTest && npm run relTest"
+    "full-test": "npm run test-manifest && npm run noManifest && npm run yamlTest && npm run relTest",
+    "wkhtmltopdf": "wkhtmltopdf -T 1in -B 1in -L .7in -R .7in --page-size Letter --footer-line --footer-center 'Page [page]' --enable-local-file-access --disable-smart-shrinking /Users/nennig/Documents/GitHub/knennigtri/merge-markdown/test/pdf/src/merged/+Lorem-Ipsum-Docs.html /Users/nennig/Documents/GitHub/knennigtri/merge-markdown/test/pdf/src/merged/+Lorem-Ipsum-Docs.pdf"
   },
   "main": "index.js",
   "keywords": [

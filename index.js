@@ -1,6 +1,6 @@
 "use strict";
 var merge = require("./merge.js");
-var mergedContent = require("./presentation.js");
+var presentation = require("./presentation.js");
 var minimist = require('minimist');
 var fs = require('fs');
 var path = require('path');
@@ -67,8 +67,6 @@ var init = function(manifestParam, qaParam) {
   var argQA = qaParam || args.qa;
   var argHelp =  args.h || args.help;
   var argVersion = args.v || args.version;
-  var argToHTML = args.html
-  var argToPDF = args.pdf
 
   // Show CLI help
   if (argHelp) {
@@ -130,10 +128,10 @@ var init = function(manifestParam, qaParam) {
   //TODO Allow for PDF creation without a manifest
   //TODO Allow for qa mode (different output name)
   if(manifestJSON){
-    if (argToHTML) {
-      mergedContent.build(manifestJSON, manifestRelPath, 'html');
-    } else if(argToPDF) {
-      mergedContent.build(manifestJSON, manifestRelPath, 'pdf');
+    if (args.html) {
+      presentation.build(manifestJSON, manifestRelPath, presentation.MODE.html);
+    } else if(args.pdf) {
+      presentation.build(manifestJSON, manifestRelPath, presentation.MODE.pdf);
     }
   } else {
     console.log("No manifest JSON given. Output will use defaults");
