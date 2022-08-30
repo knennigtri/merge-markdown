@@ -38,16 +38,16 @@ var build = async function(jsonObj, inputPath, mode){
     });
     await promise; 
 
-    toHTML(jsonObj, absMMFileName, mode);
+    toHTML(jsonObj, absMMFileName, absInputPath, mode);
 }
 
 /**
  * Input and Output files are expected to be ABS
  */
-function toHTML(manifestJson, inputFile, mode){
+function toHTML(manifestJson, inputFile, inputPath, mode){
     debug("Creating HTML...")
     var outputFile = path.parse(inputFile).dir + "/temp.html";
-    var pandocArgs = buildPandocArgs(manifestJson.pandoc, outputFile);
+    var pandocArgs = buildPandocArgs(manifestJson.pandoc, inputPath, outputFile);
     debugHTML("input: "+inputFile);
     debugHTML("Args: "+pandocArgs);
     nodePandoc(inputFile, pandocArgs, function (err, result) {
@@ -77,8 +77,8 @@ function toPDF(manifestJson, inputFile, mode){
     debug("Creating PDF...")
     var outputFile = path.parse(inputFile).dir + "/temp.pdf";
     var options = buildWkhtmltopdfOptions(manifestJson.wkhtmltopdf, outputFile);
-    debugHTML("input: "+inputFile);
-    debugHTML("Args: "+JSON.stringify(options));
+    debugPDF("input: "+inputFile);
+    debugPDF("Args: "+JSON.stringify(options));
     wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
         if (err) {
             console.error('WKHTMLTOPDF Oh Nos: ',err);
@@ -91,19 +91,19 @@ function toPDF(manifestJson, inputFile, mode){
     });
 }
 
-function buildPandocArgs(jsonObj, fileName){
+function buildPandocArgs(jsonObj, inputPath, fileName){
     var cliArgs = "-o" + fileName;
     if(jsonObj){
         for (var key in jsonObj){
             if (jsonObj.hasOwnProperty(key)) {
                 if(jsonObj[key].includes("--template")){
                     var templatePath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
-                    templatePath = path.resolve(templatePath); 
+                    templatePath = path.join(inputPath,templatePath);
                     debugHTMLOptions("template added: " + templatePath);
                     cliArgs += " --template " + templatePath;
                 } else if(jsonObj[key].includes("-c")){
                     var ccsPath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
-                    ccsPath = path.resolve(ccsPath); 
+                    ccsPath = path.join(inputPath,ccsPath); 
                     debugHTMLOptions("css added: " + ccsPath);
                     cliArgs += " -c " +ccsPath;
                 } else if(jsonObj[key].includes("-o")){
@@ -123,7 +123,6 @@ function buildPandocArgs(jsonObj, fileName){
     return cliArgs;
 }
 
-//TODO test this
 function buildWkhtmltopdfOptions(optionsJson, fileName){
     debugPDF("Adding wkhtmltopdf options from Manifest");
     var options = {
