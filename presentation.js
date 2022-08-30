@@ -80,9 +80,9 @@ function toPDF(manifestJson, inputFile, outputFile, mode){
         if (err) {
             console.error('WKHTMLTOPDF Oh Nos: ',err);
         } else {
-            console.log(path.parse(inputFile).base + " created from " + path.parse(outputFile).base);
+            console.log(path.parse(outputFile).base + " created from " + path.parse(inputFile).base);
            // renameToFinalTitle();
-           console.log(result);
+           debugPDF(result);
         }
     });
 }
@@ -145,22 +145,22 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
                     options.marginBottom = optionsJson[key];
                 }
                 if(key == 'marginTop' || key == 'T'){
-                    options.marginBottom = optionsJson[key];
+                    options.marginTop = optionsJson[key];
                 }
                 if(key == 'marginLeft' || key == 'L'){
-                    options.marginBottom = optionsJson[key];
+                    options.marginLeft = optionsJson[key];
                 }
                 if(key == 'marginRight' || key == 'R'){
-                    options.marginBottom = optionsJson[key];
+                    options.marginRight = optionsJson[key];
                 }
                 if(key == 'pageSize' || key == 's'){
-                    options.marginBottom = optionsJson[key];
+                    options.pageSize = optionsJson[key];
                 }
                 if(key == 'footerLine'){
-                    options.marginBottom = optionsJson[key];
+                    options.footerLine = optionsJson[key];
                 }
                 if(key == 'footerCenter'){
-                    options.marginBottom = optionsJson[key];
+                    options.footerCenter = optionsJson[key];
                 }
             }
         };
