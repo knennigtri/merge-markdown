@@ -91,7 +91,7 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
     //cleanup 
     removeTempFiles(mergedFileArr);
 
-    return outputFileStr
+    return outputFileStr;
 }
 
 function createSingleFile(list, outputFileStr, doctocOptions){
