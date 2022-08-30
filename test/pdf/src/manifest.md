@@ -3,7 +3,7 @@ input:
  ../../frontmatter.md: ''
  m1/m1-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 1:"}}
  m2/m2-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 2:"}}
-output: "merged/+Lorem-Ipsum-Docs.md"
+output: "merged/+Lorem Ipsum Docs.md"
 qa: {exclude: "(frontmatter)"}
 replace:
  <!--{copyrightYear}-->: 2022
