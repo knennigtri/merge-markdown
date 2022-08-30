@@ -119,24 +119,16 @@ var init = function(manifestParam, qaParam) {
     //print out manifest to be used
     debugManifest(JSON.stringify(manifestJSON, null, 2));
     merge.markdownMerge(manifestJSON, manifestRelPath, args.qa); 
-  } else {
-    console.log("Cannot read manifest.");
-    console.log(EXAMPLE_MANIFEST);
-    return;
-  } 
-
-  //TODO Allow for PDF creation without a manifest
-  //TODO Allow for qa mode (different output name)
-  if(manifestJSON){
     if (args.html) {
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.html);
     } else if(args.pdf) {
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.pdf);
     }
   } else {
-    console.log("No manifest JSON given. Output will use defaults");
-  }
-
+    console.log("Cannot read manifest.");
+    console.log(EXAMPLE_MANIFEST);
+    return;
+  } 
   return; 
 }
 
