@@ -164,8 +164,8 @@ var getManifestJSON = function(inputManifestFile, qaMode){
 
   // If the manifest doesn't have an output, generate the output name basedd on the manifest directory
   if(!jsonObj.output) {
-    console.log("Manifest is missing output. out/curDir.out.md will be used.");
     jsonObj.output = generateFileNameFromFolder(inputManifestFile);
+    console.log("Manifest is missing output. "+path.parse(jsonObj.output).dir+"/ will be used.");
   }
   if(jsonObj.output.split('.').pop() != "md"){
     console.log("output needs to be a .md file");
