@@ -1,12 +1,12 @@
-var mm = require('./index.js');
 var path = require('path');
 var nodePandoc = require('node-pandoc');
 var wkhtmltopdf = require('wkhtmltopdf');
-var doctoc = require('doctoc/lib/transform');
 var debug = require('debug')('presentation');
 var debugHTML = require('debug')('presentation:html');
+var debugHTMLOptions = require('debug')('presentation:html:options');
 var debugPDF = require('debug')('presentation:pdf');
 var debugPDFOptions = require('debug')('presentation:pdf:options');
+var verbose = require('debug')('verbose');
 var fs = require('fs');
 var EXT = {
     "pdf": ".pdf",
@@ -31,13 +31,6 @@ var build = async function(jsonObj, inputPath, mode){
     var absOutputPath = path.join(absInputPath,absManifestOutputPath);
     //Location of merge-markdown file
     var absMMFileName = path.join(absOutputPath,absManifestOutputFileName);
-    
-    //Setup the title of the output documents
-    var mTitle = path.parse(jsonObj.output).name;
-    var mTitleNoSpaces = mTitle.replace(/ /g,"_");
-
-    //Default name used for all output documents
-    var absOutputFileName = path.join(absOutputPath, mTitleNoSpaces + EXT.html);
 
     //TODO remove?
     var promise = new Promise((res, rej) => {
@@ -45,14 +38,15 @@ var build = async function(jsonObj, inputPath, mode){
     });
     await promise; 
 
-    toHTML(jsonObj, absMMFileName, absOutputFileName, mode);
+    toHTML(jsonObj, absMMFileName, mode);
 }
 
 /**
  * Input and Output files are expected to be ABS
  */
-function toHTML(manifestJson, inputFile, outputFile, mode){
+function toHTML(manifestJson, inputFile, mode){
     debug("Creating HTML...")
+    var outputFile = path.parse(inputFile).dir + "/temp.html";
     var pandocArgs = buildPandocArgs(manifestJson.pandoc, outputFile);
     debugHTML("input: "+inputFile);
     debugHTML("Args: "+pandocArgs);
@@ -61,10 +55,17 @@ function toHTML(manifestJson, inputFile, outputFile, mode){
             console.error('PANDOC Oh Nos: ',err);
         } else {
             console.log(path.parse(outputFile).base + " created from " + path.parse(inputFile).base);
-            if(mode == MODE.pdf){
-                var absPDFName = outputFile.replace(EXT.html,EXT.pdf);
-                toPDF(manifestJson, outputFile, absPDFName, mode);
+            switch (mode){
+                case MODE.pdf:
+                    toPDF(manifestJson, outputFile, mode);
+                    break;
+                case MODE.html:
+                    renameToManifestOutputName(manifestJson, outputFile, mode);
+                    break;
+                default:
+                    return;
             }
+            verbose(result);
         }
     });
 }
@@ -72,53 +73,52 @@ function toHTML(manifestJson, inputFile, outputFile, mode){
 /**
  * Input and Output files are expected to be ABS
  */
-function toPDF(manifestJson, inputFile, outputFile, mode){
+function toPDF(manifestJson, inputFile, mode){
     debug("Creating PDF...")
+    var outputFile = path.parse(inputFile).dir + "/temp.pdf";
     var options = buildWkhtmltopdfOptions(manifestJson.wkhtmltopdf, outputFile);
     debugHTML("input: "+inputFile);
     debugHTML("Args: "+JSON.stringify(options));
-    return;
     wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
         if (err) {
             console.error('WKHTMLTOPDF Oh Nos: ',err);
         } else {
             console.log(path.parse(outputFile).base + " created from " + path.parse(inputFile).base);
-           // renameToFinalTitle();
-           debugPDF(result);
+            renameToManifestOutputName(manifestJson, outputFile, mode);
+            // fs.unlinkSync(inputFile);
+            verbose(result);
         }
     });
 }
 
 function buildPandocArgs(jsonObj, fileName){
-    fileName = fileName || "default-name";
-    var cliArgs = "";
+    var cliArgs = "-o" + fileName;
     if(jsonObj){
         for (var key in jsonObj){
             if (jsonObj.hasOwnProperty(key)) {
                 if(jsonObj[key].includes("--template")){
-                 var templatePath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
-                 templatePath = path.resolve(templatePath); 
-                 debugHTML("template: " + templatePath);
-                 cliArgs += " --template " + templatePath;
+                    var templatePath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
+                    templatePath = path.resolve(templatePath); 
+                    debugHTMLOptions("template added: " + templatePath);
+                    cliArgs += " --template " + templatePath;
                 } else if(jsonObj[key].includes("-c")){
                     var ccsPath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
                     ccsPath = path.resolve(ccsPath); 
-                    debugHTML("css: " + ccsPath);
+                    debugHTMLOptions("css added: " + ccsPath);
                     cliArgs += " -c " +ccsPath;
+                } else if(jsonObj[key].includes("-o")){
+                    debugHTMLOptions("Arg [ -o ] cannot be changed. Ignoring.");
                 } else {
+                    debugHTMLOptions("Arg [ "+jsonObj[key]+" ] added.")
                     cliArgs += " " + jsonObj[key];
                 }
             }
         };
-        //if no specified output name was given, use the default
-        if(!cliArgs.includes("-o")){
-            cliArgs += " -o" + fileName;
-        }
-        //remove leading space
-        if(cliArgs.charAt(0) == " ") cliArgs = cliArgs.substring(1);
+        //add default title if none was given
+        if(!cliArgs.includes("-M")) cliArgs += " -M title:defaultTitle";
     } else {
-        cliArgs = "-o " + fileName + " -M title:defaultTitle";
-        debugHTML("No pandoc Args given in manifest. Using Default pandoc arguments: " + cliArgs);
+        cliArgs += " -M title:defaultTitle";
+        debugHTML("No pandoc Args given in manifest. Using arguments: " + cliArgs);
     }
     return cliArgs;
 }
@@ -142,10 +142,6 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
         for (var key in optionsJson){
             if(optionsJson.hasOwnProperty(key)){
                 switch (key) {
-                    case 'output':
-                        options.output = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                        break;
                     case 'marginBottom':
                     case 'B':
                         options.marginBottom = optionsJson[key];
@@ -180,6 +176,7 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
                         break;
                     case 'enableLocalFileAccess':
                     case 'disableSmartShrinking':
+                    case 'output':
                         debugPDFOptions("Option [ "+key+" ] cannot be changed for output. Ignoring.");
                         break;
                     default:
@@ -194,10 +191,18 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
     return options;
 }
 
-function renameToFinalTitle(){
-    fs.rename(pdfOutputFileABS, mTitle+".pdf",  () => {
-        console.log("File Renamed to " + path.parse(pdfOutputFileABS).base);
-      });
+function renameToManifestOutputName(manifestJson, inputFile, mode){
+    var title = path.parse(manifestJson.output).name;
+    var output = path.parse(inputFile).dir;
+    if(mode == MODE.pdf){
+        output = path.join(output, title + EXT.pdf)
+    }
+    if(mode == MODE.html){
+        output = path.join(output, title + EXT.html)
+    }
+    fs.rename(inputFile, output,  () => {
+        console.log("File Renamed to " + path.parse(output).base);
+    });
 }
 
 exports.build = build;
