@@ -6,6 +6,7 @@ var doctoc = require('doctoc/lib/transform');
 var debug = require('debug')('presentation');
 var debugHTML = require('debug')('presentation:html');
 var debugPDF = require('debug')('presentation:pdf');
+var debugPDFOptions = require('debug')('presentation:pdf:options');
 var fs = require('fs');
 var EXT = {
     "pdf": ".pdf",
@@ -76,6 +77,7 @@ function toPDF(manifestJson, inputFile, outputFile, mode){
     var options = buildWkhtmltopdfOptions(manifestJson.wkhtmltopdf, outputFile);
     debugHTML("input: "+inputFile);
     debugHTML("Args: "+JSON.stringify(options));
+    return;
     wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
         if (err) {
             console.error('WKHTMLTOPDF Oh Nos: ',err);
@@ -123,6 +125,7 @@ function buildPandocArgs(jsonObj, fileName){
 
 //TODO test this
 function buildWkhtmltopdfOptions(optionsJson, fileName){
+    debugPDF("Adding wkhtmltopdf options from Manifest");
     var options = {
         output: fileName,
         enableLocalFileAccess: true,
@@ -138,29 +141,50 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
     if(optionsJson){
         for (var key in optionsJson){
             if(optionsJson.hasOwnProperty(key)){
-                if(key == 'output'){
-                    options.output = optionsJson[key];
-                }
-                if(key == 'marginBottom' || key == 'B'){
-                    options.marginBottom = optionsJson[key];
-                }
-                if(key == 'marginTop' || key == 'T'){
-                    options.marginTop = optionsJson[key];
-                }
-                if(key == 'marginLeft' || key == 'L'){
-                    options.marginLeft = optionsJson[key];
-                }
-                if(key == 'marginRight' || key == 'R'){
-                    options.marginRight = optionsJson[key];
-                }
-                if(key == 'pageSize' || key == 's'){
-                    options.pageSize = optionsJson[key];
-                }
-                if(key == 'footerLine'){
-                    options.footerLine = optionsJson[key];
-                }
-                if(key == 'footerCenter'){
-                    options.footerCenter = optionsJson[key];
+                switch (key) {
+                    case 'output':
+                        options.output = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
+                        break;
+                    case 'marginBottom':
+                    case 'B':
+                        options.marginBottom = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
+                        break;
+                    case 'marginTop':
+                    case 'T':
+                        options.marginTop = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
+                        break;
+                    case 'marginLeft':
+                    case 'L':
+                        options.marginLeft = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
+                        break;
+                    case 'marginRight':
+                    case 'R':
+                        options.marginRight = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
+                        break;
+                    case 'pageSize':
+                        options.pageSize = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
+                        break;
+                    case 'footerLine':
+                        options.footerLine = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
+                        break;
+                    case 'footerCenter':
+                        options.footerCenter = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
+                        break;
+                    case 'enableLocalFileAccess':
+                    case 'disableSmartShrinking':
+                        debugPDFOptions("Option [ "+key+" ] cannot be changed for output. Ignoring.");
+                        break;
+                    default:
+                        options[key] = optionsJson[key];
+                        debugPDFOptions("Option [ "+key+" ] added.");
                 }
             }
         };
