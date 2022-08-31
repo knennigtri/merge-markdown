@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "1.0.0",
+  "version": "0.9.0",
   "description": "Creates a single markdown file (with TOC) from several markdown files and optionally add html/pdf presentation",
   "repository": {
     "type": "git",
