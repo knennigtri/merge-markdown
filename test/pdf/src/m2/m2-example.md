@@ -70,7 +70,7 @@ Prerequisites:
 1. Go to Tools > Operations > Maintenance
 1. Click on the **Daily Maintenance Window** card.
 2. Select the **+ Add** button
-    <img src="links/Backpack_C.jpg" alt="Backpack_C" style="zoom: 15%;" />
+    <img src="../../../assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
 3. From the dropdown, select **Project Purge** and click **Save**
 4. The bottom of the Project Purge card specifies when it will run next. For testing purposes, you can manually start the task immeditately. 
 5. Hover over the card and click the **play** button. Notice how the purge task fails. This is because it has not been configured yet.
@@ -83,7 +83,7 @@ Minimizing the number of workflow instances increases the performance of the wor
 
 Configure **Adobe Granite Workflow Purge Configuration** to purge workflow instances according their age and status. You can also purge workflow instances of all models or of a specific model .
 
-<img src="links/Backpack_C.jpg" alt="Backpack_C" style="zoom: 15%;" />
+<img src="../../../assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
 
 You can also create multiple configurations of the service to purge workflow instances that satisfy different criteria. For example, create a configuration that purges the instances of a particular workflow model when they are running for much longer than the expected time. Create another configuration that purges all completed workflows after a certain number of days to minimize the size of the repository.
 
@@ -121,7 +121,7 @@ You can also create multiple configurations of the service to purge workflow ins
 6. Since configurations are considered immutable content, navigate to **devops.ui.apps > src/main/content/jcr_root > apps > training**
 
 7. Right click on **config.author** and select **New > File**
-    <img src="links/Backpack_C.jpg" alt="Backpack_C" style="zoom: 15%;" />
+    <img src="../../../assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
 
 8. Enter **com.adobe.granite.workflow.purge.Scheduler~training.cfg.json** as the file name and click **Finish.**
 

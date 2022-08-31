@@ -10,7 +10,7 @@ typora-copy-images-to: ../assets/lorem-module
 # Lorem Ipsum One
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur egestas dapibus ex, vel ultrices dui posuere id. In eget vehicula augue, et porttitor justo. Curabitur id vehicula enim. Pellentesque finibus lacus vitae magna aliquam, vitae vulputate nibh molestie. Aliquam ut augue nisi. Vivamus in mauris volutpat, pellentesque orci ultrices, sagittis libero. Proin volutpat enim lorem, a accumsan diam tempor eget. Nunc sed neque sed augue imperdiet ultrices vitae a mi. Suspendisse ultricies arcu at est convallis, ut vehicula felis tincidunt. Nulla facilisi.
-![asset-1](../assets/lorem-module/asset-1.png)
+![sample-image](../../../assets/sample-image.png)
 
 *WKND SPA Implementation*
 
@@ -22,7 +22,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur egestas dapib
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit.[^o-1] Integer et ullamcorper ipsum, in efficitur mi. Ut vitae velit et orci eleifend elementum. Sed vestibulum tortor lacus, eu aliquet velit luctus fermentum. Suspendisse non sapien nec arcu volutpat accumsan vehicula eget mi. Interdum et malesuada fames ac ante ipsum primis in faucibus. Donec sit amet finibus diam. Vivamus malesuada eu massa pulvinar viverra. Aliquam accumsan ultrices ornare. Etiam sed elementum odio.
 
-![asset-1](../assets1/lorem-module/asset-1.png)
+![sample-image](../../../assets/sample-image.png)
 
 * [Lorem](https://www.lipsum.com/)
 * [Ipsum](https://www.lipsum.com/)

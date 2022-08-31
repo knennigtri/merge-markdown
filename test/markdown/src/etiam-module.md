@@ -2,7 +2,7 @@
 title: Etiam module Three
 description: Etiam a fermentum nibh. Fusce molestie vitae nulla a mollis. Quisque lectus neque, faucibus in interdum in, dignissim a enim. Nullam at ex at felis rhoncus sodales.
 editor: https://typora.io/
-typora-copy-images-to: assets/etiam-module
+typora-copy-images-to: ../../assets
 ---
 
 #<!--#--> Etiam module Three
