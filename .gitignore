@@ -3,7 +3,10 @@
 /test/src/**/*.*.md
 output/
 Output/
+merged/
+Merged/
 notes.txt
+*.temp
 *+*
 
 # Logs

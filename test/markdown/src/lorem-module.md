@@ -3,7 +3,7 @@ title: Lorem Ipsum One
 description: Etiam a fermentum nibh. Fusce molestie vitae nulla a mollis. Quisque lectus neque, faucibus in interdum in, dignissim a enim. Nullam at ex at felis rhoncus sodales
 subject: module subject
 editor: https://typora.io/
-typora-copy-images-to: assets/lorem-module
+typora-copy-images-to: ../../assets
 ---
 
 
@@ -21,7 +21,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur egestas dapib
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit.[^o-1] Integer et ullamcorper ipsum, in efficitur mi. Ut vitae velit et orci eleifend elementum. Sed vestibulum tortor lacus, eu aliquet velit luctus fermentum. Suspendisse non sapien nec arcu volutpat accumsan vehicula eget mi. Interdum et malesuada fames ac ante ipsum primis in faucibus. Donec sit amet finibus diam. Vivamus malesuada eu massa pulvinar viverra. Aliquam accumsan ultrices ornare. Etiam sed elementum odio.
 
-![asset-1](assets1/lorem-module/asset-1.png)
+![sample-image](../../assets/sample-image.png)
 
 * [Lorem](https://www.lipsum.com/)
 * [Ipsum](https://www.lipsum.com/)

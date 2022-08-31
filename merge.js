@@ -5,7 +5,13 @@ var concat = require('concat');
 var markdownLinkCheck = require('markdown-link-check');
 var doctoc = require('doctoc/lib/transform');
 var validUrl = require('valid-url');
-var v,d,onlyQA;
+var debug = require('debug')('merge');
+var debugRelLinks  = require('debug')('merge:relLinks');
+var debugYaml = require('debug')('merge:yaml');
+var debugtoc = require('debug')('merge:toc');
+var debugReplace = require('debug')('merge:replace');
+var debugLinkcheck = require('debug')('merge:linkcheck');
+var onlyQA;
 var EXT = {
     "linkcheck": ".linkcheck.md",
     "qa": ".qa.md",
@@ -14,17 +20,14 @@ var EXT = {
 };
 exports.EXT = EXT;
 
-
-var markdownMerge = function(manifestJSON, relPathManifest, verbose ,debug, qaContent){
-    v = verbose || false;
-    d = debug || false;
+var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
     onlyQA = qaContent || false;
     var inputJSON = manifestJSON.input;
     var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
-    var outputLinkcheckFileStr = outputFileStr.replace(".md",EXT.linkcheck);
+    var outputLinkcheckFileStr = updateExtension(outputFileStr, EXT.linkcheck);
     var qaRegex;
-    if(onlyQA) qaRegex = new RegExp(manifestJSON.qa.exclude);
-    if(onlyQA && v) console.log("QA exclude regex: " + qaRegex);
+    if(manifestJSON.qa) qaRegex = new RegExp(manifestJSON.qa.exclude);
+    if(onlyQA) console.log("QA exclude regex: " + qaRegex);
 
     //Iterate through all of the input files in manifest apply options
     var fileArr= [];
@@ -47,15 +50,16 @@ var markdownMerge = function(manifestJSON, relPathManifest, verbose ,debug, qaCo
         var generatedContent = updateAssetRelPaths(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr));
         
         //applies gobal generate rules
-        if (v) console.log("--applying manifest options--");
-        generatedContent = applyGeneratedContent(generatedContent,manifestJSON);
+        debug("--Apply global manifest OPTIONS--");
+        generatedContent = applyContentOptions(generatedContent,manifestJSON);
         //Applies file specific generate rules
-        if (v) console.log("--applying file options--");
-        generatedContent = applyGeneratedContent(generatedContent,inputJSON[inputKey]);
+        debug("--Apply file specific OPTIONS--");
+        generatedContent = applyContentOptions(generatedContent,inputJSON[inputKey]);
         var tempFile = inputFileStr+".temp";
         fs.writeFileSync(tempFile,generatedContent);
         
         //checks for broken links within the content
+        debug("--Create/Update linkcheck file--");
         linkCheck(inputFileStr,outputLinkcheckFileStr);
 
         //add the  temp file to the list to merge together
@@ -63,7 +67,7 @@ var markdownMerge = function(manifestJSON, relPathManifest, verbose ,debug, qaCo
         console.log(path.basename(tempFile)+" added to merge list");
 
         //Adds any same name .ref.md files to refFilesList
-        var refFileStr = inputFileStr.replace(".md",EXT.ref)
+        var refFileStr = updateExtension(inputFileStr, EXT.ref)
         if(fs.existsSync(refFileStr)){
             console.log(path.basename(refFileStr)+ " added to references merge list");
             refFileArr.push(refFileStr);
@@ -76,16 +80,22 @@ var markdownMerge = function(manifestJSON, relPathManifest, verbose ,debug, qaCo
     
     console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
     if(onlyQA){
-        outputFileStr = outputFileStr.replace(".md",EXT.qa);
+        outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
     if(manifestJSON.mergedTOC){
-        return createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
+        outputFileStr = createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
+    } else {
+        outputFileStr = createSingleFile(mergedFileArr, outputFileStr);
     }
-    return createSingleFile(mergedFileArr, outputFileStr);
+    
+    //cleanup 
+    removeTempFiles(mergedFileArr);
+
+    return outputFileStr;
 }
 
-async function createSingleFile(list, outputFileStr, doctocOptions){
-    if (d) console.log("Creating single file");
+function createSingleFile(list, outputFileStr, doctocOptions){
+    debug("Creating single file");
     if(list == null || list == ""){
         console.log("List to merge is not valid. Aborting..");
         return;
@@ -94,30 +104,22 @@ async function createSingleFile(list, outputFileStr, doctocOptions){
     if(!fs.existsSync(outputPath)){
         fs.mkdirSync(outputPath);
     }
-    concat(list, outputFileStr);
-
-    //Remove temp files
-    findFiles('./',/\.temp$/,function(tempFilename){
-        fs.unlinkSync(tempFilename);
+    concat(list, outputFileStr).then(result => {
+        if(doctocOptions){
+            fs.readFile(outputFileStr, 'utf-8', function (err, data) {
+                var outDoctoc = doctoc(data,"github.com",3,"",false,"",false,true, false);
+                fs.writeFile(outputFileStr, outDoctoc.data, 'utf-8', function (err) {
+                    if (err) return console.log(err);
+                    return outputFileStr;
+                });
+            });
+        } else {
+            return outputFileStr;
+        }
     });
-
-    
-    if(doctocOptions){
-        var promise = new Promise((res, rej) => {
-            setTimeout(() => res("Now it's done!"), 500)
-        });
-        var wait = await promise; 
-
-        var mergedContent = fs.readFileSync(outputFileStr, 'utf-8');
-        fs.rmSync(outputFileStr);
-        // Write TOC with doctoc
-        var outDoctoc = doctoc(mergedContent,"github.com",3,"",false,"",false,true);
-        fs.writeFileSync(outputFileStr, outDoctoc.data, 'utf-8');
-    }
-    return outputFileStr;
 }
 
-function applyGeneratedContent(origContent, fileOptions) {
+function applyContentOptions(origContent, fileOptions) {
     var scrubbedContent = origContent;
 
     if(fileOptions == null) return scrubbedContent;
@@ -137,12 +139,12 @@ function applyGeneratedContent(origContent, fileOptions) {
         if(fileOptions.TOC.toString().toLowerCase() != "true"){
             tocTitle = fileOptions.TOC
         } 
-        // Write TOC with doctoc
-        // https://github.com/thlorenz/doctoc
-        var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true);
+        debug("[OPTION] Add TOC...");
+        //(files, mode, maxHeaderLevel, title, notitle, entryPrefix, processAll, stdOut, updateOnly)
+        var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true,false);
         if(outDoctoc.data != null){
             scrubbedContent = outDoctoc.data;
-            if (v) console.log("TOC Added");
+            debugtoc("TOC Added");
         }
     } 
     return scrubbedContent;
@@ -150,16 +152,18 @@ function applyGeneratedContent(origContent, fileOptions) {
 
 /** Searches for ![*](relPath) or src="relPath" in a string and replaces the asset
  * relPath with an absolute one
+ * Debug=merge:relLinks
  */
 function updateAssetRelPaths(fileContents,inputPath){
     var resultContent=[];
     var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
 
-    if(d) console.log("Rewriting Relative Asset Paths");
+    debug("Rewriting Relative Asset Paths");
 
     //Go through each line that and 
     var lines = fileContents.split("\n");
-    lines.forEach(line => {
+    var count = 0;
+    lines.forEach((line, lineNumber) => {
         var match = line.match(regex);
         var origAssetRelPath = "";
         //if found capture relPath
@@ -174,8 +178,9 @@ function updateAssetRelPaths(fileContents,inputPath){
                 //resolve the asset path
                 var origAssetPath = path.resolve(inputPath, origAssetRelPath);
 
-                if(d) console.log("origAssetRelPath: "+origAssetRelPath);
-                if(d) console.log("origAssetPath: "+origAssetPath);
+                count++;
+                debugRelLinks("[Line " + lineNumber + "]: "+origAssetRelPath);
+                debugRelLinks("Updated to: "+origAssetPath);
 
                 var newLine = line.replace(origAssetRelPath,origAssetPath);
                 resultContent.push(newLine);
@@ -186,6 +191,7 @@ function updateAssetRelPaths(fileContents,inputPath){
             resultContent.push(line);
         }
     });
+    debugRelLinks(count + " relative paths updated");
     return resultContent.join("\n");
 }
 
@@ -194,7 +200,7 @@ function updateAssetRelPaths(fileContents,inputPath){
  * @returns String that has YAML removed
  */
 function removeYAML(fileContents) {
-    if(d) console.log("Removing YAML content");
+    debug("[OPTION] Remove YAML...");
     var resultContent = fileContents;
     var lines = fileContents.split("\n");
     var i=0;
@@ -219,34 +225,32 @@ function removeYAML(fileContents) {
             break;
         }
     }
-    if(d) console.log("S("+startYAML+")E("+endYAML+")✓'d("+i+")T("+lines.length+")");
+    debugYaml("S("+startYAML+")E("+endYAML+")✓'d("+i+")T("+lines.length+")");
     if(startYAML != -1 && endYAML != -1){
         //shows YAML being removed
-        if(d) console.log("Removing S("+startYAML+")->E("+endYAML+") YAML:")
+        debugYaml("Removing S("+startYAML+")->E("+endYAML+") YAML:")
         var yaml = lines.splice(startYAML,1+endYAML-startYAML).join("\n");
-        if(d) console.log(yaml);
+        debugYaml(yaml);
         resultContent = lines.join("\n");
-        if (v) console.log("YAML removed");
+        debugYaml("YAML removed");
     } else {
-        if (v) console.log("No YAML found for removal");
+        debugYaml("No YAML found for removal");
     }
     return  resultContent;
 }
 
 /** Replaces any value with another value. 
  * Regex values are allowed and will be wrapped with /str/g
- * @param {*} fileContents - String that contains the replaceable characters
- * @param {*} replacements - key value pairs that contain the find/replace values.
- * @returns String that contains the replaced keys with their values
+ * Debug=merge:replace
  */
 function replaceStrings(fileContents,replacements){
-    if(d) console.log("Find and Replacing Strings");
+    debug("[OPTION] Find and Replace Strings...");
     var replacedContent = fileContents;
     Object.keys(replacements).forEach(function(replaceKey) {
         var findRegex = "";
         findRegex = new RegExp(replaceKey, 'g');
         var replaceStr = replacements[replaceKey];
-        if(v) console.log("Replacing: "+findRegex+" with: "+replaceStr);
+        debugReplace("Replacing: "+findRegex+" with: "+replaceStr);
         replacedContent = replacedContent.replace(findRegex,replaceStr); 
     });
     return replacedContent;
@@ -255,11 +259,9 @@ function replaceStrings(fileContents,replacements){
 /** Function that uses markdown-link-check to validate all URLS and relative links to images
  * Writes a file called outputFile.linkcheck.md with the results
  * https://github.com/tcort/markdown-link-check
- * @param {*} inputFileStr markdown file name to perform link checking
- * @param {*} outputFileStr output file name to write the results to
+ * DEBUG=merge:linkcheck
  */
 function linkCheck(inputFileStr, outputFileStr) {
-    if(d) console.log("Linkchecking...");
     var outputFolder = path.dirname(outputFileStr)
     if(!fs.existsSync(outputFolder)){
         fs.mkdirSync(outputFolder);
@@ -271,7 +273,7 @@ function linkCheck(inputFileStr, outputFileStr) {
     
     var inputFolder = path.dirname(inputFileStr);
     var base = path.join("file://",process.cwd(),inputFolder);
-    if(d) console.log("Input Folder Location: "+base);
+    debugLinkcheck("Folder to be linkchecked: "+base);
     var fileContents = fs.readFileSync(inputFileStr, 'utf-8');
     markdownLinkCheck(fileContents,
         {
@@ -282,7 +284,9 @@ function linkCheck(inputFileStr, outputFileStr) {
                 console.error('Error', err);
                 return;
             }
-            var linkcheckResults = "FILE: " + inputFileStr + " \n";
+            var linkcheckResults = "FILE: " + inputFileStr;
+            debugLinkcheck(linkcheckResults);
+            linkcheckResults += " \n";
             results.forEach(function (result) {
                 var icon = "";
                 switch(result.status) {
@@ -297,8 +301,8 @@ function linkCheck(inputFileStr, outputFileStr) {
                         break;
                   }
                 var statusStr="["+icon+"] " + result.link + " is " + result.status;
-                if(d) linkcheckResults+=" "+ statusStr + " \n";
-                if(!d && result.status != "alive"){
+                debugLinkcheck(statusStr);
+                if(result.status != "alive"){ 
                     linkcheckResults+=" "+ statusStr + " \n";
                 }
             });
@@ -311,21 +315,21 @@ function linkCheck(inputFileStr, outputFileStr) {
     });
 }
 
-// Helper method to find all .temp files and do something with them
-function findFiles(startPath,filter,callback){
-    if (!fs.existsSync(startPath)){
-        console.log("no dir ",startPath);
-        return;
+//Helper method to updateing the extension
+function updateExtension(fileStr, newExt){
+    var ext = path.extname(fileStr);
+    if(ext != ""){
+        var i = fileStr.lastIndexOf(".");
+        fileStr = fileStr.substring(0,i);
     }
-    var files=fs.readdirSync(startPath);
-    for(var i=0;i<files.length;i++){
-        var filename=path.join(startPath,files[i]);
-        var stat = fs.lstatSync(filename);
-        if (stat.isDirectory()){
-            findFiles(filename,filter,callback); //recurse
-        }
-        else if (filter.test(filename)) callback(filename);
-    };
+    if(newExt.charAt(0) != ".") newExt = "." + newExt;
+    return fileStr +newExt;
+}
+
+function removeTempFiles(fileArr){
+    fileArr.forEach(element => {
+        fs.unlinkSync(element);
+    });
 }
 
 exports.markdownMerge = markdownMerge;

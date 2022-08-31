@@ -1,11 +1,10 @@
 ---
 input:
- frontmatter.md: ""
- preamble.md: ""
+ ../../frontmatter.md: ""
  lorem-module.md: ""
  ipsum-module.md: ""
  etiam-module.md: ""
-output: merge/onlyGlobalOptions-Guide.md
+output: merged/onlyGlobalOptions.md
 qa: {exclude: "(frontmatter|preamble)"}
 noYAML: true
 replace:

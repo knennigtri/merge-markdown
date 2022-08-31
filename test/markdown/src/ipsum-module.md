@@ -2,8 +2,7 @@
 title: Ipsum module Two
 description: Etiam a fermentum nibh. Fusce molestie vitae nulla a mollis. Quisque lectus neque, faucibus in interdum in, dignissim a enim. Nullam at ex at felis rhoncus sodales.
 editor: https://typora.io/
-typora-copy-images-to: assets/ipsum-module
-
+typora-copy-images-to: ../../assets
 ---
 
 #<!--#--> Ipsum module Two
@@ -44,7 +43,7 @@ Nullam varius bibendum elit, eu lobortis magna laoreet vitae. Donec nec vestibul
 2. Suspendisse euismod lacus sodales dapibus vehicula.
 3. Aenean vitae magna sollicitudin, maximus lacus quis, finibus orci.
 4. Sed a ex interdum, lobortis libero ut, vulputate arcu.
-![asset-2](assets/ipsum-module/asset-2.png)
+![sample-image](../../assets/sample-image.png)
 5. Maecenas volutpat quam ut dui maximus, vitae accumsan dolor auctor.
 6. Vivamus vitae urna at ex mollis varius ac ut neque.
 
@@ -54,9 +53,9 @@ Nullam varius bibendum elit, eu lobortis magna laoreet vitae. Donec nec vestibul
 
 1. Duis et justo ornare, scelerisque ligula eu, mattis lacus.
 2. Donec quis lectus ac ligula ultricies suscipit sed convallis nunc.
-   <img src="assets/ipsum-module/asset-2.png" alt="asset-2" style="zoom:50%;" />
+   <img src="../../assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
 3. Pellentesque ac est id lorem cursus fringilla a sit amet diam.
-4. In dapibus ligula blandit odio porta ornare.![asset-3](assets/ipsum-module/asset-3.png)
+4. In dapibus ligula blandit odio porta ornare.![sample-image](../../assets/sample-image.png)
 
 #### Congratulations! (h4)
 
