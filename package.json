@@ -8,7 +8,7 @@
   },
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
-    "build": "npm run readmeTOC && npm ci",
+    "build": "npm run readmeTOC && npm ci && npm i --package-lock-only",
     "readmeTOC": "doctoc README.md --github --title='# Contents'",
     "m-extTest": "merge-markdown -m test/markdown/src/manifest.json; merge-markdown -m test/markdown/src/manifest.yml",
     "m-ioTest": "merge-markdown -m test/markdown/src/manifest-noIO.yml; merge-markdown -m test/markdown/src/manifest-noInput.yml; merge-markdown -m test/markdown/src/manifest-noOutput.yml",
