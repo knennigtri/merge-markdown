@@ -124,7 +124,7 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
 
 function buildWkhtmltopdfOptions(optionsJson, fileName){
     debugPDF("Adding wkhtmltopdf options from Manifest");
-    var options = {
+    var defaultOptions = {
         output: fileName,
         enableLocalFileAccess: true,
         disableSmartShrinking: true,
@@ -139,54 +139,21 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
     if(optionsJson){
         for (var key in optionsJson){
             if(optionsJson.hasOwnProperty(key)){
-                switch (key) {
-                    case 'marginBottom':
-                    case 'B':
-                        options.marginBottom = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                        break;
-                    case 'marginTop':
-                    case 'T':
-                        options.marginTop = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                        break;
-                    case 'marginLeft':
-                    case 'L':
-                        options.marginLeft = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                        break;
-                    case 'marginRight':
-                    case 'R':
-                        options.marginRight = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                        break;
-                    case 'pageSize':
-                        options.pageSize = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                        break;
-                    case 'footerLine':
-                        options.footerLine = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                        break;
-                    case 'footerCenter':
-                        options.footerCenter = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                        break;
-                    case 'enableLocalFileAccess':
-                    case 'disableSmartShrinking':
-                    case 'output':
+                if(key == 'enableLocalFileAccess' ||
+                    key == 'disableSmartShrinking' ||
+                    key == 'output'){
                         debugPDFOptions("Option [ "+key+" ] cannot be changed for output. Ignoring.");
-                        break;
-                    default:
-                        options[key] = optionsJson[key];
-                        debugPDFOptions("Option [ "+key+" ] added.");
-                }
+                        delete optionsJson[key]; 
+                    }
             }
         };
-    } else {
-        debugPDF("No options given in manifest. Using Default wkhtmltopdf options.");
+        optionsJson.enableLocalFileAccess = true;
+        optionsJson.disableSmartShrinking = true;
+        optionsJson.output = fileName;
+        return optionsJson;
     }
-    return options;
+    debugPDF("No options given in manifest. Using Default wkhtmltopdf options.");
+    return defaultOptions;
 }
 
 function renameToManifestOutputName(manifestJson, inputFile, mode){
