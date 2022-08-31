@@ -52,7 +52,8 @@ function toHTML(manifestJson, inputFile, inputPath, mode){
     debugHTML("Args: "+pandocArgs);
     nodePandoc(inputFile, pandocArgs, function (err, result) {
         if (err) {
-            console.error('PANDOC Oh Nos: ',err);
+            console.error('PANDOC: ',err);
+            console.log("Verify the pandoc arguments according to pandoc documentation");
         } else {
             console.log(path.parse(outputFile).base + " created from " + path.parse(inputFile).base);
             switch (mode){
@@ -81,7 +82,8 @@ function toPDF(manifestJson, inputFile, mode){
     debugPDF("Args: "+JSON.stringify(options));
     wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
         if (err) {
-            console.error('WKHTMLTOPDF Oh Nos: ',err);
+            console.error('WKHTMLTOPDF: ',err);
+            console.log("Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
         } else {
             console.log(path.parse(outputFile).base + " created from " + path.parse(inputFile).base);
             renameToManifestOutputName(manifestJson, outputFile, mode);
@@ -114,10 +116,7 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
                 }
             }
         };
-        //add default title if none was given
-        if(!cliArgs.includes("-M")) cliArgs += " -M title:defaultTitle";
     } else {
-        cliArgs += " -M title:defaultTitle";
         debugHTML("No pandoc Args given in manifest. Using arguments: " + cliArgs);
     }
     return cliArgs;
