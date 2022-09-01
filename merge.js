@@ -83,15 +83,10 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
         outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
     if(manifestJSON.mergedTOC){
-        outputFileStr = createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
+        createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
     } else {
-        outputFileStr = createSingleFile(mergedFileArr, outputFileStr);
+        createSingleFile(mergedFileArr, outputFileStr);
     }
-    
-    //cleanup 
-    removeTempFiles(mergedFileArr);
-
-    return outputFileStr;
 }
 
 function createSingleFile(list, outputFileStr, doctocOptions){
@@ -109,11 +104,18 @@ function createSingleFile(list, outputFileStr, doctocOptions){
             fs.readFile(outputFileStr, 'utf-8', function (err, data) {
                 var outDoctoc = doctoc(data,"github.com",3,"",false,"",false,true, false);
                 fs.writeFile(outputFileStr, outDoctoc.data, 'utf-8', function (err) {
-                    if (err) return console.log(err);
+                    if (err) {
+                        console.log("DOCTOC Error: " +err);
+                        return;
+                    }
+                    removeTempFiles(list); //cleanup
+                    console.log(outputFileStr + " created.");
                     return outputFileStr;
                 });
             });
         } else {
+            removeTempFiles(list); //cleanup
+            console.log(outputFileStr + " created.");
             return outputFileStr;
         }
     });
