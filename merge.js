@@ -23,7 +23,7 @@ exports.EXT = EXT;
 var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
     onlyQA = qaContent || false;
     var inputJSON = manifestJSON.input;
-    var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
+    var outputFileStr = path.join(relPathManifest, manifestJSON.output)
     var outputLinkcheckFileStr = updateExtension(outputFileStr, EXT.linkcheck);
     var qaRegex;
     if(manifestJSON.qa) qaRegex = new RegExp(manifestJSON.qa.exclude);
@@ -33,7 +33,7 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
     var fileArr= [];
     var refFileArr= [];
     Object.keys(inputJSON).forEach(function(inputKey) {
-        var inputFileStr = relPathManifest +"/"+ inputKey;
+        var inputFileStr = path.join(relPathManifest, inputKey);
         console.log("*********"+inputFileStr+"*********");
 
         if(onlyQA && qaRegex.test(inputFileStr)){
@@ -272,7 +272,7 @@ function linkCheck(inputFileStr, outputFileStr) {
     }
     
     var inputFolder = path.dirname(inputFileStr);
-    var base = path.join("file://",process.cwd(),inputFolder);
+    var base = path.join("file:",path.resolve(inputFolder)); //TODO Might be failing on windows
     debugLinkcheck("Folder to be linkchecked: "+base);
     var fileContents = fs.readFileSync(inputFileStr, 'utf-8');
     markdownLinkCheck(fileContents,

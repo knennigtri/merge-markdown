@@ -45,8 +45,8 @@ var build = async function(jsonObj, inputPath, mode){
  * Input and Output files are expected to be ABS
  */
 function toHTML(manifestJson, inputFile, inputPath, mode){
-    debug("Creating HTML...")
-    var outputFile = path.parse(inputFile).dir + "/temp.html";
+    debug("Creating HTML...");
+    var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
     var pandocArgs = buildPandocArgs(manifestJson.pandoc, inputPath, outputFile);
     debugHTML("input: "+inputFile);
     debugHTML("Args: "+pandocArgs);
@@ -75,15 +75,16 @@ function toHTML(manifestJson, inputFile, inputPath, mode){
  * Input and Output files are expected to be ABS
  */
 function toPDF(manifestJson, inputFile, mode){
-    debug("Creating PDF...")
-    var outputFile = path.parse(inputFile).dir + "/temp.pdf";
+    debug("Creating PDF...");
+    var outputFile = path.join(path.parse(inputFile).dir, "temp.pdf");
     var options = buildWkhtmltopdfOptions(manifestJson.wkhtmltopdf, outputFile);
     debugPDF("input: "+inputFile);
     debugPDF("Args: "+JSON.stringify(options));
     wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
         if (err) {
             console.error('WKHTMLTOPDF: ',err);
-            console.log("Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
+            if(err.includes("spawn wkhtmltopdf ENOENT")) console.log("Make sure wkhtmltopdf is installed from http://wkhtmltopdf.org/downloads.html");
+            else console.log("Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
         } else {
             console.log(path.parse(outputFile).base + " created from " + path.parse(inputFile).base);
             renameToManifestOutputName(manifestJson, outputFile, mode);
@@ -94,7 +95,7 @@ function toPDF(manifestJson, inputFile, mode){
 }
 
 function buildPandocArgs(jsonObj, inputPath, fileName){
-    var cliArgs = "-o" + fileName;
+    var cliArgs = "-o " + fileName;
     if(jsonObj){
         for (var key in jsonObj){
             if (jsonObj.hasOwnProperty(key)) {

@@ -116,7 +116,7 @@ var init = function(manifestParam, qaParam) {
   } else { //if there is no -m check for a default manifest file
     console.log("No -m argument given. Using default: "+ DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
     manifestJSON = getDefaultManifestJSON(".", args.qa);
-    manifestRelPath = "./";
+    manifestRelPath = ".";
   }
 
   if(manifestJSON && manifestJSON.length != 0){
@@ -243,7 +243,7 @@ function generateFileNameFromFolder(inputPath, extension){
   var pathStr = path.resolve(inputFolder);
   // get last directory in directory path
   var fileStr = pathStr.match(/([^\/]*)\/*$/)[1];
-  return "merged/" + fileStr + "." + ext;
+  return path.join("merged", fileStr + "." + ext);
 }
 
 /**
