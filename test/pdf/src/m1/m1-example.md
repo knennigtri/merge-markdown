@@ -86,31 +86,31 @@ The Maintenance UI can be used to easily configure the windows on a local AEM in
 
 The Maintenance UI can be used to easily configure the windows on a local AEM instance and them syncronzied back into the AEM project to be checked into source control. Alternatively, you can add and edit the xml files directly.
 
-## Exercise 1: Example Exercise (H2)
+## Exercise 1: Check each step has a Image (H2)
 
-**Scenario**: Your company has started using AEM projects to help support new products being added to your website. To maintain the performance in AEM, you need to purge the unused projects that users might have abandoned or are no longer needed. Because projects are used so often, purging needs to be performed daily.
+**Scenario**: Each step has an Image. make sure they render correctly.
 
 Prerequisites:
 
-- AEM running
+- One
+- Two Three
 
-1. Go to Tools > Operations > Maintenance
-1. Click on the **Daily Maintenance Window** card.
-2. Image with Return, tab, and < img > with zoom 15%
+This is the beginning of the Task
+
+1. Image with Return, tab, and < img > with zoom 15%
     <img src="../../../assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
-3. Image with NO Return and < img > <img src="../../../assets/sample-image.png" alt="sample-image" />
-4. Image with Return, tab, and ! [] ()
+2. Image with NO Return and < img > <img src="../../../assets/sample-image.png" alt="sample-image" />
+3. Image with Return, tab, and ! [] ()
     ![sample-image](../../../assets/sample-image.png)
-5. Image with NO Return and ! [] () ![sample-image](../../../assets/sample-image.png)
-6. Image with Return only and < img >
+4. Image with NO Return and ! [] () ![sample-image](../../../assets/sample-image.png)
+5. Image with Return only and < img >
 <img src="../../../assets/sample-image.png" alt="sample-image" />
-1. Image with 2 Returns and < img >
+6. Image with 2 Returns and < img >
 
     <img src="../../../assets/sample-image.png" alt="sample-image" />
 
-2. From the dropdown, select **Project Purge** and click **Save**
-3. The bottom of the Project Purge card specifies when it will run next. For testing purposes, you can manually start the task immeditately. 
-4. Hover over the card and click the **play** button. Notice how the purge task fails. This is because it has not been configured yet.
+7. Closing Image
+<img src="../../../assets/sample-image.png" alt="sample-image" />
 
 > **Congratulations!** You have successfully created a daily purge task within a maintenance window.
 
@@ -158,7 +158,6 @@ You can also create multiple configurations of the service to purge workflow ins
 6. Since configurations are considered immutable content, navigate to **devops.ui.apps > src/main/content/jcr_root > apps > training**
 
 7. Right click on **config.author** and select **New > File**
-    <img src="../../../assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
 
 8. Enter **com.adobe.granite.workflow.purge.Scheduler~training.cfg.json** as the file name and click **Finish.**
 
