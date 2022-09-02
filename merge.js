@@ -20,14 +20,17 @@ var EXT = {
 };
 exports.EXT = EXT;
 
-var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
+var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkCheck){
     onlyQA = qaContent || false;
     var inputJSON = manifestJSON.input;
     var outputFileStr = path.join(relPathManifest, manifestJSON.output)
+    var doNotCreateLinkcheckFile = noLinkCheck;
     var outputLinkcheckFileStr = updateExtension(outputFileStr, EXT.linkcheck);
     var qaRegex;
     if(manifestJSON.qa) qaRegex = new RegExp(manifestJSON.qa.exclude);
     if(onlyQA) console.log("QA exclude regex: " + qaRegex);
+
+    if(doNotCreateLinkcheckFile) console.log("Skipping linkcheck on all files");
 
     //Iterate through all of the input files in manifest apply options
     var fileArr= [];
@@ -58,9 +61,11 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
         var tempFile = inputFileStr+".temp";
         fs.writeFileSync(tempFile,generatedContent);
         
-        //checks for broken links within the content
-        debug("--Create/Update linkcheck file--");
-        linkCheck(inputFileStr,outputLinkcheckFileStr);
+        if(!doNotCreateLinkcheckFile){
+            //checks for broken links within the content
+            debug("--Create/Update linkcheck file--");
+            linkCheck(tempFile,outputLinkcheckFileStr);
+        }
 
         //add the  temp file to the list to merge together
         fileArr.push(tempFile);
@@ -159,7 +164,6 @@ function applyContentOptions(origContent, fileOptions) {
 function updateAssetRelPaths(fileContents,inputPath){
     var resultContent=[];
     var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
-
     debug("Rewriting Relative Asset Paths");
 
     //Go through each line that and 
@@ -167,24 +171,29 @@ function updateAssetRelPaths(fileContents,inputPath){
     var count = 0;
     lines.forEach((line, lineNumber) => {
         var match = line.match(regex);
-        var origAssetRelPath = "";
+        var relAssetPath = "";
         //if found capture relPath
         if(match != null){
             var origStr = match[0];
+            //Example: ![my-asset](links/my-asset.jpg)
             if(origStr.startsWith("![")){
-                origAssetRelPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
-            } else if(origStr.startsWith("src=")){
-                origAssetRelPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+                relAssetPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
+            } else {
+                //Example: src="links/my-asset.jpg"
+                if(origStr.startsWith("src=")){
+                    relAssetPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+                }
             } 
-            if(!validUrl.isUri(origAssetRelPath)){
+            //Check if path is a URL
+            if(!validUrl.isUri(relAssetPath)){
                 //resolve the asset path
-                var origAssetPath = path.resolve(inputPath, origAssetRelPath);
+                var absAssetPath = path.resolve(inputPath, relAssetPath);
 
                 count++;
-                debugRelLinks("[Line " + lineNumber + "]: "+origAssetRelPath);
-                debugRelLinks("Updated to: "+origAssetPath);
+                debugRelLinks("[Line " + lineNumber + "]: "+relAssetPath);
+                debugRelLinks("Updated to: "+absAssetPath);
 
-                var newLine = line.replace(origAssetRelPath,origAssetPath);
+                var newLine = line.replace(relAssetPath,absAssetPath);
                 resultContent.push(newLine);
             }else{
                 resultContent.push(line);
@@ -274,7 +283,7 @@ function linkCheck(inputFileStr, outputFileStr) {
     }
     
     var inputFolder = path.dirname(inputFileStr);
-    var base = path.join("file:",path.resolve(inputFolder)); //TODO Might be failing on windows
+    var base = new URL(path.join("file:",path.resolve(inputFolder))); //TODO Might be failing on windows
     debugLinkcheck("Folder to be linkchecked: "+base);
     var fileContents = fs.readFileSync(inputFileStr, 'utf-8');
     markdownLinkCheck(fileContents,
