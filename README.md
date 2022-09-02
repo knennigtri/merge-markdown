@@ -24,22 +24,24 @@ Available on GPR: https://github.com/knennigtri/merge-markdown/packages/1458049
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported {options}](#supported-options)
-  - [Global only options](#global-only-options)
-    - [QA Mode](#qa-mode)
-    - [Merged file TOC](#merged-file-toc)
-    - [Output to PDF or HTML](#output-to-pdf-or-html)
-- [Manifest Examples](#manifest-examples)
-  - [YAML used as input](#yaml-used-as-input)
-  - [JSON used as input](#json-used-as-input)
-  - [Replace keys within a single file](#replace-keys-within-a-single-file)
-  - [Options applied to all files](#options-applied-to-all-files)
-  - [Apply custom HTML and PDF options](#apply-custom-html-and-pdf-options)
-  - [Other Examples in the manifest](#other-examples-in-the-manifest)
+- [merge-markdown](#merge-markdown)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported {options}](#supported-options)
+    - [Global only options](#global-only-options)
+      - [QA Mode](#qa-mode)
+      - [Merged file TOC](#merged-file-toc)
+      - [Output to PDF or HTML](#output-to-pdf-or-html)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Apply custom HTML and PDF options](#apply-custom-html-and-pdf-options)
+    - [Other Examples in the manifest](#other-examples-in-the-manifest)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -146,22 +148,27 @@ Set where you would like for the TOC to exist:
 #### Output to PDF or HTML
 You can output to HTML or PDF. Pandoc is used to generate HTML and wkhtmltopdf is used to generate a PDF.
 
-If you need to modify the HTML output, you can add pandoc parameters to the manifest. The `key` doesn't matter, only the `value` is evalutated based on [pandoc args](https://pandoc.org/MANUAL.html).
+**HTML Output**
+
+You can optionally add pandoc parameters to the manifest. The `key` doesn't matter, only the `value` is evalutated based on [pandoc args](https://pandoc.org/MANUAL.html).
 ```yaml
  pandoc:
    latexTemplate: --template path/to/my/latex/template.latex
    css: -c path/to/my/css/main.css
 ```
-> Caution: Input and output file locations/names cannot be changed through pandoc. This must be done by the manifest.output parameter.
+> **Caution**: Input and output file locations/names cannot be changed through pandoc. This must be done by the manifest.output parameter.
 
-if you need to modify the PDF output, you can add wkhtmltopdf options to the manifest. See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to learn more:
+**PDF Output**
+> **Warning:** wkhtmltopdf must be installed and added to your path to create PDFs! http://wkhtmltopdf.org/downloads.html
+
+You can optionally add wkhtmltopdf options to the manifest.  See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to learn more:
 ```yaml
  wkhtmltopdf:
   marginBottom: 1in
   marginTop: 1in
   pageSize: Letter
 ```
-> Caution: The following options cannot be changes for wkhtmltopdf. This must be done by the manifest.output parameter.
+> The following options cannot be changes for wkhtmltopdf. This must be done by the manifest.output parameter.
 >  * enableLocalFileAccess - always true for this module
 >  * disableSmartShrinking - always true for this module
 >  * output - can only be modified using manifest.output

@@ -31,7 +31,7 @@ Options:
   -m manifestPath           Path to input folder, yaml, or json manifest
   --qa                      QA mode.
   --version                 Displays version of this package
-  --pdf                     Output to PDF
+  --pdf                     Output to PDF. wkhtmltopdf must be installed http://wkhtmltopdf.org/downloads.html
   --html                    Output to HTML
   -h                        Displays this screen
   -h [manifest|options|qa]  See examples
