@@ -66,11 +66,12 @@ Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to cu
  * @param {*} qaParam boolean to turn on QA mode
  * @returns 
  */
-var init = function(manifestParam, qaParam) {
+var init = function(manifestParam, qaParam, noLinkcheckParam) {
   var argManifest = manifestParam || args.m;
   var argQA = qaParam || args.qa;
   var argHelp =  args.h || args.help;
   var argVersion = args.v || args.version;
+  var argNoLinkcheck = noLinkcheckParam || args.nolinkcheck;
 
   // Show CLI help
   if (argHelp) {
@@ -99,12 +100,12 @@ var init = function(manifestParam, qaParam) {
       var fsStat = fs.lstatSync(argManifest)
       if(fsStat.isDirectory()){
         debugInput("Using directory for manifest");
-        manifestJSON = useFolderPath(argManifest, args.qa);
+        manifestJSON = useFolderPath(argManifest, argQA);
         manifestRelPath = argManifest;
       }
       if(fsStat.isFile()){
         debugInput("Using file manifest");
-        manifestJSON = getManifestJSON(argManifest, args.qa);
+        manifestJSON = getManifestJSON(argManifest, argQA);
         manifestRelPath = path.dirname(argManifest);
       }
     }
@@ -115,14 +116,14 @@ var init = function(manifestParam, qaParam) {
     }
   } else { //if there is no -m check for a default manifest file
     console.log("No -m argument given. Using default: "+ DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
-    manifestJSON = getDefaultManifestJSON(".", args.qa);
+    manifestJSON = getDefaultManifestJSON(".", argQA);
     manifestRelPath = ".";
   }
 
   if(manifestJSON && manifestJSON.length != 0){
     //print out manifest to be used
     debugManifest(JSON.stringify(manifestJSON, null, 2));
-    merge.markdownMerge(manifestJSON, manifestRelPath, args.qa); 
+    merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck); 
     if (args.html) {
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.html);
     } else if(args.pdf) {
