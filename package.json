@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "0.9.0",
+  "version": "0.9.1-bugfix.0",
   "description": "Creates a single markdown file (with TOC) from several markdown files and optionally add html/pdf presentation",
   "repository": {
     "type": "git",
@@ -9,10 +9,11 @@
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
     "build": "npm run readmeTOC && npm ci && npm i --package-lock-only",
+    "local": "npm pack",
     "readmeTOC": "doctoc README.md --github --title='# Contents'",
     "m-extTest": "merge-markdown -m test/markdown/src/manifest.json; merge-markdown -m test/markdown/src/manifest.yml",
     "m-ioTest": "merge-markdown -m test/markdown/src/manifest-noIO.yml; merge-markdown -m test/markdown/src/manifest-noInput.yml; merge-markdown -m test/markdown/src/manifest-noOutput.yml",
-    "m-onlyGlobalOptions": "merge-markdown -m test/markdown/src/manifest-noInput-withOutput.yml",
+    "m-onlyGlobalOptions": "merge-markdown -m test/markdown/src/manifest-noInput.yml",
     "o-noManifest": "merge-markdown -m test/markdown/src",
     "o-yamlTest": "merge-markdown -m test/markdown/src/yaml-test",
     "p-pdfTest": "merge-markdown -m test/pdf/src/manifest.md --pdf; merge-markdown -m test/pdf/src/manifest-noPresentation.md --pdf",
