@@ -104,7 +104,7 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
                     templatePath = path.join(inputPath,templatePath);
                     debugHTMLOptions("template added: " + templatePath);
                     cliArgs += " --template " + templatePath;
-                } else if(jsonObj[key].includes("-c")){
+                } else if(jsonObj[key].includes("-c ")){
                     var ccsPath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
                     ccsPath = path.join(inputPath,ccsPath); 
                     debugHTMLOptions("css added: " + ccsPath);
