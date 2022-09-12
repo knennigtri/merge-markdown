@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "0.9.1-bugfix.1",
+  "version": "0.9.1-bugfix.2",
   "description": "Creates a single markdown file (with TOC) from several markdown files and optionally add html/pdf presentation",
   "repository": {
     "type": "git",
@@ -35,6 +35,8 @@
   ],
   "license": "ISC",
   "dependencies": {
+    "-": "^0.0.1",
+    "@knennigtri/merge-markdown": "^0.9.1-bugfix.1",
     "concat": "^1.0.3",
     "debug": "^4.3.4",
     "doctoc": "^2.2.0",
@@ -42,6 +44,7 @@
     "markdown-link-check": "^3.10.2",
     "minimist": "^1.2.6",
     "node-pandoc": "^0.3.0",
+    "save": "^2.5.0",
     "valid-url": "^1.0.9",
     "wkhtmltopdf": "^0.4.0"
   },
@@ -52,7 +55,6 @@
   "directories": {
     "test": "test"
   },
-  "devDependencies": {},
   "bugs": {
     "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
   }
