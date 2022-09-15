@@ -88,8 +88,9 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
     if(onlyQA){
         outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
-    if(manifestJSON.mergedTOC){
-        createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
+    var mergedTOC = manifestJSON.output.mergedTOC || manifestJSON.mergedTOC;
+    if(mergedTOC){
+        createSingleFile(mergedFileArr, outputFileStr, mergedTOC);
     } else {
         createSingleFile(mergedFileArr, outputFileStr);
     }
@@ -145,7 +146,9 @@ function applyContentOptions(origContent, fileOptions) {
         var tocTitle = "#### Module Contents";
         var outDoctoc = "";
         if(fileOptions.TOC.toString().toLowerCase() != "true"){
-            tocTitle = fileOptions.TOC
+            if(typeof fileOptions.TOC === 'string') {
+                tocTitle = fileOptions.TOC;
+            }
         } 
         debug("[OPTION] Add TOC...");
         //(files, mode, maxHeaderLevel, title, notitle, entryPrefix, processAll, stdOut, updateOnly)
