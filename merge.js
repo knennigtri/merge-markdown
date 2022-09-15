@@ -8,7 +8,7 @@ var validUrl = require('valid-url');
 var debug = require('debug')('merge');
 var debugRelLinks  = require('debug')('merge:relLinks');
 var debugYaml = require('debug')('merge:yaml');
-var debugtoc = require('debug')('merge:toc');
+var debugDoctoc = require('debug')('merge:doctoc');
 var debugReplace = require('debug')('merge:replace');
 var debugLinkcheck = require('debug')('merge:linkcheck');
 var onlyQA;
@@ -51,13 +51,11 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
         
         //updates all relative asset paths to the relative output location
         var generatedContent = updateAssetRelPaths(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr));
-        
-        //applies gobal generate rules
-        debug("--Apply global manifest OPTIONS--");
-        generatedContent = applyContentOptions(generatedContent,manifestJSON);
-        //Applies file specific generate rules
-        debug("--Apply file specific OPTIONS--");
-        generatedContent = applyContentOptions(generatedContent,inputJSON[inputKey]);
+
+        debug("--Apply file OPTIONS--");
+        //Content, local options, global options
+        generatedContent = applyContentOptions(generatedContent,inputJSON[inputKey],manifestJSON);
+
         var tempFile = inputFileStr+".temp";
         fs.writeFileSync(tempFile,generatedContent);
         
@@ -128,36 +126,57 @@ function createSingleFile(list, outputFileStr, doctocOptions){
     });
 }
 
-function applyContentOptions(origContent, fileOptions) {
+//Content, local options, global options
+function applyContentOptions(origContent, fileOptions, globalOptions) {
     var scrubbedContent = origContent;
 
     if(fileOptions == null) return scrubbedContent;
-    //Remove YAML
-    if(fileOptions.hasOwnProperty("noYAML") && fileOptions.noYAML){
-        var contentNoYAML = removeYAML(origContent);
-        scrubbedContent = contentNoYAML;
-    }
-    //Allows for find and replace options in the markdown with ${}
-    if(fileOptions.hasOwnProperty("replace") && fileOptions.replace){
-        scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
-    }
-    //Add TOC
-    if(fileOptions.hasOwnProperty("TOC") && fileOptions.TOC){
-        var tocTitle = "#### Module Contents";
-        var outDoctoc = "";
-        if(fileOptions.TOC.toString().toLowerCase() != "true"){
-            if(typeof fileOptions.TOC === 'string') {
-                tocTitle = fileOptions.TOC;
-            }
-        } 
-        debug("[OPTION] Add TOC...");
-        //(files, mode, maxHeaderLevel, title, notitle, entryPrefix, processAll, stdOut, updateOnly)
-        var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true,false);
-        if(outDoctoc.data != null){
-            scrubbedContent = outDoctoc.data;
-            debugtoc("TOC Added");
+    /* Apply noYAML */
+    //Apply local noYAML option
+    if(fileOptions.hasOwnProperty("noYAML")){ 
+        if(fileOptions.noYAML){
+            debug("Using [Local] noYAML...");
+            scrubbedContent = removeYAML(origContent);
         }
-    } 
+    } else //Apply global noYAML option
+        if(globalOptions.hasOwnProperty("noYAML") && globalOptions.noYAML){ 
+            debug("Using [Global] noYAML...");
+        scrubbedContent = removeYAML(origContent);
+    }
+
+    /* Apply find and replace */
+    //Apply local replace
+    if(fileOptions.hasOwnProperty("replace")){
+        // merge global replace with local replace taking precedence
+        if(globalOptions.hasOwnProperty("replace")){
+            for (var key in globalOptions.replace){
+                if(!fileOptions.replace.hasOwnProperty(key)){
+                    fileOptions.replace[key] = globalOptions.replace[key];
+                }
+            }
+            debug("Using [Local/Global] Find/Replace...");
+            scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
+        } else {
+            debug("Using [Local] Find/Replace...");
+            scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
+        }
+    } else //Apply global replace
+    if(globalOptions.hasOwnProperty("replace")){
+        debug("Using [Global] Find/Replace...");
+        scrubbedContent = replaceStrings(scrubbedContent,globalOptions.replace);
+    }
+
+    //Add TOC
+    if(fileOptions.hasOwnProperty("TOC")){
+        if(fileOptions.TOC){
+            debugDoctoc("Using [Local] DocToc...");
+            scrubbedContent = buildTOC(scrubbedContent,fileOptions.TOC);
+        }
+    } else if(globalOptions.hasOwnProperty("TOC") && globalOptions.TOC){
+        debug("Using [Global] DocToc...");
+        scrubbedContent = buildTOC(scrubbedContent,globalOptions.TOC);
+    }
+
     return scrubbedContent;
 } 
 
@@ -269,6 +288,41 @@ function replaceStrings(fileContents,replacements){
         replacedContent = replacedContent.replace(findRegex,replaceStr); 
     });
     return replacedContent;
+}
+
+/*
+
+*/
+function buildTOC(fileContents,doctocOptions){
+    debug("[OPTION] Add TOC...");
+    var defaultDocToc = {
+        "mode": "github.com",
+        "maxlevel": 3,
+        "title": "## Contents",
+        "notitle": false,
+        "all": true,
+        "stdout": true,
+        "update-only": false
+    };
+    // if (doctocOptions === 'boolean'){
+
+    // }
+    var tocTitle = "#### Module Contents";
+    if(doctocOptions.toString().toLowerCase() != "true"){
+        if(typeof doctocOptions === 'string') {
+            tocTitle = doctocOptions;   
+        }
+    } 
+    debugDoctoc("tocTitle: " + tocTitle);
+    //(file, mode, maxlevel, title, notitle, entryprefix, all, stdOut, update-only)
+    //all = process all TOCs in a file
+    //update-only = only updates if there is an existing TOC
+    var out = doctoc(fileContents,"github.com",3,tocTitle,false,"",true,true,false);
+    
+    if(out.data == null) return;
+    
+    debugDoctoc("TOC Added");
+    return out.data;
 }
 
 /** Function that uses markdown-link-check to validate all URLS and relative links to images
