@@ -37,7 +37,7 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
     var refFileArr= [];
     Object.keys(inputJSON).forEach(function(inputKey) {
         var inputFileStr = path.join(relPathManifest, inputKey);
-        console.log("*********"+inputFileStr+"*********");
+        console.log("--"+inputFileStr+"--");
 
         if(onlyQA && qaRegex.test(inputFileStr)){
             console.warn("Skipping " +inputKey + " for QA");
@@ -69,7 +69,8 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
 
         //add the  temp file to the list to merge together
         fileArr.push(tempFile);
-        console.log(path.basename(tempFile)+" added to merge list");
+        debug(path.basename(tempFile));
+        console.log("...added to merge list");
 
         //Adds any same name .ref.md files to refFilesList
         var refFileStr = updateExtension(inputFileStr, EXT.ref)
@@ -79,11 +80,11 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
         } 
     });
 
-    console.log("++++++++++++++++++++")
+    console.log("+++++++++++++")
     //Merge lists and output single markdown file
     var mergedFileArr = fileArr.concat(refFileArr);
     
-    console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
+    console.log("Creating Merged Markdown:\n " + mergedFileArr.join("\n "));
     if(onlyQA){
         outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
