@@ -24,22 +24,28 @@ Available on GPR: https://github.com/knennigtri/merge-markdown/packages/1458049
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported {options}](#supported-options)
-  - [Global only options](#global-only-options)
-    - [QA Mode](#qa-mode)
-    - [Merged file TOC](#merged-file-toc)
-    - [Output to PDF or HTML](#output-to-pdf-or-html)
-- [Manifest Examples](#manifest-examples)
-  - [YAML used as input](#yaml-used-as-input)
-  - [JSON used as input](#json-used-as-input)
-  - [Replace keys within a single file](#replace-keys-within-a-single-file)
-  - [Options applied to all files](#options-applied-to-all-files)
-  - [Apply custom HTML and PDF options](#apply-custom-html-and-pdf-options)
-  - [Other Examples in the manifest](#other-examples-in-the-manifest)
+- [merge-markdown](#merge-markdown)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported Options](#supported-options)
+      - [`noYAML`](#noyaml)
+      - [`replace`](#replace)
+      - [`doctoc`](#doctoc)
+    - [Supported Output Options](#supported-output-options)
+      - [Merged file TOC](#merged-file-toc)
+      - [HTML Output](#html-output)
+      - [PDF Output](#pdf-output)
+    - [Special Modes](#special-modes)
+      - [QA Mode](#qa-mode)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Apply output options](#apply-output-options)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -78,98 +84,133 @@ merge-markdown -m myManifest.md --pdf
 
 ## Usage
 ```shell
-Usage: merge-markdown [OPTIONS]
-Options:
-  -m manifestPath           Path to input folder, yaml, or json manifest
-  --qa                      QA mode.
-  --version                 Displays version of this package
-  --pdf                     Output to PDF
-  --html                    Output to HTML
-  -h                        Displays this screen
-  -h [manifest|options|qa]  See examples
+Usage: merge-markdown [ARGS]
+Arguments:
+  -m <manifestFile>                        Path to input folder, yaml, or json manifest
+  -v, --version                            Displays version of this package
+      --qa                                 QA mode.
+      --nolinkcheck                        Skips linkchecking
+      --pdf                                Output to PDF. wkhtmltopdf must be installed http://wkhtmltopdf.org/downloads.html
+      --html                               Output to HTML
+  -h, --help                               Displays this screen
+  -h [manifest|options|outputOptions|qa]   See examples
 Default manifest: manifest.[md|yaml|yml|json] unless specified in -m. 
 ```
 
 ## Manifest file format
 
 `manifest.[md|yaml|yml|json]`:
-This file can be in YAML or JSON format. Relative or absolute paths can be used.
+This file can be in YAML or JSON format.
 
-* `input`: markdown files to be merged. These can be relative or absolute paths. If no `input` is given, all .md files in the same directory as the manifest will be merged.
-  * `{options}`: Options that will be applied to an individual file
-* `output`: path/name.md of the resultant file of the merge. If no  `output` is given, the merged file will be saved in `merged/<curDir>.out.md`.
-* `{options}`: Options applied to all `input` files
+* `input`: No `input` will merge all .md files in the same directory as the manifest.
+  * `myFile1.md: {options}` *Local options*
+  * `myFile2.md: {options}`
+* `output`: No  `output` will be save the merged doc in in `merged/<curDir>.out.md`.
+  * `name: path/name.md`: of the resultant file
+  * `{outputOptions}` See [Supported Output Options](#supported-output-options)
+* `{options}`: global options. See [Supported Options](#supported-options)
 
-### Supported {options}
+> Relative or absolute paths can be used for all values
+
+### Supported Options
 Options can be applied to an individual input or at a globally to apply to all inputs
-* `noYAML`: optionlly removes YAML. Default=false
-* `TOC`: optionally adds a TOC to this file with doctoc. Default=false. See https://www.npmjs.com/package/doctoc#specifying-location-of-toc 
-* `replace`:
+
+#### `noYAML`
+
+Optionlly removes YAML from top of input file. Default=false
+```yaml
+---
+  noYAML: true|false
+---
+```
+
+#### `replace`
+
+Optionally find/replace in an input file.
   * string: Specify a string to find and replace
   * regex: Specify a regex to find and replace
 ```yaml
 ---
-  noYAML: true|false
-  TOC: true|false|"TOC title"
   replace:
-      <!--{timestamp}-->: 01/01/2021
+      <!--{timestamp}-->: 09/01/2022
       ({#(.*?)}): ""                  
 ---
 ```
-### Global only options
-Global options cannot be applied to individual inputs. They must be added to the top level of the manifest.
-#### QA Mode
-```shell
-merge-markdown -m manifest.json --qa
-```
-Output will omit all filenames with `frontmatter` by default
-Add a regex to the manifest.json to customize exclusion:
+
+#### `doctoc`
+Optionally add a table of contents to files using [doctoc](https://www.npmjs.com/package/doctoc). This will allow for a local navigation within a module/chapter of your merged document.
+
 ```yaml
+# Use Default doctoc values:
 ---
-  qa: {exclude: "(frontmatter|preamble)"}
+ doctoc: true
+---
+# Add a unique title:
+---
+ doctoc: "Module Contents"
+---
+# Fully configure doctoc by overriding the default values from below:
+---
+  doctoc:
+   mode: github
+   maxlevel: 3
+   title: ""
+   notitle: true
+   entryprefix: ""
+   all: false
+   stdout: true
+   update-only: false                
 ---
 ```
-#### Merged file TOC
-```yaml
- mergedTOC: true
-```
-Set where you would like for the TOC to exist:
+Based on [doctoc](https://www.npmjs.com/package/doctoc#specifying-location-of-toc), Set where you would like for the TOC to exist in the markdown file
 ```html
-<div class="toc" >
-  <div>Course Contents</div>
   <!-- START auto-update -->
   <!-- START doctoc -->
   <!-- END doctoc -->
   <!-- END auto-update -->
-</div>
 ```
-#### Output to PDF or HTML
+
+
+### Supported Output Options
 You can output to HTML or PDF. Pandoc is used to generate HTML and wkhtmltopdf is used to generate a PDF.
 
-**HTML Output**
+#### Merged file TOC
+Similar to adding a TOC to the input files, you can add a TOC for the entire merged document. See [doctoc](#doctoc) options to configure.
+```yaml
+ output:
+   doctoc:
+     key: value
+```
 
+
+#### HTML Output
 You can optionally add pandoc parameters to the manifest. The `key` doesn't matter, only the `value` is evalutated based on [pandoc args](https://pandoc.org/MANUAL.html).
 ```yaml
- pandoc:
-   latexTemplate: --template path/to/my/latex/template.latex
-   css: -c path/to/my/css/main.css
+ output:
+   pandoc:
+     latexTemplate: --template path/to/my/latex/template.latex
+     css: -c path/to/my/css/main.css
 ```
-> **Caution**: Input and output file locations/names cannot be changed through pandoc. This must be done by the manifest.output parameter.
+> The following arguments cannot be changes for pandoc:
+>  * `-o < fileName >`  - can only be modified using manifest.output.name
 
-**PDF Output**
-> **Warning:** wkhtmltopdf must be installed and added to your path to create PDFs! http://wkhtmltopdf.org/downloads.html
+#### PDF Output
 
-You can optionally add wkhtmltopdf options to the manifest.  See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to learn more:
+
+You can optionally add wkhtmltopdf options to the manifest. [wkhtmltopdf](http://wkhtmltopdf.org/downloads.html) must be installed and added to your path to create PDFs!
+
+See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to learn more:
 ```yaml
- wkhtmltopdf:
-  marginBottom: 1in
-  marginTop: 1in
-  pageSize: Letter
+ output:
+   wkhtmltopdf:
+    marginBottom: 1in
+    marginTop: 1in
+    pageSize: Letter
 ```
-> The following options cannot be changes for wkhtmltopdf. This must be done by the manifest.output parameter.
->  * enableLocalFileAccess - always true for this module
->  * disableSmartShrinking - always true for this module
->  * output - can only be modified using manifest.output
+> The following options cannot be changes for wkhtmltopdf:
+>  * `enableLocalFileAccess` - always true
+>  * `disableSmartShrinking` - always true
+>  * `output` - can only be modified using manifest.output.name
 
 Generate HTML only:
 ```shell
@@ -181,6 +222,20 @@ Generate a PDF:
 ```
 Example files can be found in [test/pdf/src](test/pdf/src). You can also checkout a [working project](https://github.com/knennigtri/example-webpack-project) for css development using webpack.
 
+### Special Modes
+
+#### QA Mode
+```shell
+merge-markdown -m manifest.json --qa
+```
+Output will omit all filenames with `frontmatter` by default
+Add a regex to the manifest.json to customize exclusion:
+```yaml
+---
+  qa: {exclude: "(frontmatter|preamble)"}
+---
+```
+
 ## Manifest Examples
 
 ### YAML used as input
@@ -188,9 +243,10 @@ Example files can be found in [test/pdf/src](test/pdf/src). You can also checkou
 ---
 input:
   frontmatter.md: ""
-  file1.md: {noYAML: true, TOC: "#### Section Contents"}
-  file2.md: {noYAML: true, TOC: "#### Section Contents"}
-output: myOutput.md
+  file1.md: {noYAML: true, doctoc: "#### Section Contents"}
+  file2.md: {noYAML: true, doctoc: "#### Section Contents"}
+output: 
+  name: myOutput.md
 ---
 ```
 ### JSON used as input
@@ -198,10 +254,12 @@ output: myOutput.md
 {
   "input": {
     "frontmatter.md": {"replace": {"timestamp":true}},
-    "file1.md": {"noYAML":true,"TOC":"#### Section Contents"},
-    "file2.md": {"noYAML":true,"TOC":"#### Section Contents"}
+    "file1.md": {"noYAML":true,"doctoc":"#### Section Contents"},
+    "file2.md": {"noYAML":true,"doctoc":"#### Section Contents"}
   },
-  "output": "myOutput.md"
+  "output": {
+    "name": "myOutput.md"
+  }
 }
 ```
 ### Replace keys within a single file
@@ -215,7 +273,9 @@ output: myOutput.md
       }},
     "folder2/folder2/file2.md": {"noYAML":true}
   },
-  "output": "output/1/myOutput.md",
+  "output": {
+    "name": "path/to/myOutput.md"
+  }
 }
 ```
 ### Options applied to all files
@@ -225,30 +285,34 @@ input:
   frontmatter.md: ""
   folder1/file1.md: ""
   file2.md: ""
-output: myOutput.md
+output: 
+  name: myOutput.md
 replace:
   ${timestamp}: 06/01/2021
   ({#(.*?)}): ""
-TOC: "#### Chapter contents"
+doctoc: "#### Chapter contents"
 noYAML: true
 ---
 ```
-### Apply custom HTML and PDF options
+### Apply output options
 ``` yaml
 ---
 input:
  frontmatter.md: ''
- m1/m1-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 1:"}}
- m2/m2-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 2:"}}
-output: "merged/myOutput.md"
-pandoc:
- css: -c path/to/main.css
- title: -M title:Example
-wkhtmltopdf:
- pageSize: Letter
- footerLine: true
- footerCenter: Page [page]
+ m1/m1-example.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1:"}}
+ m2/m2-example.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 2:"}}
+output: 
+  name: merged/myOutput.md
+  doctoc:
+   mode: bitbucket
+   title: "Course Contents"
+   maxlevel: 2
+  pandoc:
+    css: -c path/to/main.css
+    title: -M title:Example
+  wkhtmltopdf:
+    pageSize: Letter
+    footerLine: true
+    footerCenter: Page [page]
 ---
 ```
-### Other Examples in the manifest
-To See `qa` mode, `mergedTOC`, and other use cases see the [manifest-example.md](manifest-example.md)

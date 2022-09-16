@@ -21,7 +21,7 @@ const EXAMPLE_MANIFEST = `Example yaml in a manifest file:
   input:
     global-frontmatter.md: ""
     module1Folder/file1.md: {options}
-    module2Folder/file2.md: {noYAML: true, TOC: true, replace: {key:value}}
+    module2Folder/file2.md: {noYAML: true, doctoc: true, replace: {key:value}}
   output: 
     name: merged/myOutput.md
     {outputOptions}
@@ -30,14 +30,14 @@ const EXAMPLE_MANIFEST = `Example yaml in a manifest file:
 ---`;
 const MSG_HELP = `Usage: merge-markdown [ARGS]
 Arguments:
-  -m manifestPath           Path to input folder, yaml, or json manifest
-  --version                 Displays version of this package
-  --qa                      QA mode.
-  --nolinkcheck             Skips linkchecking
-  --pdf                     Output to PDF. wkhtmltopdf must be installed http://wkhtmltopdf.org/downloads.html
-  --html                    Output to HTML
-  --help                    Displays this screen
-  -h [manifest|options|outputOptions|qa]  See examples
+  -m <manifestFile>                        Path to input folder, yaml, or json manifest
+  -v, --version                            Displays version of this package
+      --qa                                 QA mode.
+      --nolinkcheck                        Skips linkchecking
+      --pdf                                Output to PDF. wkhtmltopdf must be installed http://wkhtmltopdf.org/downloads.html
+      --html                               Output to HTML
+  -h, --help                               Displays this screen
+  -h [manifest|options|outputOptions|qa]   See examples
 Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] unless specified in -m.
 `;
 const MANIFEST_OPTIONS = `Supported key/value pairs for {options}:
@@ -129,9 +129,9 @@ var init = function(manifestParam, qaParam, noLinkcheckParam) {
   if(manifestJSON && manifestJSON.length != 0){
     //print out manifest to be used
     manifestJSON =  fixDeprecatedManifestEntry(manifestJSON);
-  //  return;
-      merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck); 
-    if (args.html) {
+    merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck); 
+    // return;
+      if (args.html) {
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.html);
     } else if(args.pdf) {
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.pdf);
@@ -304,8 +304,14 @@ function getDefaultManifestJSON(inputFolder, qaMode){
   return;
 }
 
+/**
+ * Method to organize the manifest for merge and presentation to 
+ * allow for non-destructive updates to mege-markdown.
+ * Important if users are coming from earlier versions of merge-markdown
+ */
 function fixDeprecatedManifestEntry(manifestFix){
   var updatesNeeded = "";
+  //Fix output to allow for keys under the output
   if(typeof manifestFix.output === "string"){
     var name = manifestFix.output;
     delete manifestFix.output;
@@ -314,6 +320,7 @@ function fixDeprecatedManifestEntry(manifestFix){
     updatesNeeded += "   -manifest.output >> manifest.output.name.\n";
   }
 
+  //Move all outputOptions under the output
   if(manifestFix.hasOwnProperty("mergedTOC")){
     manifestFix.output.doctoc = manifestFix.mergedTOC;  
     delete manifestFix.mergedTOC
@@ -324,12 +331,13 @@ function fixDeprecatedManifestEntry(manifestFix){
     delete manifestFix.pandoc;
     updatesNeeded += "   -manifest.pandoc >> manifest.output.pandoc.\n";
   }
-
   if(manifestFix.hasOwnProperty("wkhtmltopdf")){
     manifestFix.output.wkhtmltopdf = manifestFix.wkhtmltopdf;
     delete manifestFix.wkhtmltopdf;
     updatesNeeded += "   -manifest.wkhtmltopdf >> manifest.output.wkhtmltopdf.\n";
   }
+
+  //Update all TOC and mergedTOC keys to doctoc
   if(manifestFix.output.hasOwnProperty("TOC")){
     manifestFix.output.doctoc = manifestFix.output.TOC;  
     delete manifestFix.output.TOC
@@ -340,14 +348,11 @@ function fixDeprecatedManifestEntry(manifestFix){
     delete manifestFix.output.mergedTOC;
     updatesNeeded += "   -manifest.output.mergedTOC >> manifest.output.doctoc.\n";
   }
-
-
   if(manifestFix.hasOwnProperty("TOC")){
     manifestFix.doctoc = manifestFix.TOC;
     delete manifestFix.TOC;
     updatesNeeded += "   -manifest.TOC >> manifest.doctoc.\n";
   }
-
   if(manifestFix.hasOwnProperty("input")){
     var update = false;
     for(var i in manifestFix.input){
@@ -359,12 +364,13 @@ function fixDeprecatedManifestEntry(manifestFix){
     }
     if(update) updatesNeeded += "   -manifest.input[item].TOC >> manifest.input[item].doctoc.\n";
   }
-  
+
+  //Display to the user which keys should be updated in their manifest
   if(updatesNeeded){
     console.log("[WARNING] Below entries are old. Consider updating your manifest:");
     console.log(updatesNeeded)
-    debugManifest(JSON.stringify(manifestFix, null, 2));
   }
+  debugManifest(JSON.stringify(manifestFix, null, 2));
   return manifestFix;
 }
 
