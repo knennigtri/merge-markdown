@@ -88,13 +88,13 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
     }
 
     if(manifestJSON.output.doctoc){
-        createSingleFile(mergedFileArr, outputFileStr, manifestJSON.output.doctoc);
+        createSingleFile(mergedFileArr, outputFileStr, manifestJSON);
     } else {
         createSingleFile(mergedFileArr, outputFileStr);
     }
 }
 
-function createSingleFile(list, outputFileStr, doctocOptions){
+function createSingleFile(list, outputFileStr, manifestJSON){
     debug("Creating single file");
     if(list == null || list == ""){
         console.log("List to merge is not valid. Aborting..");
@@ -105,10 +105,14 @@ function createSingleFile(list, outputFileStr, doctocOptions){
         fs.mkdirSync(outputPath);
     }
     concat(list, outputFileStr).then(result => {
-        if(doctocOptions){
+        if(manifestJSON.output.hasOwnProperty("doctoc") && manifestJSON.output.doctoc){
             fs.readFile(outputFileStr, 'utf-8', function (err, data) {
-                var outDoctoc = doctoc(data,"github.com",3,"",false,"",false,true, false);
-                fs.writeFile(outputFileStr, outDoctoc.data, 'utf-8', function (err) {
+               
+                manifestJSON.output.doctoc
+                var outDoctoc = buildTOC(data,manifestJSON.output.doctoc, manifestJSON.doctoc);
+                // var outDoctoc = doctoc(data,"github.com",3,"",false,"",false,true, false);
+
+                fs.writeFile(outputFileStr, outDoctoc, 'utf-8', function (err) {
                     if (err) {
                         console.log("DOCTOC Error: " +err);
                         return;
@@ -130,10 +134,11 @@ function createSingleFile(list, outputFileStr, doctocOptions){
 function applyContentOptions(origContent, fileOptions, globalOptions) {
     var scrubbedContent = origContent;
 
-    if(fileOptions == null) return scrubbedContent;
+    // if(fileOptions == undefined || fileOptions == "") return scrubbedContent;
+    
     /* Apply noYAML */
     //Apply local noYAML option
-    if(fileOptions.hasOwnProperty("noYAML")){ 
+    if(fileOptions && fileOptions.hasOwnProperty("noYAML")){ 
         if(fileOptions.noYAML){
             debug("Using [Local] noYAML...");
             scrubbedContent = removeYAML(origContent);
@@ -146,7 +151,7 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
 
     /* Apply find and replace */
     //Apply local replace
-    if(fileOptions.hasOwnProperty("replace")){
+    if(fileOptions && fileOptions.hasOwnProperty("replace")){
         // merge global replace with local replace taking precedence
         if(globalOptions.hasOwnProperty("replace")){
             for (var key in globalOptions.replace){
@@ -167,14 +172,19 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
     }
 
     //Add TOC
-    if(fileOptions.hasOwnProperty("doctoc")){
+    if(fileOptions && fileOptions.hasOwnProperty("doctoc")){
         if(fileOptions.doctoc){
-            debugDoctoc("Using [Local] DocToc...");
-            scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc);
+            if(globalOptions.hasOwnProperty("doctoc")){
+                debugDoctoc("Using [Local/Global] DocToc...");
+                scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc, globalOptions.doctoc);
+            } else {
+                debugDoctoc("Using [Local] DocToc...");
+                scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc);
+            }
         }
     } else if(globalOptions.hasOwnProperty("doctoc") && globalOptions.doctoc){
         debug("Using [Global] DocToc...");
-        scrubbedContent = buildTOC(scrubbedContent,globalOptions.doctoc);
+        scrubbedContent = buildTOC(scrubbedContent, null, globalOptions.doctoc);
     }
 
     return scrubbedContent;
@@ -293,36 +303,65 @@ function replaceStrings(fileContents,replacements){
 /*
 
 */
-function buildTOC(fileContents,doctocOptions){
+function buildTOC(fileContents,doctocLocal, doctocGlobal){
     debug("[OPTION] Running doctoc...");
+    var includeTOC = false;
+
     var defaultDocToc = {
-        "mode": "github.com",
+        "mode": "github",
         "maxlevel": 3,
-        "title": "## Contents",
-        "notitle": false,
-        "all": true,
+        "title": "",
+        "notitle": true,
+        "entryprefix": "",
+        "all": false,
         "stdout": true,
         "update-only": false
     };
-    // if (doctocOptions === 'boolean'){
-
-    // }
-    var tocTitle = "#### Module Contents";
-    if(doctocOptions.toString().toLowerCase() != "true"){
-        if(typeof doctocOptions === 'string') {
-            tocTitle = doctocOptions;   
+    var finalDoctoc = defaultDocToc;
+    var obj = {doctocGlobal, doctocLocal};
+    for (var options in obj){
+        if (options=="doctocGlobal") debugDoctoc("Apply Global Options: " + JSON.stringify(obj[options]));
+        else debugDoctoc("Apply Local Options: " + JSON.stringify(obj[options]));
+        if(obj[options] != undefined){
+            if(typeof obj[options] === 'boolean'){
+                includeTOC = obj[options];
+            } else if(typeof obj[options] === 'string') {
+                finalDoctoc.title = obj[options];
+                finalDoctoc.notitle = false;
+                includeTOC = true; 
+            } else {
+                for(var key in finalDoctoc){
+                    if(obj[options].hasOwnProperty(key)){
+                        finalDoctoc[key] = obj[options][key];
+                        if(key == "title") finalDoctoc.notitle = false;
+                        includeTOC = true;
+                    } 
+                }
+            }
         }
-    } 
-    debugDoctoc("tocTitle: " + tocTitle);
-    //(file, mode, maxlevel, title, notitle, entryprefix, all, stdOut, update-only)
-    //all = process all TOCs in a file
-    //update-only = only updates if there is an existing TOC
-    var out = doctoc(fileContents,"github.com",3,tocTitle,false,"",true,true,false);
-    
-    if(out.data == null) return;
-    
-    debugDoctoc("doctoc TOC generated");
-    return out.data;
+    }
+
+    if(includeTOC){
+        debugDoctoc(JSON.stringify(finalDoctoc, null, 2))
+        var out = doctoc(fileContents,"github.com",
+            finalDoctoc.maxlevel,
+            finalDoctoc.title,
+            finalDoctoc.notitle,
+            finalDoctoc.entryprefix,
+            finalDoctoc.all,
+            finalDoctoc.stdout,
+            finalDoctoc['update-only']);
+        
+        if(!out.transformed) {
+            debugDoctoc("No generated TOC based on document and maxlevel");
+            return fileContents;
+        }
+        if(out.data == null) return;
+        
+        debugDoctoc("doctoc TOC generated");
+        return out.data;
+    }
+    return fileContents;
 }
 
 /** Function that uses markdown-link-check to validate all URLS and relative links to images
