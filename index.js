@@ -316,6 +316,17 @@ function fixDeprecatedManifestEntry(manifestFix){
     delete manifestFix.mergedTOC
     updatesNeeded += "   -manifest.mergedTOC >> manifest.output.mergedTOC.\n";
   }
+  if(manifestFix.hasOwnProperty("pandoc")){
+    manifestFix.output.pandoc = manifestFix.pandoc;
+    delete manifestFix.pandoc;
+    updatesNeeded += "   -manifest.pandoc >> manifest.output.pandoc.\n";
+  }
+
+  if(manifestFix.hasOwnProperty("wkhtmltopdf")){
+    manifestFix.output.wkhtmltopdf = manifestFix.wkhtmltopdf;
+    delete manifestFix.wkhtmltopdf;
+    updatesNeeded += "   -manifest.wkhtmltopdf >> manifest.output.wkhtmltopdf.\n";
+  }
   
   if(updatesNeeded){
     console.log("[WARNING] Manifest entries have moved. Consider updating your manifest");

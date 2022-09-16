@@ -52,7 +52,7 @@ var build = async function(jsonObj, inputPath, mode){
 function toHTML(manifestJson, inputFile, inputPath, mode){
     debug("Creating HTML...");
     var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
-    var pandocArgs = buildPandocArgs(manifestJson.pandoc, inputPath, outputFile);
+    var pandocArgs = buildPandocArgs(manifestJson.output.pandoc, inputPath, outputFile);
     debugHTML("input: "+inputFile);
     debugHTML("Args: "+pandocArgs);
     nodePandoc(inputFile, pandocArgs, function (err, result) {
@@ -82,7 +82,7 @@ function toHTML(manifestJson, inputFile, inputPath, mode){
 function toPDF(manifestJson, inputFile, mode){
     debug("Creating PDF...");
     var outputFile = path.join(path.parse(inputFile).dir, "temp.pdf");
-    var options = buildWkhtmltopdfOptions(manifestJson.wkhtmltopdf, outputFile);
+    var options = buildWkhtmltopdfOptions(manifestJson.output.wkhtmltopdf, outputFile);
     debugPDF("input: "+inputFile);
     debugPDF("Args: "+JSON.stringify(options));
     wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
