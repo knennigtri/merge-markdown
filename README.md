@@ -1,51 +1,49 @@
-# merge-markdown 
+# merge-markdown
 [![Publish to NPM](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml) [![Publish to GHP](https://github.com/knennigtri/merge-markdown/actions/workflows/ghp-publish.yml/badge.svg)](https://github.com/knennigtri/merge-markdown/actions/workflows/ghp-publish.yml)
 
+Published on [NPM](https://www.npmjs.com/package/@knennigtri/merge-markdown) and [GPR](https://github.com/knennigtri/merge-markdown/packages/1458049 )
+
+# Overview
 Takes in a list of markdown files and merges them into a single output file with optional HTML and PDF output. Other advantages:
 * Merge all md files in a folder
 * auto-resolution of all relative links in files for assets, other markdown files no matter their location locally
 * built in link checker of final file
-* Use a Manifest file (json/yaml) for:
+* Use a Manifest file (json/yaml):
   * Specify the input list of files (relative or absolute)
   * Specify the output file (relative or absolute)
+    * Add pandoc arguments for HTML output
+    * Add wkhtmltopdf for PDF output
+    * Create a TOC with doctoc
   * QA feature for optional file exclusions for reviewing
   * Per input file or globally:
     * Find/replace with regex (ex: names, titles, chapter #s, timestamps, etc)
-    * Create TOC with optional Title
+    * Create TOC with doctoc
     * Remove yaml from top of md file
-* Optionally use custom css and template.latex for HTML and PDF output
-
-
-Available on NPM: https://www.npmjs.com/package/@knennigtri/merge-markdown 
-
-Available on GPR: https://github.com/knennigtri/merge-markdown/packages/1458049 
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [merge-markdown](#merge-markdown)
-- [Contents](#contents)
-  - [Installation](#installation)
-  - [Command Line Tool](#command-line-tool)
-  - [Usage](#usage)
-  - [Manifest file format](#manifest-file-format)
-    - [Supported Options](#supported-options)
-      - [`noYAML`](#noyaml)
-      - [`replace`](#replace)
-      - [`doctoc`](#doctoc)
-    - [Supported Output Options](#supported-output-options)
-      - [Merged file TOC](#merged-file-toc)
-      - [HTML Output](#html-output)
-      - [PDF Output](#pdf-output)
-    - [Special Modes](#special-modes)
-      - [QA Mode](#qa-mode)
-  - [Manifest Examples](#manifest-examples)
-    - [YAML used as input](#yaml-used-as-input)
-    - [JSON used as input](#json-used-as-input)
-    - [Replace keys within a single file](#replace-keys-within-a-single-file)
-    - [Options applied to all files](#options-applied-to-all-files)
-    - [Apply output options](#apply-output-options)
+- [Installation](#installation)
+- [Command Line Tool](#command-line-tool)
+- [Usage](#usage)
+- [Manifest file format](#manifest-file-format)
+  - [Supported Options](#supported-options)
+    - [`noYAML`](#noyaml)
+    - [`replace`](#replace)
+    - [`doctoc`](#doctoc)
+  - [Supported Output Options](#supported-output-options)
+    - [Merged file TOC](#merged-file-toc)
+    - [HTML Output](#html-output)
+    - [PDF Output](#pdf-output)
+  - [Special Modes](#special-modes)
+    - [QA Mode](#qa-mode)
+- [Manifest Examples](#manifest-examples)
+  - [YAML used as input](#yaml-used-as-input)
+  - [JSON used as input](#json-used-as-input)
+  - [Replace keys within a single file](#replace-keys-within-a-single-file)
+  - [Options applied to all files](#options-applied-to-all-files)
+  - [Apply output options](#apply-output-options)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
