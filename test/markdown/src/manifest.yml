@@ -3,12 +3,14 @@ input:
  ../../frontmatter.md: ""
  lorem-module.md: 
   noYAML: true
-  TOC: true
+  doctoc: true
   replace:
    <!--#-->: "Module 1: "
- ipsum-module.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 2: "}}
- etiam-module.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 3: "}}
-output: merged/manifest-yaml.md
+ ipsum-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 2: "}}
+ etiam-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 3: "}}
+output: 
+ name: merged/manifest-yaml.md
+ doctoc: true
 qa: {exclude: "(frontmatter|preamble)"}
 replace:
  <!--{timestamp}-->: 05/25/2021
