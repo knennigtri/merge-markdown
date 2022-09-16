@@ -86,12 +86,7 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
     if(onlyQA){
         outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
-
-    if(manifestJSON.output.doctoc){
-        createSingleFile(mergedFileArr, outputFileStr, manifestJSON);
-    } else {
-        createSingleFile(mergedFileArr, outputFileStr);
-    }
+    createSingleFile(mergedFileArr, outputFileStr, manifestJSON);
 }
 
 function createSingleFile(list, outputFileStr, manifestJSON){
@@ -110,7 +105,6 @@ function createSingleFile(list, outputFileStr, manifestJSON){
                
                 manifestJSON.output.doctoc
                 var outDoctoc = buildTOC(data,manifestJSON.output.doctoc, manifestJSON.doctoc);
-                // var outDoctoc = doctoc(data,"github.com",3,"",false,"",false,true, false);
 
                 fs.writeFile(outputFileStr, outDoctoc, 'utf-8', function (err) {
                     if (err) {
