@@ -8,17 +8,26 @@ var debugPDF = require('debug')('presentation:pdf');
 var debugPDFOptions = require('debug')('presentation:pdf:options');
 var verbose = require('debug')('verbose');
 var fs = require('fs');
-var EXT = {
-    "pdf": ".pdf",
-    "html": ".html"
-}
 var MODE = {
     "pdf": "pdf",
     "html": "html"
 }
+var EXT = {
+    "pdf": "."+MODE.pdf,
+    "html": "."+MODE.html
+}
+
 exports.MODE = MODE;
 
 var build = async function(jsonObj, inputPath, mode){
+    //TODO remove?
+    var promise = new Promise((res, rej) => {
+        setTimeout(() => res("Now it's done!"), 5000)
+    });
+    await promise; 
+
+    console.log("Creating presentation...");
+    
     debug("Presentation output: " + mode);
     var absInputPath = path.resolve(inputPath);
 
@@ -26,28 +35,24 @@ var build = async function(jsonObj, inputPath, mode){
     debug("Input: " + absInputPath);
 
     //Set the output location of documents
-    var absManifestOutputPath = path.parse(jsonObj.output).dir;
-    var absManifestOutputFileName = path.parse(jsonObj.output).base;
+    var absManifestOutputPath = path.parse(jsonObj.output.name).dir;
+    var absManifestOutputFileName = path.parse(jsonObj.output.name).base;
     var absOutputPath = path.join(absInputPath,absManifestOutputPath);
     //Location of merge-markdown file
     var absMMFileName = path.join(absOutputPath,absManifestOutputFileName);
 
-    //TODO remove?
-    var promise = new Promise((res, rej) => {
-        setTimeout(() => res("Now it's done!"), 500)
-    });
-    await promise; 
-
-    toHTML(jsonObj, absMMFileName, absInputPath, mode);
+    console.log(mode.toUpperCase() + " mode selected for " + absManifestOutputFileName);
+    console.log("+++++++++++++");
+   toHTML(jsonObj, absMMFileName, absInputPath, mode);
 }
 
 /**
  * Input and Output files are expected to be ABS
  */
 function toHTML(manifestJson, inputFile, inputPath, mode){
-    debug("Creating HTML...")
-    var outputFile = path.parse(inputFile).dir + "/temp.html";
-    var pandocArgs = buildPandocArgs(manifestJson.pandoc, inputPath, outputFile);
+    debug("Creating HTML...");
+    var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
+    var pandocArgs = buildPandocArgs(manifestJson.output.pandoc, inputPath, outputFile);
     debugHTML("input: "+inputFile);
     debugHTML("Args: "+pandocArgs);
     nodePandoc(inputFile, pandocArgs, function (err, result) {
@@ -55,7 +60,7 @@ function toHTML(manifestJson, inputFile, inputPath, mode){
             console.error('PANDOC: ',err);
             console.log("Verify the pandoc arguments according to pandoc documentation");
         } else {
-            console.log(path.parse(outputFile).base + " created from " + path.parse(inputFile).base);
+            console.log(" pandoc: "+ path.parse(inputFile).base + " >> "+ path.parse(outputFile).base);
             switch (mode){
                 case MODE.pdf:
                     toPDF(manifestJson, outputFile, mode);
@@ -75,17 +80,18 @@ function toHTML(manifestJson, inputFile, inputPath, mode){
  * Input and Output files are expected to be ABS
  */
 function toPDF(manifestJson, inputFile, mode){
-    debug("Creating PDF...")
-    var outputFile = path.parse(inputFile).dir + "/temp.pdf";
-    var options = buildWkhtmltopdfOptions(manifestJson.wkhtmltopdf, outputFile);
+    debug("Creating PDF...");
+    var outputFile = path.join(path.parse(inputFile).dir, "temp.pdf");
+    var options = buildWkhtmltopdfOptions(manifestJson.output.wkhtmltopdf, outputFile);
     debugPDF("input: "+inputFile);
     debugPDF("Args: "+JSON.stringify(options));
     wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
         if (err) {
             console.error('WKHTMLTOPDF: ',err);
-            console.log("Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
+            if(err.includes("spawn wkhtmltopdf ENOENT")) console.log("Make sure wkhtmltopdf is installed from http://wkhtmltopdf.org/downloads.html");
+            else console.log("Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
         } else {
-            console.log(path.parse(outputFile).base + " created from " + path.parse(inputFile).base);
+            console.log(" wkhtmltopdf: "+ path.parse(inputFile).base + " >> "+ path.parse(outputFile).base);
             renameToManifestOutputName(manifestJson, outputFile, mode);
             // fs.unlinkSync(inputFile);
             verbose(result);
@@ -94,7 +100,7 @@ function toPDF(manifestJson, inputFile, mode){
 }
 
 function buildPandocArgs(jsonObj, inputPath, fileName){
-    var cliArgs = "-o" + fileName;
+    var cliArgs = "-o " + fileName;
     if(jsonObj){
         for (var key in jsonObj){
             if (jsonObj.hasOwnProperty(key)) {
@@ -103,7 +109,7 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
                     templatePath = path.join(inputPath,templatePath);
                     debugHTMLOptions("template added: " + templatePath);
                     cliArgs += " --template " + templatePath;
-                } else if(jsonObj[key].includes("-c")){
+                } else if(jsonObj[key].includes("-c ")){
                     var ccsPath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
                     ccsPath = path.join(inputPath,ccsPath); 
                     debugHTMLOptions("css added: " + ccsPath);
@@ -156,17 +162,20 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
     return defaultOptions;
 }
 
-function renameToManifestOutputName(manifestJson, inputFile, mode){
-    var title = path.parse(manifestJson.output).name;
-    var output = path.parse(inputFile).dir;
+function renameToManifestOutputName(manifestJson, absInputFile, mode){
+    console.log(" Renaming "+path.parse(absInputFile).base+"...");
+    var title = path.parse(manifestJson.output.name).name;
+    var absOutput = path.parse(absInputFile).dir;
     if(mode == MODE.pdf){
-        output = path.join(output, title + EXT.pdf)
+        absOutput = path.join(absOutput, title + EXT.pdf)
     }
     if(mode == MODE.html){
-        output = path.join(output, title + EXT.html)
+        absOutput = path.join(absOutput, title + EXT.html)
     }
-    fs.rename(inputFile, output,  () => {
-        console.log("File Renamed to " + path.parse(output).base);
+    fs.rename(absInputFile, absOutput,  () => {
+        var manifestOutputDir = path.parse(manifestJson.output.name).dir;
+        var mOutput = path.join(manifestOutputDir,path.parse(absOutput).base);
+        console.log(mOutput + " created.")
     });
 }
 

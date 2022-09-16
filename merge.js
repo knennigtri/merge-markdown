@@ -6,9 +6,9 @@ var markdownLinkCheck = require('markdown-link-check');
 var doctoc = require('doctoc/lib/transform');
 var validUrl = require('valid-url');
 var debug = require('debug')('merge');
-var debugRelLinks  = require('debug')('merge:relLinks');
+var debugRelLinks  = require('debug')('merge:rellinks');
 var debugYaml = require('debug')('merge:yaml');
-var debugtoc = require('debug')('merge:toc');
+var debugDoctoc = require('debug')('merge:doctoc');
 var debugReplace = require('debug')('merge:replace');
 var debugLinkcheck = require('debug')('merge:linkcheck');
 var onlyQA;
@@ -20,21 +20,24 @@ var EXT = {
 };
 exports.EXT = EXT;
 
-var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
+var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkCheck){
     onlyQA = qaContent || false;
     var inputJSON = manifestJSON.input;
-    var outputFileStr = relPathManifest +"/"+ manifestJSON.output;
+    var outputFileStr = path.join(relPathManifest, manifestJSON.output.name)
+    var doNotCreateLinkcheckFile = noLinkCheck;
     var outputLinkcheckFileStr = updateExtension(outputFileStr, EXT.linkcheck);
     var qaRegex;
     if(manifestJSON.qa) qaRegex = new RegExp(manifestJSON.qa.exclude);
     if(onlyQA) console.log("QA exclude regex: " + qaRegex);
 
+    if(doNotCreateLinkcheckFile) console.log("Skipping linkcheck on all files");
+
     //Iterate through all of the input files in manifest apply options
     var fileArr= [];
     var refFileArr= [];
     Object.keys(inputJSON).forEach(function(inputKey) {
-        var inputFileStr = relPathManifest +"/"+ inputKey;
-        console.log("*********"+inputFileStr+"*********");
+        var inputFileStr = path.join(relPathManifest, inputKey);
+        console.log("--"+inputFileStr+"--");
 
         if(onlyQA && qaRegex.test(inputFileStr)){
             console.warn("Skipping " +inputKey + " for QA");
@@ -48,23 +51,24 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
         
         //updates all relative asset paths to the relative output location
         var generatedContent = updateAssetRelPaths(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr));
-        
-        //applies gobal generate rules
-        debug("--Apply global manifest OPTIONS--");
-        generatedContent = applyContentOptions(generatedContent,manifestJSON);
-        //Applies file specific generate rules
-        debug("--Apply file specific OPTIONS--");
-        generatedContent = applyContentOptions(generatedContent,inputJSON[inputKey]);
+
+        debug("--Apply file OPTIONS--");
+        //Content, local options, global options
+        generatedContent = applyContentOptions(generatedContent,inputJSON[inputKey],manifestJSON);
+
         var tempFile = inputFileStr+".temp";
         fs.writeFileSync(tempFile,generatedContent);
         
-        //checks for broken links within the content
-        debug("--Create/Update linkcheck file--");
-        linkCheck(inputFileStr,outputLinkcheckFileStr);
+        if(!doNotCreateLinkcheckFile){
+            //checks for broken links within the content
+            debug("--Create/Update linkcheck file--");
+            linkCheck(tempFile,outputLinkcheckFileStr);
+        }
 
         //add the  temp file to the list to merge together
         fileArr.push(tempFile);
-        console.log(path.basename(tempFile)+" added to merge list");
+        debug(path.basename(tempFile));
+        console.log("...added to merge list");
 
         //Adds any same name .ref.md files to refFilesList
         var refFileStr = updateExtension(inputFileStr, EXT.ref)
@@ -74,27 +78,18 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent){
         } 
     });
 
-    console.log("++++++++++++++++++++")
+    console.log("+++++++++++++")
     //Merge lists and output single markdown file
     var mergedFileArr = fileArr.concat(refFileArr);
     
-    console.log("List of files to merge:\n    " + mergedFileArr.join("\n    "));
+    console.log("Creating Merged Markdown:\n " + mergedFileArr.join("\n "));
     if(onlyQA){
         outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
-    if(manifestJSON.mergedTOC){
-        outputFileStr = createSingleFile(mergedFileArr, outputFileStr, manifestJSON.mergedTOC);
-    } else {
-        outputFileStr = createSingleFile(mergedFileArr, outputFileStr);
-    }
-    
-    //cleanup 
-    removeTempFiles(mergedFileArr);
-
-    return outputFileStr;
+    createSingleFile(mergedFileArr, outputFileStr, manifestJSON);
 }
 
-function createSingleFile(list, outputFileStr, doctocOptions){
+function createSingleFile(list, outputFileStr, manifestJSON){
     debug("Creating single file");
     if(list == null || list == ""){
         console.log("List to merge is not valid. Aborting..");
@@ -105,48 +100,87 @@ function createSingleFile(list, outputFileStr, doctocOptions){
         fs.mkdirSync(outputPath);
     }
     concat(list, outputFileStr).then(result => {
-        if(doctocOptions){
+        if(manifestJSON.output.hasOwnProperty("doctoc") && manifestJSON.output.doctoc){
             fs.readFile(outputFileStr, 'utf-8', function (err, data) {
-                var outDoctoc = doctoc(data,"github.com",3,"",false,"",false,true, false);
-                fs.writeFile(outputFileStr, outDoctoc.data, 'utf-8', function (err) {
-                    if (err) return console.log(err);
+               
+                manifestJSON.output.doctoc
+                var outDoctoc = buildTOC(data,manifestJSON.output.doctoc, manifestJSON.doctoc);
+
+                fs.writeFile(outputFileStr, outDoctoc, 'utf-8', function (err) {
+                    if (err) {
+                        console.log("DOCTOC Error: " +err);
+                        return;
+                    }
+                    removeTempFiles(list); //cleanup
+                    console.log(outputFileStr + " created.");
                     return outputFileStr;
                 });
             });
         } else {
+            removeTempFiles(list); //cleanup
+            console.log(outputFileStr + " created.");
             return outputFileStr;
         }
     });
 }
 
-function applyContentOptions(origContent, fileOptions) {
+//Content, local options, global options
+function applyContentOptions(origContent, fileOptions, globalOptions) {
     var scrubbedContent = origContent;
 
-    if(fileOptions == null) return scrubbedContent;
-    //Remove YAML
-    if(fileOptions.hasOwnProperty("noYAML") && fileOptions.noYAML){
-        var contentNoYAML = removeYAML(origContent);
-        scrubbedContent = contentNoYAML;
-    }
-    //Allows for find and replace options in the markdown with ${}
-    if(fileOptions.hasOwnProperty("replace") && fileOptions.replace){
-        scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
-    }
-    //Add TOC
-    if(fileOptions.hasOwnProperty("TOC") && fileOptions.TOC){
-        var tocTitle = "#### Module Contents";
-        var outDoctoc = "";
-        if(fileOptions.TOC.toString().toLowerCase() != "true"){
-            tocTitle = fileOptions.TOC
-        } 
-        debug("[OPTION] Add TOC...");
-        //(files, mode, maxHeaderLevel, title, notitle, entryPrefix, processAll, stdOut, updateOnly)
-        var outDoctoc = doctoc(scrubbedContent,"github.com",3,tocTitle,false,"",true,true,false);
-        if(outDoctoc.data != null){
-            scrubbedContent = outDoctoc.data;
-            debugtoc("TOC Added");
+    // if(fileOptions == undefined || fileOptions == "") return scrubbedContent;
+    
+    /* Apply noYAML */
+    //Apply local noYAML option
+    if(fileOptions && fileOptions.hasOwnProperty("noYAML")){ 
+        if(fileOptions.noYAML){
+            debug("Using [Local] noYAML...");
+            scrubbedContent = removeYAML(origContent);
         }
-    } 
+    } else //Apply global noYAML option
+        if(globalOptions.hasOwnProperty("noYAML") && globalOptions.noYAML){ 
+            debug("Using [Global] noYAML...");
+        scrubbedContent = removeYAML(origContent);
+    }
+
+    /* Apply find and replace */
+    //Apply local replace
+    if(fileOptions && fileOptions.hasOwnProperty("replace")){
+        // merge global replace with local replace taking precedence
+        if(globalOptions.hasOwnProperty("replace")){
+            for (var key in globalOptions.replace){
+                if(!fileOptions.replace.hasOwnProperty(key)){
+                    fileOptions.replace[key] = globalOptions.replace[key];
+                }
+            }
+            debug("Using [Local/Global] Find/Replace...");
+            scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
+        } else {
+            debug("Using [Local] Find/Replace...");
+            scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
+        }
+    } else //Apply global replace
+    if(globalOptions.hasOwnProperty("replace")){
+        debug("Using [Global] Find/Replace...");
+        scrubbedContent = replaceStrings(scrubbedContent,globalOptions.replace);
+    }
+
+    //Add TOC
+    if(fileOptions && fileOptions.hasOwnProperty("doctoc")){
+        if(fileOptions.doctoc){
+            if(globalOptions.hasOwnProperty("doctoc")){
+                debugDoctoc("Using [Local/Global] DocToc...");
+                scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc, globalOptions.doctoc);
+            } else {
+                debugDoctoc("Using [Local] DocToc...");
+                scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc);
+            }
+        }
+    } else if(globalOptions.hasOwnProperty("doctoc") && globalOptions.doctoc){
+        debug("Using [Global] DocToc...");
+        scrubbedContent = buildTOC(scrubbedContent, null, globalOptions.doctoc);
+    }
+
     return scrubbedContent;
 } 
 
@@ -157,7 +191,6 @@ function applyContentOptions(origContent, fileOptions) {
 function updateAssetRelPaths(fileContents,inputPath){
     var resultContent=[];
     var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
-
     debug("Rewriting Relative Asset Paths");
 
     //Go through each line that and 
@@ -165,24 +198,29 @@ function updateAssetRelPaths(fileContents,inputPath){
     var count = 0;
     lines.forEach((line, lineNumber) => {
         var match = line.match(regex);
-        var origAssetRelPath = "";
+        var relAssetPath = "";
         //if found capture relPath
         if(match != null){
             var origStr = match[0];
+            //Example: ![my-asset](links/my-asset.jpg)
             if(origStr.startsWith("![")){
-                origAssetRelPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
-            } else if(origStr.startsWith("src=")){
-                origAssetRelPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+                relAssetPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
+            } else {
+                //Example: src="links/my-asset.jpg"
+                if(origStr.startsWith("src=")){
+                    relAssetPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+                }
             } 
-            if(!validUrl.isUri(origAssetRelPath)){
+            //Check if path is a URL
+            if(!validUrl.isUri(relAssetPath)){
                 //resolve the asset path
-                var origAssetPath = path.resolve(inputPath, origAssetRelPath);
+                var absAssetPath = path.resolve(inputPath, relAssetPath);
 
                 count++;
-                debugRelLinks("[Line " + lineNumber + "]: "+origAssetRelPath);
-                debugRelLinks("Updated to: "+origAssetPath);
+                debugRelLinks("[Line " + lineNumber + "]: "+relAssetPath);
+                debugRelLinks("Updated to: "+absAssetPath);
 
-                var newLine = line.replace(origAssetRelPath,origAssetPath);
+                var newLine = line.replace(relAssetPath,absAssetPath);
                 resultContent.push(newLine);
             }else{
                 resultContent.push(line);
@@ -256,6 +294,70 @@ function replaceStrings(fileContents,replacements){
     return replacedContent;
 }
 
+/*
+
+*/
+function buildTOC(fileContents,doctocLocal, doctocGlobal){
+    debug("[OPTION] Running doctoc...");
+    var includeTOC = false;
+
+    var defaultDocToc = {
+        "mode": "github",
+        "maxlevel": 3,
+        "title": "",
+        "notitle": true,
+        "entryprefix": "",
+        "all": false,
+        "stdout": true,
+        "update-only": false
+    };
+    var finalDoctoc = defaultDocToc;
+    var obj = {doctocGlobal, doctocLocal};
+    for (var options in obj){
+        if (options=="doctocGlobal") debugDoctoc("Apply Global Options: " + JSON.stringify(obj[options]));
+        else debugDoctoc("Apply Local Options: " + JSON.stringify(obj[options]));
+        if(obj[options] != undefined){
+            if(typeof obj[options] === 'boolean'){
+                includeTOC = obj[options];
+            } else if(typeof obj[options] === 'string') {
+                finalDoctoc.title = obj[options];
+                finalDoctoc.notitle = false;
+                includeTOC = true; 
+            } else {
+                for(var key in finalDoctoc){
+                    if(obj[options].hasOwnProperty(key)){
+                        finalDoctoc[key] = obj[options][key];
+                        if(key == "title") finalDoctoc.notitle = false;
+                        includeTOC = true;
+                    } 
+                }
+            }
+        }
+    }
+
+    if(includeTOC){
+        debugDoctoc(JSON.stringify(finalDoctoc, null, 2))
+        var out = doctoc(fileContents,"github.com",
+            finalDoctoc.maxlevel,
+            finalDoctoc.title,
+            finalDoctoc.notitle,
+            finalDoctoc.entryprefix,
+            finalDoctoc.all,
+            finalDoctoc.stdout,
+            finalDoctoc['update-only']);
+        
+        if(!out.transformed) {
+            debugDoctoc("No generated TOC based on document and maxlevel");
+            return fileContents;
+        }
+        if(out.data == null) return;
+        
+        debugDoctoc("doctoc TOC generated");
+        return out.data;
+    }
+    return fileContents;
+}
+
 /** Function that uses markdown-link-check to validate all URLS and relative links to images
  * Writes a file called outputFile.linkcheck.md with the results
  * https://github.com/tcort/markdown-link-check
@@ -272,7 +374,7 @@ function linkCheck(inputFileStr, outputFileStr) {
     }
     
     var inputFolder = path.dirname(inputFileStr);
-    var base = path.join("file://",process.cwd(),inputFolder);
+    var base = new URL(path.join("file:",path.resolve(inputFolder))); //TODO Might be failing on windows
     debugLinkcheck("Folder to be linkchecked: "+base);
     var fileContents = fs.readFileSync(inputFileStr, 'utf-8');
     markdownLinkCheck(fileContents,

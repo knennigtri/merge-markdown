@@ -1,0 +1,19 @@
+---
+input:
+ ../../frontmatter.md: ""
+ preamble.md: ""
+ lorem-module.md: {noYAML: true, doctoc: {title: Module Title, maxlevel: 2}, replace: {<!--#-->: "Module 1: "}}
+ ipsum-module.md: {noYAML: true, doctoc: false, replace: {<!--#-->: "Module 2: "}}
+ etiam-module.md: {noYAML: true, doctoc: "Hello Contents!", replace: {<!--#-->: "Module 3: "}}
+output: 
+ name: merged/doctoc.md
+ doctoc: true
+qa: {exclude: "(frontmatter|preamble)"}
+doctoc: {maxlevel: 2, notitle: false}
+replace:
+ <!--{timestamp}-->: 05/25/2021
+ <!--{returnToMainTOC}-->: "[Return to Course Contents](#course-contents)"
+ <!--{courseTitle}-->: My Course Title
+ <!--{author}-->: Chuck Grant
+ ({#(.*?)}): ""
+---

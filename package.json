@@ -1,22 +1,24 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "0.9.0",
-  "description": "Creates a single markdown file (with TOC) from several markdown files and optionally add html/pdf presentation",
+  "version": "1.0.0",
+  "description": "Prepare input files to merge together and optionally output html/pdf presentation",
   "repository": {
     "type": "git",
     "url": "git@github.com:knennigtri/merge-markdown.git"
   },
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
-    "build": "npm run readmeTOC && npm ci",
+    "build": "npm run readmeTOC && npm ci && npm i --package-lock-only && depcheck ./",
+    "local": "npm pack",
+    "publish-bugfix": "npm publish --tag bugfix",
     "readmeTOC": "doctoc README.md --github --title='# Contents'",
     "m-extTest": "merge-markdown -m test/markdown/src/manifest.json; merge-markdown -m test/markdown/src/manifest.yml",
     "m-ioTest": "merge-markdown -m test/markdown/src/manifest-noIO.yml; merge-markdown -m test/markdown/src/manifest-noInput.yml; merge-markdown -m test/markdown/src/manifest-noOutput.yml",
-    "m-onlyGlobalOptions": "merge-markdown -m test/markdown/src/manifest-noInput-withOutput.yml",
+    "m-onlyGlobalOptions": "merge-markdown -m test/markdown/src/manifest-noInput.yml",
     "o-noManifest": "merge-markdown -m test/markdown/src",
     "o-yamlTest": "merge-markdown -m test/markdown/src/yaml-test",
-    "p-pdfTest": "merge-markdown -m test/pdf/src/manifest.md --pdf; merge-markdown -m test/pdf/src/manifest-noPresentation.md --pdf",
-    "p-htmlTest": "merge-markdown -m test/pdf/src/manifest.md --html; merge-markdown -m test/pdf/src/manifest-noPresentation.md --html",
+    "p-pdfTest": "merge-markdown -m test/pdf/src/manifest.yml --pdf; merge-markdown -m test/pdf/src/manifest-noPresentation.yml --pdf",
+    "p-htmlTest": "merge-markdown -m test/pdf/src/manifest.yml --html; merge-markdown -m test/pdf/src/manifest-noPresentation.yml --html",
     "test-manifest": "npm run m-extTest && npm run m-ioTest && npm run m-onlyGlobalOptions",
     "test-other": "npm run o-noManifest && npm run o-yamlTest",
     "test-presentation": "npm run p-pdfTest && npm run p-htmlTest",
@@ -29,7 +31,17 @@
     "merge",
     "toc",
     "removeYAML",
-    "noYAML"
+    "noYAML",
+    "YAML",
+    "JSON",
+    "manifest",
+    "doctoc",
+    "pandoc",
+    "wkhtmltopdf",
+    "markdown-link-check",
+    "presentation",
+    "pdf",
+    "html"
   ],
   "license": "ISC",
   "dependencies": {
@@ -50,7 +62,6 @@
   "directories": {
     "test": "test"
   },
-  "devDependencies": {},
   "bugs": {
     "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
   }
