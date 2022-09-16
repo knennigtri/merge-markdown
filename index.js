@@ -128,7 +128,6 @@ var init = function(manifestParam, qaParam, noLinkcheckParam) {
 
   if(manifestJSON && manifestJSON.length != 0){
     //print out manifest to be used
-    debugManifest(JSON.stringify(manifestJSON, null, 2));
     manifestJSON =  fixDeprecatedManifestEntry(manifestJSON);
   //  return;
       merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck); 
@@ -331,6 +330,17 @@ function fixDeprecatedManifestEntry(manifestFix){
     delete manifestFix.wkhtmltopdf;
     updatesNeeded += "   -manifest.wkhtmltopdf >> manifest.output.wkhtmltopdf.\n";
   }
+  if(manifestFix.output.hasOwnProperty("TOC")){
+    manifestFix.output.doctoc = manifestFix.output.TOC;  
+    delete manifestFix.output.TOC
+    updatesNeeded += "   -manifest.output.TOC >> manifest.output.doctoc.\n";
+  }
+  if(manifestFix.output.hasOwnProperty("mergedTOC")){
+    manifestFix.output.doctoc = manifestFix.output.mergedTOC;  
+    delete manifestFix.output.mergedTOC;
+    updatesNeeded += "   -manifest.output.mergedTOC >> manifest.output.doctoc.\n";
+  }
+
 
   if(manifestFix.hasOwnProperty("TOC")){
     manifestFix.doctoc = manifestFix.TOC;
@@ -351,9 +361,9 @@ function fixDeprecatedManifestEntry(manifestFix){
   }
   
   if(updatesNeeded){
-    console.log("[WARNING] Manifest entries have moved. Consider updating your manifest");
+    console.log("[WARNING] Below entries are old. Consider updating your manifest:");
     console.log(updatesNeeded)
-    console.log(JSON.stringify(manifestFix, null, 2));
+    debugManifest(JSON.stringify(manifestFix, null, 2));
   }
   return manifestFix;
 }
