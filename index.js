@@ -22,7 +22,8 @@ const EXAMPLE_MANIFEST = `Example yaml in a manifest file:
     global-frontmatter.md: ""
     module1Folder/file1.md: {options}
     module2Folder/file2.md: {noYAML: true, TOC: true}
-  output: output/myOutput.md
+  output: 
+    name: merged/myOutput.md
   qa: {exclude: frontmatter}
   {options}
 ---`;
@@ -124,7 +125,9 @@ var init = function(manifestParam, qaParam, noLinkcheckParam) {
   if(manifestJSON && manifestJSON.length != 0){
     //print out manifest to be used
     debugManifest(JSON.stringify(manifestJSON, null, 2));
-    merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck); 
+    manifestJSON =  fixDeprecatedManifestEntry(manifestJSON);
+  //  return;
+      merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck); 
     if (args.html) {
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.html);
     } else if(args.pdf) {
@@ -149,7 +152,7 @@ var getManifestJSON = function(inputManifestFile, qaMode){
     console.log(MSG_HELP);
     return;
   }
-  console.log("Found manifest to use: %s", inputManifestFile);
+  console.log("Found manifest to use: " + inputManifestFile);
   var fileContents = fs.readFileSync(inputManifestFile, 'utf8');
   var jsonObj = "";
   try {
@@ -168,22 +171,31 @@ var getManifestJSON = function(inputManifestFile, qaMode){
     }
   }
 
-  // If the manifest doesn't have an output, generate the output name basedd on the manifest directory
+  // If the manifest doesn't have an output, generate the output name based on the manifest directory
   if(!jsonObj.output) {
-    jsonObj.output = generateFileNameFromFolder(inputManifestFile);
-    console.log("Manifest is missing output. "+path.parse(jsonObj.output).dir+"/ will be used.");
+    jsonObj.output = {};
+    jsonObj.output.name = generateFileNameFromFolder(inputManifestFile);
+    console.log("Manifest is missing output.name. "+jsonObj.output.name+" will be used.");
+    debugmanifestJson("OUTPUT:\n" + JSON.stringify(jsonObj.output, null, 2));
+  } else {
+    jsonObj = fixDeprecatedManifestEntry(jsonObj);
   }
-  if(jsonObj.output.split('.').pop() != "md"){
-    console.log("output needs to be a .md file");
+  
+  if(jsonObj.output.name.split('.').pop() != "md"){
+    console.log("output.name needs to be a .md file but found: " + jsonObj.output.name);
+    return;
   }
 
   // If the manifest doesn't have an input, build the input with md files in the manifest directory
   if(!jsonObj.input){
-    console.log("Manifest is missing input, .md files in same directory as manifest will be used.");
-    var inputList = generateInputListFromFolder(inputManifestFile, jsonObj.output);
+    console.log("Manifest is missing input, .md files in same directoy as manifest will be used.");
+    var inputList = generateInputListFromFolder(inputManifestFile, jsonObj.output.name);
     jsonObj.input = inputList;
+    debugmanifestJson("INPUT:\n" + JSON.stringify(jsonObj.input, null, 2));
+  } else {
+    jsonObj = fixDeprecatedManifestEntry(jsonObj); 
   }
-
+  
   if(qaMode){
     if (!jsonObj.qa || !jsonObj.qa.exclude){
       console.log("No exclude patterns given for QA. Using default `frontmatter` for exclusion.")
@@ -259,10 +271,10 @@ function useFolderPath(inputFolder, qaMode){
     return defManifest;
   }
   console.log("No manifest file given. Using "+inputFolder+" folder to create manifest.");
-  var generatedJSON = {"input": {},"output": ""};
+  var generatedJSON = {"input": {},"output": {}};
   
   //Create ouput file name
-  generatedJSON.output = generateFileNameFromFolder(inputFolder, merge.EXT.out);
+  generatedJSON.output.name = generateFileNameFromFolder(inputFolder, merge.EXT.out);
 
   //Generate the input with all .md files in the inputFolder
   var inputList = generateInputListFromFolder(inputFolder, "");
@@ -287,6 +299,30 @@ function getDefaultManifestJSON(inputFolder, qaMode){
     i++;
   }
   return;
+}
+
+function fixDeprecatedManifestEntry(manifestFix){
+  var updatesNeeded = "";
+  if(typeof manifestFix.output === "string"){
+    var name = manifestFix.output;
+    delete manifestFix.output;
+    manifestFix.output = {}
+    manifestFix.output.name = name;
+    updatesNeeded += "   -manifest.output >> manifest.output.name.\n";
+  }
+
+  if(manifestFix.hasOwnProperty("mergedTOC")){
+    manifestFix.output.mergedTOC = manifestFix.mergedTOC;  
+    delete manifestFix.mergedTOC
+    updatesNeeded += "   -manifest.mergedTOC >> manifest.output.mergedTOC.\n";
+  }
+  
+  if(updatesNeeded){
+    console.log("[WARNING] Manifest entries have moved. Consider updating your manifest");
+    console.log(updatesNeeded)
+    console.log(JSON.stringify(manifestFix, null, 2));
+  }
+  return manifestFix;
 }
 
 exports.init = init;

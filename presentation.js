@@ -35,8 +35,8 @@ var build = async function(jsonObj, inputPath, mode){
     debug("Input: " + absInputPath);
 
     //Set the output location of documents
-    var absManifestOutputPath = path.parse(jsonObj.output).dir;
-    var absManifestOutputFileName = path.parse(jsonObj.output).base;
+    var absManifestOutputPath = path.parse(jsonObj.output.name).dir;
+    var absManifestOutputFileName = path.parse(jsonObj.output.name).base;
     var absOutputPath = path.join(absInputPath,absManifestOutputPath);
     //Location of merge-markdown file
     var absMMFileName = path.join(absOutputPath,absManifestOutputFileName);
@@ -164,7 +164,7 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
 
 function renameToManifestOutputName(manifestJson, absInputFile, mode){
     console.log(" Renaming "+path.parse(absInputFile).base+"...");
-    var title = path.parse(manifestJson.output).name;
+    var title = path.parse(manifestJson.output.name).name;
     var absOutput = path.parse(absInputFile).dir;
     if(mode == MODE.pdf){
         absOutput = path.join(absOutput, title + EXT.pdf)
@@ -173,7 +173,7 @@ function renameToManifestOutputName(manifestJson, absInputFile, mode){
         absOutput = path.join(absOutput, title + EXT.html)
     }
     fs.rename(absInputFile, absOutput,  () => {
-        var manifestOutputDir = path.parse(manifestJson.output).dir;
+        var manifestOutputDir = path.parse(manifestJson.output.name).dir;
         var mOutput = path.join(manifestOutputDir,path.parse(absOutput).base);
         console.log(mOutput + " created.")
     });

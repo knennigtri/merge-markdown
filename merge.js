@@ -23,7 +23,7 @@ exports.EXT = EXT;
 var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkCheck){
     onlyQA = qaContent || false;
     var inputJSON = manifestJSON.input;
-    var outputFileStr = path.join(relPathManifest, manifestJSON.output)
+    var outputFileStr = path.join(relPathManifest, manifestJSON.output.name)
     var doNotCreateLinkcheckFile = noLinkCheck;
     var outputLinkcheckFileStr = updateExtension(outputFileStr, EXT.linkcheck);
     var qaRegex;
@@ -86,9 +86,9 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
     if(onlyQA){
         outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
-    var mergedTOC = manifestJSON.output.mergedTOC || manifestJSON.mergedTOC;
-    if(mergedTOC){
-        createSingleFile(mergedFileArr, outputFileStr, mergedTOC);
+
+    if(manifestJSON.output.mergedTOC){
+        createSingleFile(mergedFileArr, outputFileStr, manifestJSON.output.mergedTOC);
     } else {
         createSingleFile(mergedFileArr, outputFileStr);
     }
