@@ -14,5 +14,5 @@ replace:
  <!--{author}-->: Chuck Grant
  <!--#-->: Module 44
  ({#(.*?)}): ""
-mergedtoc: true
+mergedTOC: true
 ---
