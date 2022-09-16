@@ -24,26 +24,31 @@ Takes in a list of markdown files and merges them into a single output file with
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported Options](#supported-options)
-    - [`noYAML`](#noyaml)
-    - [`replace`](#replace)
-    - [`doctoc`](#doctoc)
-  - [Supported Output Options](#supported-output-options)
-    - [Merged file TOC](#merged-file-toc)
-    - [HTML Output](#html-output)
-    - [PDF Output](#pdf-output)
-  - [Special Modes](#special-modes)
-    - [QA Mode](#qa-mode)
-- [Manifest Examples](#manifest-examples)
-  - [YAML used as input](#yaml-used-as-input)
-  - [JSON used as input](#json-used-as-input)
-  - [Replace keys within a single file](#replace-keys-within-a-single-file)
-  - [Options applied to all files](#options-applied-to-all-files)
-  - [Apply output options](#apply-output-options)
+- [merge-markdown](#merge-markdown)
+- [Overview](#overview)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported Options](#supported-options)
+      - [`noYAML`](#noyaml)
+      - [`replace`](#replace)
+      - [`doctoc`](#doctoc)
+    - [Supported Output Options](#supported-output-options)
+      - [Merged file TOC](#merged-file-toc)
+      - [HTML Output](#html-output)
+      - [PDF Output](#pdf-output)
+    - [Special Modes](#special-modes)
+      - [QA Mode](#qa-mode)
+      - [nolinkcheck Mode](#nolinkcheck-mode)
+      - [Debug Mode](#debug-mode)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Apply output options](#apply-output-options)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -56,28 +61,21 @@ npm install -g @knennigtri/merge-markdown
 
 ## Command Line Tool
 
-The command line tool optionally takes 1 argument, the file name or http/https URL.
-If not supplied, the tool reads from standard input.
-
-uses default `./manifest.[md|yaml|yml|json]` for input
+Use default `./manifest.[md|yaml|yml|json]` for input
 ```shell
-merge-markdown
+> merge-markdown
 ```
-Merges based on manifest file
+Merge based on manifest file
 ```shell
-merge-markdown -m myManifest.md
+> merge-markdown -m myManifest.md
 ```
-Merges based on `path/to/files` default manifest or merges all files in a default order
+Merge based on `path/to/files` default manifest or merges all files in a default order
 ```shell
-merge-markdown -m path/to/files
-```
-With QA
-```shell
-merge-markdown -m myManifest.md --qa
+> merge-markdown -m path/to/files
 ```
 Output to PDF
 ```shell
-merge-markdown -m myManifest.md --pdf
+> merge-markdown -m myManifest.md --pdf
 ```
 
 ## Usage
@@ -224,7 +222,7 @@ Example files can be found in [test/pdf/src](test/pdf/src). You can also checkou
 
 #### QA Mode
 ```shell
-merge-markdown -m manifest.json --qa
+> merge-markdown -m manifest.json --qa
 ```
 Output will omit all filenames with `frontmatter` by default
 Add a regex to the manifest.json to customize exclusion:
@@ -233,6 +231,20 @@ Add a regex to the manifest.json to customize exclusion:
   qa: {exclude: "(frontmatter|preamble)"}
 ---
 ```
+
+#### nolinkcheck Mode
+Sometimes the [markdown-link-check](https://www.npmjs.com/package/markdown-link-check) tool might produce an error. To skip linkcheck:
+```shell
+> merge-markdown -m mymanifest.yml --nolinkcheck
+```
+
+#### Debug Mode
+[Debug](https://www.npmjs.com/package/debug) is used in this tool. Available debug options:
+ * index:[ input | manifest ]
+ * index:manifest:[ json | generate ]
+ * merge:[ relinks | yaml | doctoc | replace | linkcheck ]
+ * presentation:[ html | pdf ]:options
+ * presentation:verbose
 
 ## Manifest Examples
 

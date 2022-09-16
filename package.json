@@ -38,6 +38,7 @@
     "doctoc",
     "pandoc",
     "wkhtmltopdf",
+    "markdown-link-check",
     "presentation",
     "pdf",
     "html"
