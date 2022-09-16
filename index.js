@@ -21,43 +21,46 @@ const EXAMPLE_MANIFEST = `Example yaml in a manifest file:
   input:
     global-frontmatter.md: ""
     module1Folder/file1.md: {options}
-    module2Folder/file2.md: {noYAML: true, TOC: true}
+    module2Folder/file2.md: {noYAML: true, TOC: true, replace: {key:value}}
   output: 
     name: merged/myOutput.md
-  qa: {exclude: frontmatter}
+    {outputOptions}
+  qa: {exclude: regex}
   {options}
 ---`;
-const MSG_HELP = `Usage: merge-markdown [OPTIONS]
-Options:
+const MSG_HELP = `Usage: merge-markdown [ARGS]
+Arguments:
   -m manifestPath           Path to input folder, yaml, or json manifest
   --version                 Displays version of this package
   --qa                      QA mode.
   --nolinkcheck             Skips linkchecking
   --pdf                     Output to PDF. wkhtmltopdf must be installed http://wkhtmltopdf.org/downloads.html
   --html                    Output to HTML
-  -h                        Displays this screen
-  -h [manifest|options|qa]  See examples
+  --help                    Displays this screen
+  -h [manifest|options|outputOptions|qa]  See examples
 Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] unless specified in -m.
 `;
-const MANIFEST_OPTIONS = `Manifest input file options:
-Supported key/value pairs for {options} within the manifest file:
-  noYAML: true|false                        optionlly removes YAML. Default=false
-  TOC: true|false|"TOC title"               optionally adds a TOC to this file with doctoc. Default=false
-  replace:                                  searches for <!--{key}--> and replaces with value
-      startStr: replaceStrStart             optional. Set a unqiue start str for replace. Default is <!--{
-      endStr: replaceStrEnd                 optional. Set a unqiue end str for replace. Default is }-->
-      timestamp: true|false|"stringVal"     true for todays date or add you own timestamp string
-      *: "stringVal"                        replace any key string with the value string
-Supported key/value pairs only supported at a manifest level and not module level:
-  mergedTOC: true|false                     TOC built by doctoc at the beginning of the merged file
-  pandoc:
-    option: <value>                         Pandoc arguments should be added to <value>
-  wkhtmltopdf:
-    option: <value>                         wkhtmltopdf options can be added based on node-wkhtmltopdf
-      `;
-const QA_HELP=`When --qa is set:
-Output will exclude all filenames with 'frontmatter' by default
-Add a regex to the `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] to customize exclusion:
+const MANIFEST_OPTIONS = `Supported key/value pairs for {options}:
+  noYAML: true|false                 Optionlly removes YAML. Default=false
+  doctoc: true|false|"TOC title"     doctoc arguments. See https://www.npmjs.com/package/doctoc
+    option: <value>
+  replace:                           Searches for key and replaces with value
+    key: value
+    <!--{key}-->: value              Example key for a useful identifier
+    *: "stringVal"                   Regular expressions are allowed
+`;
+const MANIFEST_OUTPUT_OPTIONS = `Supported key/value pairs for {outputOptions}:
+  doctoc: true|false|"TOC title"            doctoc arguments. See https://www.npmjs.com/package/doctoc
+    option: <value>
+  pandoc:                                   pandoc arguments added to <value>. See https://pandoc.org/MANUAL.html#options
+    key1: "-c mystyle.css"
+    key2: "--template mytemplate.html"
+  wkhtmltopdf:                              wkhtmltopdf options. See https://www.npmjs.com/package/wkhtmltopdf#options
+    pageSize: Letter
+    footerLine: true
+`;
+const QA_HELP=`QA mode can optionally exclude files from the output.
+Example: exclude all filenames with 'frontmatter' by default
 ---
   qa: {exclude: "(frontmatter|preamble)"}
 ---`;
@@ -82,8 +85,9 @@ var init = function(manifestParam, qaParam, noLinkcheckParam) {
        return;
     }
     if(argHelp.toLowerCase() == "manifest") console.log(EXAMPLE_MANIFEST);
-    if(argHelp.toLowerCase() == "options") console.log(MANIFEST_OPTIONS);
-    if(argHelp.toLowerCase() == "qa") console.log(QA_HELP);
+    if(argHelp.toLowerCase() == "options") console.log(EXAMPLE_MANIFEST + "\n" + MANIFEST_OPTIONS);
+    if(argHelp.toLowerCase() == "qa") console.log(EXAMPLE_MANIFEST + "\n" + QA_HELP);
+    if(argHelp.toLowerCase() == "outputoptions") console.log(EXAMPLE_MANIFEST + "\n" + MANIFEST_OUTPUT_OPTIONS);
     return;
   }
 
@@ -312,9 +316,9 @@ function fixDeprecatedManifestEntry(manifestFix){
   }
 
   if(manifestFix.hasOwnProperty("mergedTOC")){
-    manifestFix.output.mergedTOC = manifestFix.mergedTOC;  
+    manifestFix.output.doctoc = manifestFix.mergedTOC;  
     delete manifestFix.mergedTOC
-    updatesNeeded += "   -manifest.mergedTOC >> manifest.output.mergedTOC.\n";
+    updatesNeeded += "   -manifest.mergedTOC >> manifest.output.doctoc.\n";
   }
   if(manifestFix.hasOwnProperty("pandoc")){
     manifestFix.output.pandoc = manifestFix.pandoc;
@@ -326,6 +330,24 @@ function fixDeprecatedManifestEntry(manifestFix){
     manifestFix.output.wkhtmltopdf = manifestFix.wkhtmltopdf;
     delete manifestFix.wkhtmltopdf;
     updatesNeeded += "   -manifest.wkhtmltopdf >> manifest.output.wkhtmltopdf.\n";
+  }
+
+  if(manifestFix.hasOwnProperty("TOC")){
+    manifestFix.doctoc = manifestFix.TOC;
+    delete manifestFix.TOC;
+    updatesNeeded += "   -manifest.TOC >> manifest.doctoc.\n";
+  }
+
+  if(manifestFix.hasOwnProperty("input")){
+    var update = false;
+    for(var i in manifestFix.input){
+      if(manifestFix.input[i].hasOwnProperty("TOC")){
+        manifestFix.input[i].doctoc = manifestFix.input[i].TOC;
+        delete manifestFix.input[i].TOC;
+        update = true;
+      }
+    }
+    if(update) updatesNeeded += "   -manifest.input[item].TOC >> manifest.input[item].doctoc.\n";
   }
   
   if(updatesNeeded){

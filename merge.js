@@ -87,8 +87,8 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
         outputFileStr = updateExtension(outputFileStr,EXT.qa);
     }
 
-    if(manifestJSON.output.mergedTOC){
-        createSingleFile(mergedFileArr, outputFileStr, manifestJSON.output.mergedTOC);
+    if(manifestJSON.output.doctoc){
+        createSingleFile(mergedFileArr, outputFileStr, manifestJSON.output.doctoc);
     } else {
         createSingleFile(mergedFileArr, outputFileStr);
     }
@@ -167,14 +167,14 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
     }
 
     //Add TOC
-    if(fileOptions.hasOwnProperty("TOC")){
-        if(fileOptions.TOC){
+    if(fileOptions.hasOwnProperty("doctoc")){
+        if(fileOptions.doctoc){
             debugDoctoc("Using [Local] DocToc...");
-            scrubbedContent = buildTOC(scrubbedContent,fileOptions.TOC);
+            scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc);
         }
-    } else if(globalOptions.hasOwnProperty("TOC") && globalOptions.TOC){
+    } else if(globalOptions.hasOwnProperty("doctoc") && globalOptions.doctoc){
         debug("Using [Global] DocToc...");
-        scrubbedContent = buildTOC(scrubbedContent,globalOptions.TOC);
+        scrubbedContent = buildTOC(scrubbedContent,globalOptions.doctoc);
     }
 
     return scrubbedContent;
@@ -294,7 +294,7 @@ function replaceStrings(fileContents,replacements){
 
 */
 function buildTOC(fileContents,doctocOptions){
-    debug("[OPTION] Add TOC...");
+    debug("[OPTION] Running doctoc...");
     var defaultDocToc = {
         "mode": "github.com",
         "maxlevel": 3,
@@ -321,7 +321,7 @@ function buildTOC(fileContents,doctocOptions){
     
     if(out.data == null) return;
     
-    debugDoctoc("TOC Added");
+    debugDoctoc("doctoc TOC generated");
     return out.data;
 }
 
