@@ -5,6 +5,7 @@ input:
  m2/m2-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 2:"}}
 output: "merged/presentationAdded.md"
 qa: {exclude: "(frontmatter)"}
+TOC: true
 replace:
  <!--{copyrightYear}-->: 2022
  <!--{timestamp}-->: 10/22/2022
