@@ -1,9 +1,25 @@
 ---
 input:
  ../../frontmatter.md: ''
- m1/m1-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 1:"}}
- m2/m2-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 2:"}}
-output: "merged/myOutput.md"
+ m1/m1-example.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1:"}}
+ m2/m2-example.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 2:"}}
+output: 
+ name: merged/myOutput.md
+ doctoc:
+  notitle: true
+  maxlevel: 2
+ pandoc:
+  css: -c path/to/main.css
+  latexTemplate: --template path/to/template.latex
+  title: -M title:Example
+ wkhtmltopdf:
+  marginBottom: 1in
+  marginTop: 1in
+  marginLeft: .7in
+  marginRight: .7in
+  pageSize: Letter
+  footerLine: true
+  footerCenter: Page [page]
 qa: {exclude: "(frontmatter)"}
 replace:
  <!--{copyrightYear}-->: 2022
@@ -13,17 +29,4 @@ replace:
  <!--{courseTitle}-->: My Course Title
  <!--{courseCreator}-->: The Merge Company
  <!--{author}-->: Ronan Boxer
-mergedTOC: true
-pandoc:
- css: -c path/to/main.css
- latexTemplate: --template path/to/template.latex
- title: -M title:Example
-wkhtmltopdf:
- marginBottom: 1in
- marginTop: 1in
- marginLeft: .7in
- marginRight: .7in
- pageSize: Letter
- footerLine: true
- footerCenter: Page [page]
 ---

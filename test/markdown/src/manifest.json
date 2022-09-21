@@ -1,11 +1,13 @@
 {
 	"input": {
 		"../../frontmatter.md": "",
-		"lorem-module.md": {"noYAML":true,"TOC":true, "replace": {"<!--#-->": "Module 1: "}},
-		"ipsum-module.md": {"noYAML":true,"TOC":true, "replace": {"<!--#-->": "Module 2: "}},
-		"etiam-module.md": {"noYAML":true,"TOC":true, "replace": {"<!--#-->": "Module 3: "}}
+		"lorem-module.md": {"noYAML":true,"doctoc":true, "replace": {"<!--#-->": "Module 1: "}},
+		"ipsum-module.md": {"noYAML":true,"doctoc":true, "replace": {"<!--#-->": "Module 2: "}},
+		"etiam-module.md": {"noYAML":true,"doctoc":true, "replace": {"<!--#-->": "Module 3: "}}
 	},
-	"output": "merged/manifest-json.md",
+	"output": {
+		"name": "merged/manifest-json.md"
+	},
 	"replace":{
 		"<!--{timestamp}-->": "05/25/2021",
 		"<!--{returnToMainTOC}-->": "[Return to Course Contents](#course-contents)",
