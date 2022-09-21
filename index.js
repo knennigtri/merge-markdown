@@ -66,17 +66,19 @@ Example: exclude all filenames with 'frontmatter' by default
 ---`;
 
 /**
- * 
  * @param {*} manifestParam manifest file or folder of .md files
  * @param {*} qaParam boolean to turn on QA mode
- * @returns 
+ * @param {*} modeParam 'html' or 'pdf' for presentation output
+ * @param {*} noLinkcheckParam true/false on nolinkchecking
  */
-var init = function(manifestParam, qaParam, noLinkcheckParam) {
+var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam) {
   var argManifest = manifestParam || args.m;
   var argQA = qaParam || args.qa;
   var argHelp =  args.h || args.help;
   var argVersion = args.v || args.version;
   var argNoLinkcheck = noLinkcheckParam || args.nolinkcheck;
+
+  var argMode = modeParam || args.html || args.pdf
 
   // Show CLI help
   if (argHelp) {
@@ -131,10 +133,10 @@ var init = function(manifestParam, qaParam, noLinkcheckParam) {
     manifestJSON =  fixDeprecatedManifestEntry(manifestJSON);
     merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck); 
     // return;
-      if (args.html) {
-      presentation.build(manifestJSON, manifestRelPath, presentation.MODE.html);
-    } else if(args.pdf) {
+    if(modeParam == presentation.MODE.pdf || args.pdf){
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.pdf);
+    } else if(modeParam == presentation.MODE.html || args.html){
+      presentation.build(manifestJSON, manifestRelPath, presentation.MODE.html);
     }
   } else {
     console.log("Cannot read manifest.");
@@ -317,41 +319,41 @@ function fixDeprecatedManifestEntry(manifestFix){
     delete manifestFix.output;
     manifestFix.output = {}
     manifestFix.output.name = name;
-    updatesNeeded += "   -manifest.output >> manifest.output.name.\n";
+    updatesNeeded += "   manifest.output >> manifest.output.name.\n";
   }
 
   //Move all outputOptions under the output
   if(manifestFix.hasOwnProperty("mergedTOC")){
     manifestFix.output.doctoc = manifestFix.mergedTOC;  
     delete manifestFix.mergedTOC
-    updatesNeeded += "   -manifest.mergedTOC >> manifest.output.doctoc.\n";
+    updatesNeeded += "   manifest.mergedTOC >> manifest.output.doctoc.\n";
   }
   if(manifestFix.hasOwnProperty("pandoc")){
     manifestFix.output.pandoc = manifestFix.pandoc;
     delete manifestFix.pandoc;
-    updatesNeeded += "   -manifest.pandoc >> manifest.output.pandoc.\n";
+    updatesNeeded += "   manifest.pandoc >> manifest.output.pandoc.\n";
   }
   if(manifestFix.hasOwnProperty("wkhtmltopdf")){
     manifestFix.output.wkhtmltopdf = manifestFix.wkhtmltopdf;
     delete manifestFix.wkhtmltopdf;
-    updatesNeeded += "   -manifest.wkhtmltopdf >> manifest.output.wkhtmltopdf.\n";
+    updatesNeeded += "   manifest.wkhtmltopdf >> manifest.output.wkhtmltopdf.\n";
   }
 
   //Update all TOC and mergedTOC keys to doctoc
   if(manifestFix.output.hasOwnProperty("TOC")){
     manifestFix.output.doctoc = manifestFix.output.TOC;  
     delete manifestFix.output.TOC
-    updatesNeeded += "   -manifest.output.TOC >> manifest.output.doctoc.\n";
+    updatesNeeded += "   manifest.output.TOC >> manifest.output.doctoc.\n";
   }
   if(manifestFix.output.hasOwnProperty("mergedTOC")){
     manifestFix.output.doctoc = manifestFix.output.mergedTOC;  
     delete manifestFix.output.mergedTOC;
-    updatesNeeded += "   -manifest.output.mergedTOC >> manifest.output.doctoc.\n";
+    updatesNeeded += "   manifest.output.mergedTOC >> manifest.output.doctoc.\n";
   }
   if(manifestFix.hasOwnProperty("TOC")){
     manifestFix.doctoc = manifestFix.TOC;
     delete manifestFix.TOC;
-    updatesNeeded += "   -manifest.TOC >> manifest.doctoc.\n";
+    updatesNeeded += "   manifest.TOC >> manifest.doctoc.\n";
   }
   if(manifestFix.hasOwnProperty("input")){
     var update = false;
@@ -362,7 +364,7 @@ function fixDeprecatedManifestEntry(manifestFix){
         update = true;
       }
     }
-    if(update) updatesNeeded += "   -manifest.input[item].TOC >> manifest.input[item].doctoc.\n";
+    if(update) updatesNeeded += "   manifest.input[item].TOC >> manifest.input[item].doctoc.\n";
   }
 
   //Display to the user which keys should be updated in their manifest
@@ -374,5 +376,5 @@ function fixDeprecatedManifestEntry(manifestFix){
   return manifestFix;
 }
 
-exports.init = init;
+exports.run = init;
 exports.getManifestJSON = getManifestJSON;

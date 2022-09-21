@@ -2,4 +2,4 @@
 
 var mergeMarkdown = require('../index.js');
 
-mergeMarkdown.init();
+mergeMarkdown.run();
