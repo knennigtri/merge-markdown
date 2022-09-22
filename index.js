@@ -71,12 +71,13 @@ Example: exclude all filenames with 'frontmatter' by default
  * @param {*} modeParam 'html' or 'pdf' for presentation output
  * @param {*} noLinkcheckParam true/false on nolinkchecking
  */
-var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam) {
+var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintainAssetPaths) {
   var argManifest = manifestParam || args.m;
   var argQA = qaParam || args.qa;
   var argHelp =  args.h || args.help;
   var argVersion = args.v || args.version;
   var argNoLinkcheck = noLinkcheckParam || args.nolinkcheck;
+  var argMaintainAssetPaths = maintainAssetPaths || args.maintainAssetPaths;
 
   var argMode = modeParam || args.html || args.pdf
 
@@ -131,7 +132,7 @@ var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam) {
   if(manifestJSON && manifestJSON.length != 0){
     //print out manifest to be used
     manifestJSON =  fixDeprecatedManifestEntry(manifestJSON);
-    merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck); 
+    merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck, argMaintainAssetPaths); 
     // return;
     if(modeParam == presentation.MODE.pdf || args.pdf){
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.pdf);

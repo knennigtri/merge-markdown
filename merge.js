@@ -20,11 +20,12 @@ var EXT = {
 };
 exports.EXT = EXT;
 
-var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkCheck){
-    onlyQA = qaContent || false;
+var markdownMerge = function(manifestJSON, relPathManifest, qaMode, noLinkCheck, maintainAssetPaths){
+    onlyQA = qaMode || false;
     var inputJSON = manifestJSON.input;
     var outputFileStr = path.join(relPathManifest, manifestJSON.output.name)
     var doNotCreateLinkcheckFile = noLinkCheck;
+    var keepAssetPaths = maintainAssetPaths | false;
     var outputLinkcheckFileStr = updateExtension(outputFileStr, EXT.linkcheck);
     var qaRegex;
     if(manifestJSON.qa) qaRegex = new RegExp(manifestJSON.qa.exclude);
@@ -50,7 +51,7 @@ var markdownMerge = function(manifestJSON, relPathManifest, qaContent, noLinkChe
         var origContent = fs.readFileSync(inputFileStr, 'utf-8');
         
         //updates all relative asset paths to the relative output location
-        var generatedContent = updateAssetRelPaths(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr));
+        var generatedContent = updateAssetRelPaths(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr),keepAssetPaths);
 
         debug("--Apply file OPTIONS--");
         //Content, local options, global options
@@ -188,39 +189,51 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
  * relPath with an absolute one
  * Debug=merge:relLinks
  */
-function updateAssetRelPaths(fileContents,inputPath){
+function updateAssetRelPaths(fileContents,inputFilePath, mergedFilePath, keepAssetPaths){
     var resultContent=[];
     var regex = /(!\[(.*?)\][(](.*?)[)])|(src=["'](.*?)["'])/g;
     debug("Rewriting Relative Asset Paths");
-
+    debugRelLinks("inputFilePath: "+inputFilePath);
+    debugRelLinks("mergedFilePath: "+mergedFilePath);
     //Go through each line that and 
     var lines = fileContents.split("\n");
     var count = 0;
     lines.forEach((line, lineNumber) => {
         var match = line.match(regex);
-        var relAssetPath = "";
+        var origAssetPath = "";
         //if found capture relPath
         if(match != null){
             var origStr = match[0];
             //Example: ![my-asset](links/my-asset.jpg)
             if(origStr.startsWith("![")){
-                relAssetPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
+                origAssetPath = origStr.substring(origStr.indexOf("(")+1,origStr.indexOf(")"));
             } else {
                 //Example: src="links/my-asset.jpg"
                 if(origStr.startsWith("src=")){
-                    relAssetPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
+                    origAssetPath = origStr.substring(origStr.indexOf("\"")+1,origStr.lastIndexOf("\""));
                 }
             } 
             //Check if path is a URL
-            if(!validUrl.isUri(relAssetPath)){
-                //resolve the asset path
-                var absAssetPath = path.resolve(inputPath, relAssetPath);
-
+            if(!validUrl.isUri(origAssetPath)){
+                var newAssetPath = "";
+                //patch for issue #51
+                if(path.isAbsolute(origAssetPath)){
+                    debugRelLinks("OrigPath");
+                    newAssetPath = origAssetPath;
+                } else {
+                    //resolve the asset path
+                    newAssetPath = path.resolve(inputFilePath, origAssetPath);
+                    if(keepAssetPaths){ 
+                        debugRelLinks("relPath");
+                        newAssetPath = path.relative(mergedFilePath,newAssetPath);
+                    }
+                }
+                
                 count++;
-                debugRelLinks("[Line " + lineNumber + "]: "+relAssetPath);
-                debugRelLinks("Updated to: "+absAssetPath);
+                debugRelLinks("[Line " + lineNumber + "]: "+origAssetPath);
+                debugRelLinks("Updated to: "+newAssetPath);
 
-                var newLine = line.replace(relAssetPath,absAssetPath);
+                var newLine = line.replace(origAssetPath,newAssetPath);
                 resultContent.push(newLine);
             }else{
                 resultContent.push(line);
