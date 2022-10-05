@@ -101,7 +101,7 @@ function createSingleFile(list, outputFileStr, manifestJSON){
     fs.mkdirSync(outputPath);
   }
   concat(list, outputFileStr).then(result => {
-    if(manifestJSON.output.hasOwnProperty("doctoc") && manifestJSON.output.doctoc){
+    if(Object.prototype.hasOwnProperty.call(manifestJSON.output,"doctoc") && manifestJSON.output.doctoc){
       fs.readFile(outputFileStr, "utf-8", function (err, data) {   
         manifestJSON.output.doctoc;
         var outDoctoc = buildTOC(data,manifestJSON.output.doctoc, manifestJSON.doctoc);
@@ -132,24 +132,24 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
   
   /* Apply noYAML */
   //Apply local noYAML option
-  if(fileOptions && fileOptions.hasOwnProperty("noYAML")){ 
+  if(fileOptions && Object.prototype.hasOwnProperty.call(fileOptions,"noYAML")){ 
     if(fileOptions.noYAML){
       debug("Using [Local] noYAML...");
       scrubbedContent = removeYAML(origContent);
     }
   } else //Apply global noYAML option
-  if(globalOptions.hasOwnProperty("noYAML") && globalOptions.noYAML){ 
+  if(Object.prototype.hasOwnProperty.call(globalOptions,"noYAML") && globalOptions.noYAML){ 
     debug("Using [Global] noYAML...");
     scrubbedContent = removeYAML(origContent);
   }
 
   /* Apply find and replace */
   //Apply local replace
-  if(fileOptions && fileOptions.hasOwnProperty("replace")){
+  if(fileOptions && Object.prototype.hasOwnProperty.call(fileOptions,"replace")){
     // merge global replace with local replace taking precedence
-    if(globalOptions.hasOwnProperty("replace")){
+    if(Object.prototype.hasOwnProperty.call(globalOptions,"replace")){
       for (var key in globalOptions.replace){
-        if(!fileOptions.replace.hasOwnProperty(key)){
+        if(!Object.prototype.hasOwnProperty.call(fileOptions.replace,key)){
           fileOptions.replace[key] = globalOptions.replace[key];
         }
       }
@@ -160,15 +160,15 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
       scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
     }
   } else //Apply global replace
-  if(globalOptions.hasOwnProperty("replace")){
+  if(Object.prototype.hasOwnProperty.call(globalOptions,"replace")){
     debug("Using [Global] Find/Replace...");
     scrubbedContent = replaceStrings(scrubbedContent,globalOptions.replace);
   }
 
   //Add TOC
-  if(fileOptions && fileOptions.hasOwnProperty("doctoc")){
+  if(fileOptions && Object.prototype.hasOwnProperty.call(fileOptions,"doctoc")){
     if(fileOptions.doctoc){
-      if(globalOptions.hasOwnProperty("doctoc")){
+      if(Object.prototype.hasOwnProperty.call(globalOptions,"doctoc")){
         debugDoctoc("Using [Local/Global] DocToc...");
         scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc, globalOptions.doctoc);
       } else {
@@ -176,7 +176,7 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
         scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc);
       }
     }
-  } else if(globalOptions.hasOwnProperty("doctoc") && globalOptions.doctoc){
+  } else if(Object.prototype.hasOwnProperty.call(globalOptions,"doctoc") && globalOptions.doctoc){
     debug("Using [Global] DocToc...");
     scrubbedContent = buildTOC(scrubbedContent, null, globalOptions.doctoc);
   }
@@ -337,7 +337,7 @@ function buildTOC(fileContents,doctocLocal, doctocGlobal){
         includeTOC = true; 
       } else {
         for(var key in finalDoctoc){
-          if(obj[options].hasOwnProperty(key)){
+          if(Object.prototype.hasOwnProperty.call(obj[options],key)){
             finalDoctoc[key] = obj[options][key];
             if(key == "title") finalDoctoc.notitle = false;
             includeTOC = true;

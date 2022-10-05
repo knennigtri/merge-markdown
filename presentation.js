@@ -103,7 +103,7 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
   var cliArgs = "-o " + fileName;
   if(jsonObj){
     for (var key in jsonObj){
-      if (jsonObj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(jsonObj,key)) {
         if(jsonObj[key].includes("--template")){
           var templatePath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
           templatePath = path.join(inputPath,templatePath);
@@ -144,7 +144,7 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
   };
   if(optionsJson){
     for (var key in optionsJson){
-      if(optionsJson.hasOwnProperty(key)){
+      if(Object.prototype.hasOwnProperty.call(optionsJson,key)){
         if(key == "enableLocalFileAccess" ||
            key == "disableSmartShrinking" ||
            key == "output"){

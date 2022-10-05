@@ -10,6 +10,7 @@ var args = minimist(process.argv.slice(2));
 var debug = require("debug")("index");
 var debugInput = require("debug")("index:input");
 var debugManifest = require("debug")("index:manifest");
+var debugDeprication = require("debug")("index:deprecation");
 var debugmanifestJson = require("debug")("index:manifest:json");
 var debugManifestGenerate = require("debug")("index:manifest:generate");
 
@@ -130,6 +131,7 @@ var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintai
   if(manifestJSON && manifestJSON.length != 0){
     //print out manifest to be used
     manifestJSON =  fixDeprecatedManifestEntry(manifestJSON);
+    debugManifest(JSON.stringify(manifestJSON, null, 2));
     merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck, argMaintainAssetPaths); 
     // return;
     if(args.pdf || (modeParam == presentation.MODE.pdf)){
@@ -322,42 +324,42 @@ function fixDeprecatedManifestEntry(manifestFix){
   }
 
   //Move all outputOptions under the output
-  if(manifestFix.hasOwnProperty("mergedTOC")){
+  if(Object.prototype.hasOwnProperty.call(manifestFix, "mergedTOC")){
     manifestFix.output.doctoc = manifestFix.mergedTOC;  
     delete manifestFix.mergedTOC;
     updatesNeeded += "   manifest.mergedTOC >> manifest.output.doctoc.\n";
   }
-  if(manifestFix.hasOwnProperty("pandoc")){
+  if(Object.prototype.hasOwnProperty.call(manifestFix, "pandoc")){
     manifestFix.output.pandoc = manifestFix.pandoc;
     delete manifestFix.pandoc;
     updatesNeeded += "   manifest.pandoc >> manifest.output.pandoc.\n";
   }
-  if(manifestFix.hasOwnProperty("wkhtmltopdf")){
+  if(Object.prototype.hasOwnProperty.call(manifestFix,"wkhtmltopdf")){
     manifestFix.output.wkhtmltopdf = manifestFix.wkhtmltopdf;
     delete manifestFix.wkhtmltopdf;
     updatesNeeded += "   manifest.wkhtmltopdf >> manifest.output.wkhtmltopdf.\n";
   }
 
   //Update all TOC and mergedTOC keys to doctoc
-  if(manifestFix.output.hasOwnProperty("TOC")){
+  if(Object.prototype.hasOwnProperty.call(manifestFix.output,"TOC")){
     manifestFix.output.doctoc = manifestFix.output.TOC;  
     delete manifestFix.output.TOC;
     updatesNeeded += "   manifest.output.TOC >> manifest.output.doctoc.\n";
   }
-  if(manifestFix.output.hasOwnProperty("mergedTOC")){
+  if(Object.prototype.hasOwnProperty.call(manifestFix.output,"mergedTOC")){
     manifestFix.output.doctoc = manifestFix.output.mergedTOC;  
     delete manifestFix.output.mergedTOC;
     updatesNeeded += "   manifest.output.mergedTOC >> manifest.output.doctoc.\n";
   }
-  if(manifestFix.hasOwnProperty("TOC")){
+  if(Object.prototype.hasOwnProperty.call(manifestFix,"TOC")){
     manifestFix.doctoc = manifestFix.TOC;
     delete manifestFix.TOC;
     updatesNeeded += "   manifest.TOC >> manifest.doctoc.\n";
   }
-  if(manifestFix.hasOwnProperty("input")){
+  if(Object.prototype.hasOwnProperty.call(manifestFix,"input")){
     var update = false;
     for(var i in manifestFix.input){
-      if(manifestFix.input[i].hasOwnProperty("TOC")){
+      if(Object.prototype.hasOwnProperty.call(manifestFix.input[i],"TOC")){
         manifestFix.input[i].doctoc = manifestFix.input[i].TOC;
         delete manifestFix.input[i].TOC;
         update = true;
@@ -371,7 +373,7 @@ function fixDeprecatedManifestEntry(manifestFix){
     console.log("[WARNING] Below entries are old. Consider updating your manifest:");
     console.log(updatesNeeded);
   }
-  debugManifest(JSON.stringify(manifestFix, null, 2));
+  debugDeprication(JSON.stringify(manifestFix, null, 2));
   return manifestFix;
 }
 
