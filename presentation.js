@@ -54,11 +54,11 @@ function toHTML(manifestJson, inputFile, inputPath, mode){
   var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
   var pandocArgs = buildPandocArgs(manifestJson.output.pandoc, inputPath, outputFile);
   debugHTML("input: "+inputFile);
-  debugHTML("Args: "+pandocArgs);
+  debugHTML("Args: '" + pandocArgs + "'");
   nodePandoc(inputFile, pandocArgs, function (err, result) {
     if (err) {
-      console.error("PANDOC: ",err);
-      console.log("Verify the pandoc arguments according to pandoc documentation");
+      console.error("Error: Verify the pandoc arguments according to pandoc documentation");
+      console.error(err);
     } else {
       console.log(" pandoc: "+ path.parse(inputFile).base + " >> "+ path.parse(outputFile).base);
       switch (mode){
@@ -84,16 +84,15 @@ function toPDF(manifestJson, inputFile, mode){
   var outputFile = path.join(path.parse(inputFile).dir, "temp.pdf");
   var options = buildWkhtmltopdfOptions(manifestJson.output.wkhtmltopdf, outputFile);
   debugPDF("input: "+inputFile);
-  debugPDF("Args: "+JSON.stringify(options));
+  debugPDF("Args: "+JSON.stringify(options, null, 2));
   wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
     if (err) {
-      console.error("WKHTMLTOPDF: ",err);
-      if(err.includes("spawn wkhtmltopdf ENOENT")) console.log("Make sure wkhtmltopdf is installed from http://wkhtmltopdf.org/downloads.html");
-      else console.log("Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
+      if(err.toString().includes("spawn wkhtmltopdf ENOENT")) console.error("Error: Make sure wkhtmltopdf is installed from http://wkhtmltopdf.org/downloads.html");
+      else console.error("Error: Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
+      console.error(err);
     } else {
       console.log(" wkhtmltopdf: "+ path.parse(inputFile).base + " >> "+ path.parse(outputFile).base);
       renameToManifestOutputName(manifestJson, outputFile, mode);
-      // fs.unlinkSync(inputFile);
       verbose(result);
     }
   });
@@ -103,7 +102,6 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
   var cliArgs = "-o " + fileName;
   if(jsonObj){
     for (var key in jsonObj){
-      if (Object.prototype.hasOwnProperty.call(jsonObj,key)) {
         if(jsonObj[key].includes("--template")){
           var templatePath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
           templatePath = path.join(inputPath,templatePath);
@@ -120,10 +118,9 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
           debugHTMLOptions("Arg [ "+jsonObj[key]+" ] added.");
           cliArgs += " " + jsonObj[key];
         }
-      }
     }
   } else {
-    debugHTML("No pandoc Args given in manifest. Using arguments: " + cliArgs);
+    debugHTML("No pandoc Args given in manifest. Using default arguments: '" + cliArgs + "'");
   }
   return cliArgs;
 }
@@ -142,24 +139,22 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
     footerLine: true,
     footerCenter: "Page [page]"
   };
+  var finalOptions = defaultOptions;
   if(optionsJson){
     for (var key in optionsJson){
-      if(Object.prototype.hasOwnProperty.call(optionsJson,key)){
-        if(key == "enableLocalFileAccess" ||
-           key == "disableSmartShrinking" ||
-           key == "output"){
-          debugPDFOptions("Option [ "+key+" ] cannot be changed for output. Ignoring.");
-          delete optionsJson[key]; 
-        } 
-      }
+      if(key == "enableLocalFileAccess" ||
+          key == "disableSmartShrinking" ||
+          key == "output"){
+        debugPDFOptions("Option [ "+key+" ] cannot be changed for output. Ignoring.");
+      } else {
+        debugPDFOptions("Updating ["+key+"] to: " + optionsJson[key]);
+        finalOptions[key] = optionsJson[key];
+      } 
     }
-    optionsJson.enableLocalFileAccess = true;
-    optionsJson.disableSmartShrinking = true;
-    optionsJson.output = fileName;
-    return optionsJson;
+    return finalOptions;
   }
   debugPDF("No options given in manifest. Using Default wkhtmltopdf options.");
-  return defaultOptions;
+  return finalOptions;
 }
 
 function renameToManifestOutputName(manifestJson, absInputFile, mode){

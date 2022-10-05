@@ -118,9 +118,10 @@ var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintai
       }
     }
     catch (err) {
-      console.log("Manifest input does not exist. Choose a valid folder or file.");
-      console.log(MSG_HELP);
-      return;
+      console.error(err);
+      console.error("Manifest does not exist or has incorrect syntax. Choose a valid folder or file.");
+      console.error(MSG_HELP);
+      throw err;
     }
   } else { //if there is no -m check for a default manifest file
     console.log("No -m argument given. Using default: "+ DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join("|")+"]");
@@ -173,7 +174,7 @@ var getManifestJSON = function(inputManifestFile, qaMode){
       jsonObj = JSON.parse(fileContents);
     } catch(e){
       console.log("Manifest file does not contain valid YAML or JSON content.");
-      return;
+      throw e;
     }
   }
 

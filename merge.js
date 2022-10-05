@@ -102,14 +102,16 @@ function createSingleFile(list, outputFileStr, manifestJSON){
   }
   concat(list, outputFileStr).then(result => {
     if(Object.prototype.hasOwnProperty.call(manifestJSON.output,"doctoc") && manifestJSON.output.doctoc){
-      fs.readFile(outputFileStr, "utf-8", function (err, data) {   
+      fs.readFile(outputFileStr, "utf-8", function (err, data) {  
+        if (err) {
+          console.error("Error reading file for doctoc: " +outputFileStr);
+        } 
         manifestJSON.output.doctoc;
         var outDoctoc = buildTOC(data,manifestJSON.output.doctoc, manifestJSON.doctoc);
 
         fs.writeFile(outputFileStr, outDoctoc, "utf-8", function (err) {
           if (err) {
-            console.log("DOCTOC Error: " +err);
-            return;
+            console.error("Error writing file for doctoc: " +outputFileStr);
           }
           removeTempFiles(list); //cleanup
           console.log(outputFileStr + " created.");
@@ -394,8 +396,7 @@ function linkCheck(inputFileStr, outputFileStr) {
       ignorePatterns: [{ pattern: "^http://localhost" }],
     }, function (err, results) {
       if (err) {
-        console.error("Error", err);
-        return;
+        console.error("markdownlinkcheck failed on: " + inputFileStr);
       }
       var linkcheckResults = "FILE: " + inputFileStr;
       debugLinkcheck(linkcheckResults);
