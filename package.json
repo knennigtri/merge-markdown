@@ -8,6 +8,10 @@
   },
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
+    "preversion": "",
+    "postversion": "",
+    "test": "echo hello",
+    "lint": "eslint '**/*.js?(x)'",
     "build": "npm run readmeTOC && npm ci && npm i --package-lock-only && depcheck ./",
     "local": "npm pack",
     "publish-bugfix": "npm publish --tag bugfix",
@@ -64,5 +68,8 @@
   },
   "bugs": {
     "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
+  },
+  "devDependencies": {
+    "eslint": "^8.24.0"
   }
 }

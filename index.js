@@ -1,17 +1,17 @@
 "use strict";
 var merge = require("./merge.js");
 var presentation = require("./presentation.js");
-var minimist = require('minimist');
-var fs = require('fs');
-var path = require('path');
-var yaml = require('js-yaml');
+var minimist = require("minimist");
+var fs = require("fs");
+var path = require("path");
+var yaml = require("js-yaml");
 var packageInfo = require("./package.json");
 var args = minimist(process.argv.slice(2));
-var debug = require('debug')('index');
-var debugInput = require('debug')('index:input');
-var debugManifest = require('debug')('index:manifest');
-var debugmanifestJson = require('debug')('index:manifest:json');
-var debugManifestGenerate = require('debug')('index:manifest:generate');
+var debug = require("debug")("index");
+var debugInput = require("debug")("index:input");
+var debugManifest = require("debug")("index:manifest");
+var debugmanifestJson = require("debug")("index:manifest:json");
+var debugManifestGenerate = require("debug")("index:manifest:generate");
 
 const DEF_MANIFEST_NAME = "manifest";
 const DEF_MANIFEST_EXTS = ["md","yaml","yml","json"];
@@ -38,7 +38,7 @@ Arguments:
       --html                               Output to HTML
   -h, --help                               Displays this screen
   -h [manifest|options|outputOptions|qa]   See examples
-Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join('|')+`] unless specified in -m.
+Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join("|")+`] unless specified in -m.
 `;
 const MANIFEST_OPTIONS = `Supported key/value pairs for {options}:
   noYAML: true|false                 Optionlly removes YAML. Default=false
@@ -60,7 +60,7 @@ const MANIFEST_OUTPUT_OPTIONS = `Supported key/value pairs for {outputOptions}:
     footerLine: true
 `;
 const QA_HELP=`QA mode can optionally exclude files from the output.
-Example: exclude all filenames with 'frontmatter' by default
+Example: exclude all filenames with "frontmatter" by default
 ---
   qa: {exclude: "(frontmatter|preamble)"}
 ---`;
@@ -68,7 +68,7 @@ Example: exclude all filenames with 'frontmatter' by default
 /**
  * @param {*} manifestParam manifest file or folder of .md files
  * @param {*} qaParam boolean to turn on QA mode
- * @param {*} modeParam 'html' or 'pdf' for presentation output
+ * @param {*} modeParam "html" or "pdf" for presentation output
  * @param {*} noLinkcheckParam true/false on nolinkchecking
  */
 var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintainAssetPaths) {
@@ -79,13 +79,11 @@ var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintai
   var argNoLinkcheck = noLinkcheckParam || args.nolinkcheck;
   var argMaintainAssetPaths = maintainAssetPaths || args.maintainAssetPaths;
 
-  var argMode = modeParam || args.html || args.pdf
-
   // Show CLI help
   if (argHelp) {
     if(argHelp == true){
-       console.log(MSG_HELP);
-       return;
+      console.log(MSG_HELP);
+      return;
     }
     if(argHelp.toLowerCase() == "manifest") console.log(EXAMPLE_MANIFEST);
     if(argHelp.toLowerCase() == "options") console.log(EXAMPLE_MANIFEST + "\n" + MANIFEST_OPTIONS);
@@ -106,7 +104,7 @@ var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintai
   //if -m is given use the file/folder
   if(argManifest && argManifest[0] != undefined && argManifest[0] != ""){
     try {
-      var fsStat = fs.lstatSync(argManifest)
+      var fsStat = fs.lstatSync(argManifest);
       if(fsStat.isDirectory()){
         debugInput("Using directory for manifest");
         manifestJSON = useFolderPath(argManifest, argQA);
@@ -124,7 +122,7 @@ var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintai
       return;
     }
   } else { //if there is no -m check for a default manifest file
-    console.log("No -m argument given. Using default: "+ DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
+    console.log("No -m argument given. Using default: "+ DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join("|")+"]");
     manifestJSON = getDefaultManifestJSON(".", argQA);
     manifestRelPath = ".";
   }
@@ -134,9 +132,9 @@ var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintai
     manifestJSON =  fixDeprecatedManifestEntry(manifestJSON);
     merge.markdownMerge(manifestJSON, manifestRelPath, argQA, argNoLinkcheck, argMaintainAssetPaths); 
     // return;
-    if(modeParam == presentation.MODE.pdf || args.pdf){
+    if(args.pdf || (modeParam == presentation.MODE.pdf)){
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.pdf);
-    } else if(modeParam == presentation.MODE.html || args.html){
+    } else if(args.html || (modeParam == presentation.MODE.html)){
       presentation.build(manifestJSON, manifestRelPath, presentation.MODE.html);
     }
   } else {
@@ -145,21 +143,21 @@ var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintai
     return;
   } 
   return; 
-}
+};
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
  * DEBUG=index:manifest:json
  */
 var getManifestJSON = function(inputManifestFile, qaMode){
-  var fileType = inputManifestFile.split('.').pop();
+  var fileType = inputManifestFile.split(".").pop();
   if (!DEF_MANIFEST_EXTS.includes(fileType)) {
-    console.log("Manifest extension must be: .["+DEF_MANIFEST_EXTS.join('|')+"]");
+    console.log("Manifest extension must be: .["+DEF_MANIFEST_EXTS.join("|")+"]");
     console.log(MSG_HELP);
     return;
   }
   console.log("Found manifest to use: " + inputManifestFile);
-  var fileContents = fs.readFileSync(inputManifestFile, 'utf8');
+  var fileContents = fs.readFileSync(inputManifestFile, "utf8");
   var jsonObj = "";
   try {
     //Attempt to read the YAML and output JSON
@@ -167,7 +165,7 @@ var getManifestJSON = function(inputManifestFile, qaMode){
     var yamlContents = JSON.stringify(data[0], null, 2);
     jsonObj = JSON.parse(yamlContents);
   } catch {
-    debugmanifestJson("Could not read YAML, attemping JSON")
+    debugmanifestJson("Could not read YAML, attemping JSON");
     try {
       //Attempt to read JSON
       jsonObj = JSON.parse(fileContents);
@@ -177,7 +175,7 @@ var getManifestJSON = function(inputManifestFile, qaMode){
     }
   }
 
-  // If the manifest doesn't have an output, generate the output name based on the manifest directory
+  // If the manifest doesn"t have an output, generate the output name based on the manifest directory
   if(!jsonObj.output) {
     jsonObj.output = {};
     jsonObj.output.name = generateFileNameFromFolder(inputManifestFile);
@@ -187,12 +185,12 @@ var getManifestJSON = function(inputManifestFile, qaMode){
     jsonObj = fixDeprecatedManifestEntry(jsonObj);
   }
   
-  if(jsonObj.output.name.split('.').pop() != "md"){
+  if(jsonObj.output.name.split(".").pop() != "md"){
     console.log("output.name needs to be a .md file but found: " + jsonObj.output.name);
     return;
   }
 
-  // If the manifest doesn't have an input, build the input with md files in the manifest directory
+  // If the manifest doesn"t have an input, build the input with md files in the manifest directory
   if(!jsonObj.input){
     console.log("Manifest is missing input, .md files in same directoy as manifest will be used.");
     var inputList = generateInputListFromFolder(inputManifestFile, jsonObj.output.name);
@@ -204,12 +202,12 @@ var getManifestJSON = function(inputManifestFile, qaMode){
   
   if(qaMode){
     if (!jsonObj.qa || !jsonObj.qa.exclude){
-      console.log("No exclude patterns given for QA. Using default `frontmatter` for exclusion.")
+      console.log("No exclude patterns given for QA. Using default `frontmatter` for exclusion.");
       jsonObj.qa = {"exclude":"frontmatter"};
     }
   }
   return jsonObj;
-}
+};
 
 /* Creates a json of all .md files that are:
 * within the inputPath directory
@@ -294,12 +292,12 @@ function useFolderPath(inputFolder, qaMode){
  * Returns a JSON of the manifest.[md|yml|yaml|json] if it exists in the inputFolder directory
  */
 function getDefaultManifestJSON(inputFolder, qaMode){
-  var defManifest = path.join(inputFolder,DEF_MANIFEST_NAME)
+  var defManifest = path.join(inputFolder,DEF_MANIFEST_NAME);
   var i = 0;
   while(i < DEF_MANIFEST_EXTS.length){
     var file = defManifest.concat(".",DEF_MANIFEST_EXTS[i]);
     if(fs.existsSync(file)){
-      debug("Found default "+DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join('|')+"]");
+      debug("Found default "+DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join("|")+"]");
       return getManifestJSON(file, qaMode);
     }
     i++;
@@ -318,7 +316,7 @@ function fixDeprecatedManifestEntry(manifestFix){
   if(typeof manifestFix.output === "string"){
     var name = manifestFix.output;
     delete manifestFix.output;
-    manifestFix.output = {}
+    manifestFix.output = {};
     manifestFix.output.name = name;
     updatesNeeded += "   manifest.output >> manifest.output.name.\n";
   }
@@ -326,7 +324,7 @@ function fixDeprecatedManifestEntry(manifestFix){
   //Move all outputOptions under the output
   if(manifestFix.hasOwnProperty("mergedTOC")){
     manifestFix.output.doctoc = manifestFix.mergedTOC;  
-    delete manifestFix.mergedTOC
+    delete manifestFix.mergedTOC;
     updatesNeeded += "   manifest.mergedTOC >> manifest.output.doctoc.\n";
   }
   if(manifestFix.hasOwnProperty("pandoc")){
@@ -343,7 +341,7 @@ function fixDeprecatedManifestEntry(manifestFix){
   //Update all TOC and mergedTOC keys to doctoc
   if(manifestFix.output.hasOwnProperty("TOC")){
     manifestFix.output.doctoc = manifestFix.output.TOC;  
-    delete manifestFix.output.TOC
+    delete manifestFix.output.TOC;
     updatesNeeded += "   manifest.output.TOC >> manifest.output.doctoc.\n";
   }
   if(manifestFix.output.hasOwnProperty("mergedTOC")){
@@ -371,7 +369,7 @@ function fixDeprecatedManifestEntry(manifestFix){
   //Display to the user which keys should be updated in their manifest
   if(updatesNeeded){
     console.log("[WARNING] Below entries are old. Consider updating your manifest:");
-    console.log(updatesNeeded)
+    console.log(updatesNeeded);
   }
   debugManifest(JSON.stringify(manifestFix, null, 2));
   return manifestFix;
