@@ -44,7 +44,7 @@ var build = async function(jsonObj, inputPath, mode){
   console.log(mode.toUpperCase() + " mode selected for " + absManifestOutputFileName);
   console.log("+++++++++++++");
   toHTML(jsonObj, absMMFileName, absInputPath, mode);
-}
+};
 
 /**
  * Input and Output files are expected to be ABS
@@ -62,14 +62,14 @@ function toHTML(manifestJson, inputFile, inputPath, mode){
     } else {
       console.log(" pandoc: "+ path.parse(inputFile).base + " >> "+ path.parse(outputFile).base);
       switch (mode){
-        case MODE.pdf:
-          toPDF(manifestJson, outputFile, mode);
-          break;
-        case MODE.html:
-          renameToManifestOutputName(manifestJson, outputFile, mode);
-          break;
-        default:
-          return;
+      case MODE.pdf:
+        toPDF(manifestJson, outputFile, mode);
+        break;
+      case MODE.html:
+        renameToManifestOutputName(manifestJson, outputFile, mode);
+        break;
+      default:
+        return;
       }
       verbose(result);
     }

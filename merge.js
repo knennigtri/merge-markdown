@@ -138,8 +138,8 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
       scrubbedContent = removeYAML(origContent);
     }
   } else //Apply global noYAML option
-    if(globalOptions.hasOwnProperty("noYAML") && globalOptions.noYAML){ 
-      debug("Using [Global] noYAML...");
+  if(globalOptions.hasOwnProperty("noYAML") && globalOptions.noYAML){ 
+    debug("Using [Global] noYAML...");
     scrubbedContent = removeYAML(origContent);
   }
 
@@ -403,15 +403,15 @@ function linkCheck(inputFileStr, outputFileStr) {
       results.forEach(function (result) {
         var icon = "";
         switch(result.status) {
-          case "alive":
-            icon = "✓";
-            break;
-          case "dead":
-            icon = "x";
-            break;
-          case "ignored":
-            icon="-";
-            break;
+        case "alive":
+          icon = "✓";
+          break;
+        case "dead":
+          icon = "x";
+          break;
+        case "ignored":
+          icon="-";
+          break;
         }
         var statusStr="["+icon+"] " + result.link + " is " + result.status;
         debugLinkcheck(statusStr);

@@ -38,7 +38,7 @@ Arguments:
       --html                               Output to HTML
   -h, --help                               Displays this screen
   -h [manifest|options|outputOptions|qa]   See examples
-Default manifest: `+DEF_MANIFEST_NAME+`.[`+DEF_MANIFEST_EXTS.join("|")+`] unless specified in -m.
+Default manifest: `+DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join("|")+`] unless specified in -m.
 `;
 const MANIFEST_OPTIONS = `Supported key/value pairs for {options}:
   noYAML: true|false                 Optionlly removes YAML. Default=false

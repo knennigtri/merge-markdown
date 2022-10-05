@@ -11,7 +11,7 @@
     "preversion": "",
     "postversion": "",
     "test": "echo hello",
-    "lint": "eslint '**/*.js?(x)'",
+    "lint": "eslint '**/*.js?(x)' --fix",
     "build": "npm run readmeTOC && npm ci && npm i --package-lock-only && depcheck ./",
     "local": "npm pack",
     "publish-bugfix": "npm publish --tag bugfix",
