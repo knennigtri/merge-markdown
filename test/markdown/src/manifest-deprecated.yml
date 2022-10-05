@@ -12,8 +12,6 @@ replace:
 mergedTOC: true
 pandoc:
  css: -c ../../pdf/src/main.css
- latexTemplate: --template ../../pdf/src/template.latex
- title: -M title:Example
 wkhtmltopdf:
  marginBottom: 1in
  marginTop: 1in

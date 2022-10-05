@@ -13,13 +13,13 @@ Donec ut dui id diam fringilla auctor ac id tellus. Ut venenatis fermentum phare
 <!-- END doctoc -->
 <!--{returnToMainTOC}-->
 
-#### Objective {#objective-one}
+#### Objective
 
 1. Lorem ipsum dolor sit amet, consectetur adipiscing elit.[^nr-1]
 2. Cras placerat nisi in urna eleifend dapibus.
 3. Nunc eget elit sit amet nulla suscipit varius.[^nr-2]
 
-#### Get the Code {#get-the-code}
+#### Get the Code
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer et ullamcorper ipsum, in efficitur mi. Ut vitae velit et orci eleifend elementum.
 
@@ -60,3 +60,4 @@ Nullam varius bibendum elit, eu lobortis magna laoreet vitae. Donec nec vestibul
 #### Congratulations! (h4)
 
 Maecenas vehicula eu enim eu accumsan. Maecenas vitae tortor feugiat ipsum sagittis finibus sit amet ut risus. Interdum et malesuada fames ac ante ipsum primis in faucibus. Aenean quam erat, tincidunt vel tortor eget, semper placerat nisl. Aenean eu quam vitae massa ornare tincidunt. Ut faucibus congue ligula scelerisque scelerisque. Integer non hendrerit sem. Suspendisse a lorem pretium, cursus ex ultricies, dapibus sapien. Ut lobortis ultrices nibh a congue. Sed ac pellentesque velit. Maecenas molestie nisi non ex bibendum facilisis. Sed blandit nec elit ac vestibulum. Nullam id arcu nec orci porttitor pharetra. Praesent vel velit sit amet lacus pulvinar sagittis at a quam. Ut dignissim metus sit amet erat feugiat semper. Praesent pellentesque justo ac blandit tempor.
+
