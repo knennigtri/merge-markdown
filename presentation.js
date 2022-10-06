@@ -21,7 +21,7 @@ exports.MODE = MODE;
 
 var build = async function(jsonObj, inputPath, mode){
   //TODO remove?
-  var promise = new Promise((res, rej) => {
+  var promise = new Promise(res => {
     setTimeout(() => res("Now it's done!"), 5000);
   });
   await promise; 

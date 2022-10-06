@@ -100,7 +100,7 @@ function createSingleFile(list, outputFileStr, manifestJSON){
   if(!fs.existsSync(outputPath)){
     fs.mkdirSync(outputPath);
   }
-  concat(list, outputFileStr).then(result => {
+  concat(list, outputFileStr).then(() => {
     if(Object.prototype.hasOwnProperty.call(manifestJSON.output,"doctoc") && manifestJSON.output.doctoc){
       fs.readFile(outputFileStr, "utf-8", function (err, data) {  
         if (err) {

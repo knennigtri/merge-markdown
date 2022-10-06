@@ -38,7 +38,7 @@ async function test(){
     try{ 
       // (manifestParam, qaParam, modeParam, noLinkcheckParam, maintainAssetPaths)
       init.run(arr[i][0],arr[i][1],arr[i][2],arr[i][3],arr[i][4]);
-      var promise = new Promise((res, rej) => {
+      var promise = new Promise(res => {
         setTimeout(() => res("Now it's done!"), 500);
       });
       await promise; 

@@ -263,7 +263,7 @@ function generateFileNameFromFolder(inputPath, extension){
   // get resolved path
   var pathStr = path.resolve(inputFolder);
   // get last directory in directory path
-  var fileStr = pathStr.match(/([^\/]*)\/*$/)[1];
+  var fileStr = path.basename(pathStr);
   return path.join("merged", fileStr + "." + ext);
 }
 
