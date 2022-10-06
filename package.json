@@ -10,9 +10,7 @@
   "scripts": {
     "preversion": "git fetch --tags && npm run lint && npm run test:noLogs",
     "version": "npm run build",
-    "postversion": "npm run git-push && npm run git-pull-request",
-    "git-push": "git push --follow-tags",
-    "git-pull-request": "git request-pull %s main",
+    "postversion": "git push --follow-tags",
     "lint": "eslint '**/*.js?(x)'",
     "lint:fix": "npm run lint -- --fix",
     "test": "node test/test.js",
