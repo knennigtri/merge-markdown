@@ -1,7 +1,5 @@
 # merge-markdown
-[![Publish to NPM](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml/badge.svg)](https://github.com/knennigtri/merge-markdown/actions/workflows/npm-publish.yml) [![Publish to GHP](https://github.com/knennigtri/merge-markdown/actions/workflows/ghp-publish.yml/badge.svg)](https://github.com/knennigtri/merge-markdown/actions/workflows/ghp-publish.yml)
-
-Published on [NPM](https://www.npmjs.com/package/@knennigtri/merge-markdown) and [GPR](https://github.com/knennigtri/merge-markdown/packages/1458049 )
+[![Build & Publish to NPM and GHP](https://github.com/knennigtri/merge-markdown/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/knennigtri/merge-markdown/actions/workflows/release.yml)
 
 # Overview
 Takes in a list of markdown files and merges them into a single output file with optional HTML and PDF output. Other advantages:
@@ -24,28 +22,31 @@ Takes in a list of markdown files and merges them into a single output file with
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported Options](#supported-options)
-    - [`noYAML`](#noyaml)
-    - [`replace`](#replace)
-    - [`doctoc`](#doctoc)
-  - [Supported Output Options](#supported-output-options)
-    - [Merged file TOC](#merged-file-toc)
-    - [HTML Output](#html-output)
-    - [PDF Output](#pdf-output)
-  - [Special Modes](#special-modes)
-    - [QA Mode](#qa-mode)
-    - [nolinkcheck Mode](#nolinkcheck-mode)
-    - [Debug Mode](#debug-mode)
-- [Manifest Examples](#manifest-examples)
-  - [YAML used as input](#yaml-used-as-input)
-  - [JSON used as input](#json-used-as-input)
-  - [Replace keys within a single file](#replace-keys-within-a-single-file)
-  - [Options applied to all files](#options-applied-to-all-files)
-  - [Apply output options](#apply-output-options)
+- [merge-markdown](#merge-markdown)
+- [Overview](#overview)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported Options](#supported-options)
+      - [`noYAML`](#noyaml)
+      - [`replace`](#replace)
+      - [`doctoc`](#doctoc)
+    - [Supported Output Options](#supported-output-options)
+      - [Merged file TOC](#merged-file-toc)
+      - [HTML Output](#html-output)
+      - [PDF Output](#pdf-output)
+    - [Special Modes](#special-modes)
+      - [QA Mode](#qa-mode)
+      - [nolinkcheck Mode](#nolinkcheck-mode)
+      - [Debug Mode](#debug-mode)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Apply output options](#apply-output-options)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
