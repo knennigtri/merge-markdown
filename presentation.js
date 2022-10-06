@@ -102,22 +102,22 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
   var cliArgs = "-o " + fileName;
   if(jsonObj){
     for (var key in jsonObj){
-        if(jsonObj[key].includes("--template")){
-          var templatePath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
-          templatePath = path.join(inputPath,templatePath);
-          debugHTMLOptions("template added: " + templatePath);
-          cliArgs += " --template " + templatePath;
-        } else if(jsonObj[key].includes("-c ")){
-          var ccsPath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
-          ccsPath = path.join(inputPath,ccsPath); 
-          debugHTMLOptions("css added: " + ccsPath);
-          cliArgs += " -c " +ccsPath;
-        } else if(jsonObj[key].includes("-o")){
-          debugHTMLOptions("Arg [ -o ] cannot be changed. Ignoring.");
-        } else {
-          debugHTMLOptions("Arg [ "+jsonObj[key]+" ] added.");
-          cliArgs += " " + jsonObj[key];
-        }
+      if(jsonObj[key].includes("--template")){
+        var templatePath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
+        templatePath = path.join(inputPath,templatePath);
+        debugHTMLOptions("template added: " + templatePath);
+        cliArgs += " --template " + templatePath;
+      } else if(jsonObj[key].includes("-c ")){
+        var ccsPath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
+        ccsPath = path.join(inputPath,ccsPath); 
+        debugHTMLOptions("css added: " + ccsPath);
+        cliArgs += " -c " +ccsPath;
+      } else if(jsonObj[key].includes("-o")){
+        debugHTMLOptions("Arg [ -o ] cannot be changed. Ignoring.");
+      } else {
+        debugHTMLOptions("Arg [ "+jsonObj[key]+" ] added.");
+        cliArgs += " " + jsonObj[key];
+      }
     }
   } else {
     debugHTML("No pandoc Args given in manifest. Using default arguments: '" + cliArgs + "'");

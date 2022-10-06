@@ -36,19 +36,19 @@ async function test(){
   var errArr = [];
   for(var i = 0; i < arr.length; i++){
     try{ 
-        // (manifestParam, qaParam, modeParam, noLinkcheckParam, maintainAssetPaths)
-        init.run(arr[i][0],arr[i][1],arr[i][2],arr[i][3],arr[i][4]);
-        var promise = new Promise((res, rej) => {
-          setTimeout(() => res("Now it's done!"), 500);
-        });
-        await promise; 
+      // (manifestParam, qaParam, modeParam, noLinkcheckParam, maintainAssetPaths)
+      init.run(arr[i][0],arr[i][1],arr[i][2],arr[i][3],arr[i][4]);
+      var promise = new Promise((res, rej) => {
+        setTimeout(() => res("Now it's done!"), 500);
+      });
+      await promise; 
     } catch (err) {
       errors++;
       errArr.push(arr[i]);
     }
   }
   console.error("Total errors in testing: " + errors);
-  for(var i = 0; i < errArr.length; i++){
-    console.error("  [" + errArr[i] + "]");
+  for(var j = 0; j < errArr.length; j++){
+    console.error("  [" + errArr[j] + "]");
   }
 }
