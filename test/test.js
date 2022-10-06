@@ -1,9 +1,11 @@
 "use strict";
 var init = require("../index.js");
+var minimist = require("minimist");
+var args = minimist(process.argv.slice(3));
 
-test();
+test(args.hideconsole);
 
-async function test(){
+async function test(hideconsole){
   var arr = [];
 
   // Test json and yaml manifests
@@ -31,7 +33,9 @@ async function test(){
   );
 
   // Hide console logs
-  // console.log = function() {};
+  if(hideconsole){
+    console.log = function() {};
+  }
   var errors = 0;
   var errArr = [];
   for(var i = 0; i < arr.length; i++){
