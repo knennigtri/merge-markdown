@@ -1,8 +1,10 @@
 name: Build & Publish to NPM and GHP
 
 on:
+  workflow_dispatch:
   pull_request:
-    branches: [main]
+    branches: 
+      - main
     types:
       - closed
     paths:
