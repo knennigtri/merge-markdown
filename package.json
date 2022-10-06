@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Prepare input files to merge together and optionally output html/pdf presentation",
   "repository": {
     "type": "git",
@@ -8,21 +8,20 @@
   },
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
+    "preversion": "git fetch --tags && npm run lint && npm run test:noLogs",
+    "version": "npm run build",
+    "postversion": "npm run git-push && npm run git-pull-request",
+    "git-push": "git push --follow-tags",
+    "git-pull-request": "git request-pull %s main",
+    "lint": "eslint '**/*.js?(x)'",
+    "lint:fix": "npm run lint -- --fix",
+    "test": "node test/test.js",
+    "test:noLogs": "node test/test.js -- --hideconsole",
     "build": "npm run readmeTOC && npm ci && npm i --package-lock-only && depcheck ./",
-    "local": "npm pack",
-    "publish-bugfix": "npm publish --tag bugfix",
     "readmeTOC": "doctoc README.md --github --title='# Contents'",
-    "m-extTest": "merge-markdown -m test/markdown/src/manifest.json; merge-markdown -m test/markdown/src/manifest.yml",
-    "m-ioTest": "merge-markdown -m test/markdown/src/manifest-noIO.yml; merge-markdown -m test/markdown/src/manifest-noInput.yml; merge-markdown -m test/markdown/src/manifest-noOutput.yml",
-    "m-onlyGlobalOptions": "merge-markdown -m test/markdown/src/manifest-noInput.yml",
-    "o-noManifest": "merge-markdown -m test/markdown/src",
-    "o-yamlTest": "merge-markdown -m test/markdown/src/yaml-test",
-    "p-pdfTest": "merge-markdown -m test/pdf/src/manifest.yml --pdf; merge-markdown -m test/pdf/src/manifest-noPresentation.yml --pdf",
-    "p-htmlTest": "merge-markdown -m test/pdf/src/manifest.yml --html; merge-markdown -m test/pdf/src/manifest-noPresentation.yml --html",
-    "test-manifest": "npm run m-extTest && npm run m-ioTest && npm run m-onlyGlobalOptions",
-    "test-other": "npm run o-noManifest && npm run o-yamlTest",
-    "test-presentation": "npm run p-pdfTest && npm run p-htmlTest",
-    "test-all": "npm run test-manifest && npm run test-other && npm run test-presentation",
+    "local": "npm pack",
+    "release:bugfix": "npm version patch && publish:bugfix",
+    "publish:bugfix": "npm publish --tag bugfix",
     "wkhtmltopdf": "wkhtmltopdf -T 1in -B 1in -L .7in -R .7in --page-size Letter --footer-line --footer-center 'Page [page]' --enable-local-file-access --disable-smart-shrinking test/pdf/src/merged/presentationAdded.html test/pdf/src/merged/presentationAdded.pdf"
   },
   "main": "index.js",
@@ -64,5 +63,8 @@
   },
   "bugs": {
     "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
+  },
+  "devDependencies": {
+    "eslint": "^8.24.0"
   }
 }

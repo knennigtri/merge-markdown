@@ -4,7 +4,8 @@ input:
  lorem-module.md: ""
  ipsum-module.md: ""
  etiam-module.md: ""
-output: merged/onlyGlobalOptions.md
+output: 
+ name: merged/onlyGlobalOptions.md
 qa: {exclude: "(frontmatter|preamble)"}
 noYAML: true
 replace:
