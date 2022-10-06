@@ -1,3 +1,8 @@
+
+# https://github.com/pandoc/pandoc-action-example
+# https://github.com/actions/runner-images/issues/482#issuecomment-806539083
+# https://github.com/wkhtmltopdf/packaging/releases
+
 name: Build & Publish to NPM and GHP
 
 on:
@@ -24,6 +29,7 @@ jobs:
           node-version: 14
       - run: |
           sudo apt-get install -y xfonts-base xfonts-75dpi
+          sudo apt-get install -y libjpeg62-turbo
           wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.bullseye_amd64.deb
           sudo dpkg -i wkhtmltox_0.12.6.1-2.bullseye_amd64.deb
       - run: npm ci
