@@ -1,0 +1,5 @@
+services:
+  node:
+    build: .
+    image: node:build
+    tty: true
