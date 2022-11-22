@@ -1,8 +1,11 @@
 # merge-markdown
+
 [![Build & Publish to NPM and GHP](https://github.com/knennigtri/merge-markdown/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/knennigtri/merge-markdown/actions/workflows/release.yml)
 
 # Overview
+
 Takes in a list of markdown files and merges them into a single output file with optional HTML and PDF output. Other advantages:
+
 * Merge all md files in a folder
 * auto-resolution of all relative links in files for assets, other markdown files no matter their location locally
 * built in link checker of final file
@@ -22,35 +25,36 @@ Takes in a list of markdown files and merges them into a single output file with
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [merge-markdown](#merge-markdown)
-- [Overview](#overview)
-- [Contents](#contents)
-  - [Installation](#installation)
-  - [Command Line Tool](#command-line-tool)
-  - [Usage](#usage)
-  - [Manifest file format](#manifest-file-format)
-    - [Supported Options](#supported-options)
-      - [`noYAML`](#noyaml)
-      - [`replace`](#replace)
-      - [`doctoc`](#doctoc)
-    - [Supported Output Options](#supported-output-options)
-      - [Merged file TOC](#merged-file-toc)
-      - [HTML Output](#html-output)
-      - [PDF Output](#pdf-output)
-    - [Special Modes](#special-modes)
-      - [QA Mode](#qa-mode)
-      - [nolinkcheck Mode](#nolinkcheck-mode)
-      - [Debug Mode](#debug-mode)
-  - [Manifest Examples](#manifest-examples)
-    - [YAML used as input](#yaml-used-as-input)
-    - [JSON used as input](#json-used-as-input)
-    - [Replace keys within a single file](#replace-keys-within-a-single-file)
-    - [Options applied to all files](#options-applied-to-all-files)
-    - [Apply output options](#apply-output-options)
+- [Installation](#installation)
+- [Command Line Tool](#command-line-tool)
+- [Usage](#usage)
+- [Manifest file format](#manifest-file-format)
+  - [Supported Options](#supported-options)
+    - [noYAML](#noyaml)
+    - [replace](#replace)
+    - [doctoc](#doctoc)
+  - [Supported Output Options](#supported-output-options)
+    - [Merged file TOC](#merged-file-toc)
+    - [HTML Output](#html-output)
+    - [PDF Output](#pdf-output)
+  - [Special Modes](#special-modes)
+    - [QA Mode](#qa-mode)
+    - [nolinkcheck Mode](#nolinkcheck-mode)
+    - [Debug Mode](#debug-mode)
+- [Manifest Examples](#manifest-examples)
+  - [YAML used as input](#yaml-used-as-input)
+  - [JSON used as input](#json-used-as-input)
+  - [Replace keys within a single file](#replace-keys-within-a-single-file)
+  - [Options applied to all files](#options-applied-to-all-files)
+  - [Apply output options](#apply-output-options)
+- [Dockerfile](#dockerfile)
+  - [How to use this image](#how-to-use-this-image)
+  - [Basic execution commands](#basic-execution-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Installation
+
 To install the command line tool globally, run:
 
 ```shell
@@ -60,23 +64,31 @@ npm install -g @knennigtri/merge-markdown
 ## Command Line Tool
 
 Use default `./manifest.[md|yaml|yml|json]` for input
+
 ```shell
 > merge-markdown
 ```
+
 Merge based on manifest file
+
 ```shell
 > merge-markdown -m myManifest.md
 ```
+
 Merge based on `path/to/files` default manifest or merges all files in a default order
+
 ```shell
 > merge-markdown -m path/to/files
 ```
+
 Output to PDF
+
 ```shell
 > merge-markdown -m myManifest.md --pdf
 ```
 
 ## Usage
+
 ```shell
 Usage: merge-markdown [ARGS]
 Arguments:
@@ -107,22 +119,26 @@ This file can be in YAML or JSON format.
 > Relative or absolute paths can be used for all values
 
 ### Supported Options
+
 Options can be applied to an individual input or at a globally to apply to all inputs
 
-#### `noYAML`
+#### noYAML
 
 Optionlly removes YAML from top of input file. Default=false
+
 ```yaml
 ---
   noYAML: true|false
 ---
 ```
 
-#### `replace`
+#### replace
 
 Optionally find/replace in an input file.
-  * string: Specify a string to find and replace
-  * regex: Specify a regex to find and replace
+
+* string: Specify a string to find and replace
+* regex: Specify a regex to find and replace
+
 ```yaml
 ---
   replace:
@@ -131,7 +147,8 @@ Optionally find/replace in an input file.
 ---
 ```
 
-#### `doctoc`
+#### doctoc
+
 Optionally add a table of contents to files using [doctoc](https://www.npmjs.com/package/doctoc). This will allow for a local navigation within a module/chapter of your merged document.
 
 ```yaml
@@ -156,7 +173,9 @@ Optionally add a table of contents to files using [doctoc](https://www.npmjs.com
    update-only: false                
 ---
 ```
+
 Based on [doctoc](https://www.npmjs.com/package/doctoc#specifying-location-of-toc), Set where you would like for the TOC to exist in the markdown file
+
 ```html
   <!-- START auto-update -->
   <!-- START doctoc -->
@@ -164,36 +183,41 @@ Based on [doctoc](https://www.npmjs.com/package/doctoc#specifying-location-of-to
   <!-- END auto-update -->
 ```
 
-
 ### Supported Output Options
+
 You can output to HTML or PDF. Pandoc is used to generate HTML and wkhtmltopdf is used to generate a PDF.
 
 #### Merged file TOC
+
 Similar to adding a TOC to the input files, you can add a TOC for the entire merged document. See [doctoc](#doctoc) options to configure.
+
 ```yaml
  output:
    doctoc:
      key: value
 ```
 
-
 #### HTML Output
+
 You can optionally add pandoc parameters to the manifest. The `key` doesn't matter, only the `value` is evalutated based on [pandoc args](https://pandoc.org/MANUAL.html).
+
 ```yaml
  output:
    pandoc:
      latexTemplate: --template path/to/my/latex/template.latex
      css: -c path/to/my/css/main.css
 ```
+
 > The following arguments cannot be changes for pandoc:
->  * `-o < fileName >`  - can only be modified using manifest.output.name
+>
+> * `-o < fileName >`  - can only be modified using manifest.output.name
 
 #### PDF Output
-
 
 You can optionally add wkhtmltopdf options to the manifest. [wkhtmltopdf](http://wkhtmltopdf.org/downloads.html) must be installed and added to your path to create PDFs!
 
 See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to learn more:
+
 ```yaml
  output:
    wkhtmltopdf:
@@ -201,29 +225,38 @@ See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to 
     marginTop: 1in
     pageSize: Letter
 ```
+
 > The following options cannot be changes for wkhtmltopdf:
->  * `enableLocalFileAccess` - always true
->  * `disableSmartShrinking` - always true
->  * `output` - can only be modified using manifest.output.name
+>
+> * `enableLocalFileAccess` - always true
+> * `disableSmartShrinking` - always true
+> * `output` - can only be modified using manifest.output.name
 
 Generate HTML only:
+
 ```shell
  merge-markdown -m manifest.md --html
 ```
+
 Generate a PDF:
+
 ```shell
  merge-markdown -m manifest.md --pdf
 ```
+
 Example files can be found in [test/pdf/src](test/pdf/src). You can also checkout a [working project](https://github.com/knennigtri/example-webpack-project) for css development using webpack.
 
 ### Special Modes
 
 #### QA Mode
+
 ```shell
 > merge-markdown -m manifest.json --qa
 ```
+
 Output will omit all filenames with `frontmatter` by default
 Add a regex to the manifest.json to customize exclusion:
+
 ```yaml
 ---
   qa: {exclude: "(frontmatter|preamble)"}
@@ -231,22 +264,27 @@ Add a regex to the manifest.json to customize exclusion:
 ```
 
 #### nolinkcheck Mode
+
 Sometimes the [markdown-link-check](https://www.npmjs.com/package/markdown-link-check) tool might produce an error. To skip linkcheck:
+
 ```shell
 > merge-markdown -m mymanifest.yml --nolinkcheck
 ```
 
 #### Debug Mode
+
 [Debug](https://www.npmjs.com/package/debug) is used in this tool. Available debug options:
- * index:[ input | manifest ]
- * index:manifest:[ json | generate ]
- * merge:[ relinks | yaml | doctoc | replace | linkcheck ]
- * presentation:[ html | pdf ]:options
- * presentation:verbose
+
+* index:[ input | manifest ]
+* index:manifest:[ json | generate ]
+* merge:[ relinks | yaml | doctoc | replace | linkcheck ]
+* presentation:[ html | pdf ]:options
+* presentation:verbose
 
 ## Manifest Examples
 
 ### YAML used as input
+
 ```yaml
 ---
 input:
@@ -257,7 +295,9 @@ output:
   name: myOutput.md
 ---
 ```
+
 ### JSON used as input
+
 ```json
 {
   "input": {
@@ -270,7 +310,9 @@ output:
   }
 }
 ```
+
 ### Replace keys within a single file
+
 ```json
 {
   "input": {
@@ -286,7 +328,9 @@ output:
   }
 }
 ```
+
 ### Options applied to all files
+
 ```yaml
 ---
 input:
@@ -302,7 +346,9 @@ doctoc: "#### Chapter contents"
 noYAML: true
 ---
 ```
+
 ### Apply output options
+
 ``` yaml
 ---
 input:
@@ -324,3 +370,51 @@ output:
     footerCenter: Page [page]
 ---
 ```
+
+## Dockerfile
+
+A `Dockerfile` based on a NodeJS image with all required dependencies is also [available](Dockerfile) on the project.
+
+### How to use this image
+
+All you need to do is copy the `Dockerfile` and `docker-compose.yml` files inside your project, and set
+up Docker Compose with the following command:
+
+```shell
+docker compose up -d --build
+```
+
+### Basic execution commands
+
+The docker image will copy all local structure of files and directories of the project into the current
+image's working directory. Once there, the command `merge-markdown` needs to be executed on the `node` service of docker compose to generate the desired output, e.g:
+
+```shell
+docker compose exec node merge-markdown -m manifest.yml --pdf
+```
+
+We are assuming that the project will contain a `manifest.yml` file in the root directory. An example
+of the project file structure could be:
+
+```none
+project
+└── assets
+    ├── image1.svg
+    └── ...
+├── docker-compose.yml
+├── Dockerfile
+├── manifest.yml
+├── README.md
+├── README_2.md
+├── README_3.md
+└── README_4.md
+```
+
+Getting the outputs from the container's image could be done with the following command:
+
+```shell
+docker compose cp node:/home/runner/workspace/output.pdf .
+```
+
+This is an example to get the outcome of an `merge-markdown` execution which converts markdown files
+into a PDF.
