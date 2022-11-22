@@ -33,9 +33,9 @@ Takes in a list of markdown files and merges them into a single output file with
   - [Usage](#usage)
   - [Manifest file format](#manifest-file-format)
     - [Supported Options](#supported-options)
-      - [`noYAML`](#noyaml)
-      - [`replace`](#replace)
-      - [`doctoc`](#doctoc)
+      - [noYAML](#noyaml)
+      - [replace](#replace)
+      - [doctoc](#doctoc)
     - [Supported Output Options](#supported-output-options)
       - [Merged file TOC](#merged-file-toc)
       - [HTML Output](#html-output)
@@ -125,7 +125,7 @@ This file can be in YAML or JSON format.
 
 Options can be applied to an individual input or at a globally to apply to all inputs
 
-#### `noYAML`
+#### noYAML
 
 Optionlly removes YAML from top of input file. Default=false
 
@@ -135,7 +135,7 @@ Optionlly removes YAML from top of input file. Default=false
 ---
 ```
 
-#### `replace`
+#### replace
 
 Optionally find/replace in an input file.
 
@@ -150,7 +150,7 @@ Optionally find/replace in an input file.
 ---
 ```
 
-#### `doctoc`
+#### doctoc
 
 Optionally add a table of contents to files using [doctoc](https://www.npmjs.com/package/doctoc). This will allow for a local navigation within a module/chapter of your merged document.
 
