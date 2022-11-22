@@ -44,6 +44,10 @@ var build = async function(jsonObj, inputPath, mode){
   console.log(mode.toUpperCase() + " mode selected for " + absManifestOutputFileName);
   console.log("+++++++++++++");
   toHTML(jsonObj, absMMFileName, absInputPath, mode);
+  //TODO Test this:
+  // var html = await toHTML(jsonObj, absMMFileName, absInputPath, mode);
+  // var pdf = await toPDF()..
+  // var final = final rename()..
 };
 
 /**
