@@ -63,6 +63,7 @@
     "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
   },
   "devDependencies": {
+    "depcheck": "^1.4.3",
     "eslint": "^8.24.0"
   }
 }
