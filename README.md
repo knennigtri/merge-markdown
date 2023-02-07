@@ -21,35 +21,40 @@ Takes in a list of markdown files and merges them into a single output file with
     * Create TOC with doctoc
     * Remove yaml from top of md file
 
+> WARNING: [wkhtmltopdf](https://wkhtmltopdf.org/downloads.html) and [pandoc](https://pandoc.org/installing.html) must be installed prior to using this tool!
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported Options](#supported-options)
-    - [noYAML](#noyaml)
-    - [replace](#replace)
-    - [doctoc](#doctoc)
-  - [Supported Output Options](#supported-output-options)
-    - [Merged file TOC](#merged-file-toc)
-    - [HTML Output](#html-output)
-    - [PDF Output](#pdf-output)
-  - [Special Modes](#special-modes)
-    - [QA Mode](#qa-mode)
-    - [nolinkcheck Mode](#nolinkcheck-mode)
-    - [Debug Mode](#debug-mode)
-- [Manifest Examples](#manifest-examples)
-  - [YAML used as input](#yaml-used-as-input)
-  - [JSON used as input](#json-used-as-input)
-  - [Replace keys within a single file](#replace-keys-within-a-single-file)
-  - [Options applied to all files](#options-applied-to-all-files)
-  - [Apply output options](#apply-output-options)
-- [Dockerfile](#dockerfile)
-  - [How to use this image](#how-to-use-this-image)
-  - [Basic execution commands](#basic-execution-commands)
+- [merge-markdown](#merge-markdown)
+- [Overview](#overview)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported Options](#supported-options)
+      - [noYAML](#noyaml)
+      - [replace](#replace)
+      - [doctoc](#doctoc)
+    - [Supported Output Options](#supported-output-options)
+      - [Merged file TOC](#merged-file-toc)
+      - [HTML Output](#html-output)
+      - [PDF Output](#pdf-output)
+    - [Special Modes](#special-modes)
+      - [QA Mode](#qa-mode)
+      - [nolinkcheck Mode](#nolinkcheck-mode)
+      - [Debug Mode](#debug-mode)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Apply output options](#apply-output-options)
+  - [Dockerfile](#dockerfile)
+    - [How to use this image](#how-to-use-this-image)
+    - [Basic execution commands](#basic-execution-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -94,13 +99,16 @@ Usage: merge-markdown [ARGS]
 Arguments:
   -m <manifestFile>                        Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
-      --qa                                 QA mode.
-      --nolinkcheck                        Skips linkchecking
-      --pdf                                Output to PDF. wkhtmltopdf must be installed http://wkhtmltopdf.org/downloads.html
-      --html                               Output to HTML
+  --qa                                     QA mode.
+  --nolinkcheck                            Skips linkchecking
+  --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
+  --html                                   Output to HTML. Must have Pandoc installed!
   -h, --help                               Displays this screen
   -h [manifest|options|outputOptions|qa]   See examples
 Default manifest: manifest.[md|yaml|yml|json] unless specified in -m. 
+
+Download Pandoc: https://pandoc.org/installing.html
+Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
 ```
 
 ## Manifest file format

@@ -55,7 +55,7 @@ var build = async function(jsonObj, inputPath, mode){
  */
 function toHTML(manifestJson, inputFile, inputPath, mode){
   debug("Creating HTML...");
-  var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
+  var outputFile = path.join(path.parse(inputFile).dir, "temp.html"); //TODO might be failing for windows
   var pandocArgs = buildPandocArgs(manifestJson.output.pandoc, inputPath, outputFile);
   debugHTML("input: "+inputFile);
   debugHTML("Args: '" + pandocArgs + "'");

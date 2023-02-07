@@ -33,13 +33,16 @@ const MSG_HELP = `Usage: merge-markdown [ARGS]
 Arguments:
   -m <manifestFile>                        Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
-      --qa                                 QA mode.
-      --nolinkcheck                        Skips linkchecking
-      --pdf                                Output to PDF. wkhtmltopdf must be installed http://wkhtmltopdf.org/downloads.html
-      --html                               Output to HTML
+  --qa                                     QA mode.
+  --nolinkcheck                            Skips linkchecking
+  --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
+  --html                                   Output to HTML. Must have Pandoc installed!
   -h, --help                               Displays this screen
   -h [manifest|options|outputOptions|qa]   See examples
 Default manifest: `+DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join("|")+`] unless specified in -m.
+
+Download Pandoc: https://pandoc.org/installing.html
+Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
 `;
 const MANIFEST_OPTIONS = `Supported key/value pairs for {options}:
   noYAML: true|false                 Optionlly removes YAML. Default=false
