@@ -209,6 +209,8 @@ Similar to adding a TOC to the input files, you can add a TOC for the entire mer
 
 You can optionally add pandoc parameters to the manifest. The `key` doesn't matter, only the `value` is evalutated based on [pandoc args](https://pandoc.org/MANUAL.html).
 
+> [pandoc](https://pandoc.org/installing.html) must be installed in order to create HTML!
+
 ```yaml
  output:
    pandoc:
@@ -222,7 +224,10 @@ You can optionally add pandoc parameters to the manifest. The `key` doesn't matt
 
 #### PDF Output
 
-You can optionally add wkhtmltopdf options to the manifest. [wkhtmltopdf](http://wkhtmltopdf.org/downloads.html) must be installed and added to your path to create PDFs!
+You can optionally add wkhtmltopdf options to the manifest. 
+
+> [pandoc](https://pandoc.org/installing.html) must be installed in order to create PDFs!
+> [wkhtmltopdf](http://wkhtmltopdf.org/downloads.html) must be installed and added to your path to create PDFs!
 
 See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to learn more:
 
