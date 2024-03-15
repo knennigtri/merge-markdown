@@ -14,60 +14,14 @@ var debugDeprication = require("debug")("index:deprecation");
 var debugmanifestJson = require("debug")("index:manifest:json");
 var debugManifestGenerate = require("debug")("index:manifest:generate");
 
-const DEF_MANIFEST_NAME = "manifest";
-const DEF_MANIFEST_EXTS = ["md","yaml","yml","json"];
-
-const EXAMPLE_MANIFEST = `Example yaml in a manifest file:
----
-  input:
-    global-frontmatter.md: ""
-    module1Folder/file1.md: {options}
-    module2Folder/file2.md: {noYAML: true, doctoc: true, replace: {key:value}}
-  output: 
-    name: merged/myOutput.md
-    {outputOptions}
-  qa: {exclude: regex}
-  {options}
----`;
-const MSG_HELP = `Usage: merge-markdown [ARGS]
-Arguments:
-  -m <manifestFile>                        Path to input folder, yaml, or json manifest
-  -v, --version                            Displays version of this package
-  --qa                                     QA mode.
-  --nolinkcheck                            Skips linkchecking
-  --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
-  --html                                   Output to HTML. Must have Pandoc installed!
-  -h, --help                               Displays this screen
-  -h [manifest|options|outputOptions|qa]   See examples
-Default manifest: `+DEF_MANIFEST_NAME+".["+DEF_MANIFEST_EXTS.join("|")+`] unless specified in -m.
-
-Download Pandoc: https://pandoc.org/installing.html
-Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
-`;
-const MANIFEST_OPTIONS = `Supported key/value pairs for {options}:
-  noYAML: true|false                 Optionlly removes YAML. Default=false
-  doctoc: true|false|"TOC title"     doctoc arguments. See https://www.npmjs.com/package/doctoc
-    option: <value>
-  replace:                           Searches for key and replaces with value
-    key: value
-    <!--{key}-->: value              Example key for a useful identifier
-    *: "stringVal"                   Regular expressions are allowed
-`;
-const MANIFEST_OUTPUT_OPTIONS = `Supported key/value pairs for {outputOptions}:
-  doctoc: true|false|"TOC title"            doctoc arguments. See https://www.npmjs.com/package/doctoc
-    option: <value>
-  pandoc:                                   pandoc arguments added to <value>. See https://pandoc.org/MANUAL.html#options
-    key1: "-c mystyle.css"
-    key2: "--template mytemplate.html"
-  wkhtmltopdf:                              wkhtmltopdf options. See https://www.npmjs.com/package/wkhtmltopdf#options
-    pageSize: Letter
-    footerLine: true
-`;
-const QA_HELP=`QA mode can optionally exclude files from the output.
-Example: exclude all filenames with "frontmatter" by default
----
-  qa: {exclude: "(frontmatter|preamble)"}
----`;
+exports.debbugOptions = {
+  "index": "",
+  "index:input": "",
+  "index:manifest": "",
+  "index:deprecation": "",
+  "index:manifest:json": "",
+  "index:manifest:generate": "",
+};
 
 /**
  * @param {*} manifestParam manifest file or folder of .md files
@@ -78,29 +32,8 @@ Example: exclude all filenames with "frontmatter" by default
 var init = function(manifestParam, qaParam, modeParam, noLinkcheckParam, maintainAssetPaths) {
   var argManifest = manifestParam || args.m;
   var argQA = qaParam || args.qa;
-  var argHelp =  args.h || args.help;
-  var argVersion = args.v || args.version;
   var argNoLinkcheck = noLinkcheckParam || args.nolinkcheck;
   var argMaintainAssetPaths = maintainAssetPaths || args.maintainAssetPaths;
-
-  // Show CLI help
-  if (argHelp) {
-    if(argHelp == true){
-      console.log(MSG_HELP);
-      return;
-    }
-    if(argHelp.toLowerCase() == "manifest") console.log(EXAMPLE_MANIFEST);
-    if(argHelp.toLowerCase() == "options") console.log(EXAMPLE_MANIFEST + "\n" + MANIFEST_OPTIONS);
-    if(argHelp.toLowerCase() == "qa") console.log(EXAMPLE_MANIFEST + "\n" + QA_HELP);
-    if(argHelp.toLowerCase() == "outputoptions") console.log(EXAMPLE_MANIFEST + "\n" + MANIFEST_OUTPUT_OPTIONS);
-    return;
-  }
-
-  // Show version
-  if (argVersion) {
-    console.log(packageInfo.version);
-    return;
-  }
 
   //Verify Manifest exists
   var manifestJSON;
