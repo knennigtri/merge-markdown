@@ -98,6 +98,11 @@ function run() {
 }
 exports.run = run;
 
+/**
+ * Gets a valid file of manifest.[yaml|yml|json]
+ * @param {} inputArg file/directory given in -m param
+ * @returns file
+ */
 function getManifestFile(inputArg) {
     try {
         var fsStat = fs.lstatSync(inputArg);
@@ -136,6 +141,10 @@ function getManifestFile(inputArg) {
     }
 }
 
+/**
+ * Autocreates a starter manifest file 
+ * @param {*} dir location of input files
+ */
 function createManifest(dir) {
     const jsonObject = {
         input: {},
@@ -195,6 +204,11 @@ function createManifest(dir) {
     }
 }
 
+/**
+ * Finds all markdown (.md) files within a directory
+ * @param {*} directoryPath path to search
+ * @returns array of .md paths
+ */
 function findMarkdownFiles(directoryPath) {
     let markdownFiles = [];
     // Synchronously read the contents of the directory
