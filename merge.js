@@ -19,6 +19,14 @@ var EXT = {
   "ref": ".ref.md"
 };
 exports.EXT = EXT;
+exports.debbugOptions = {
+  "merge": "",
+  "merge:rellinks": "",
+  "merge:yaml": "",
+  "merge:doctoc": "",
+  "merge:replace": "",
+  "merge:linkcheck": "",
+};
 
 var markdownMerge = function(manifestJSON, relPathManifest, qaMode, noLinkCheck, maintainAssetPaths){
   onlyQA = qaMode || false;
@@ -315,6 +323,7 @@ function buildTOC(fileContents,doctocLocal, doctocGlobal){
   debug("[OPTION] Running doctoc...");
   var includeTOC = false;
 
+  //TODO make this JSON available in DEBUG=defaults
   var defaultDocToc = {
     "mode": "github",
     "maxlevel": 3,

@@ -18,6 +18,14 @@ var EXT = {
 };
 
 exports.MODE = MODE;
+exports.debbugOptions = {
+  "presentation": "",
+  "presentation:html": "",
+  "presentation:html:options": "",
+  "presentation:pdf": "",
+  "presentation:pdf:options": "",
+  "verbose": ""
+};
 
 var build = async function(jsonObj, inputPath, mode){
   //TODO remove?
@@ -53,6 +61,7 @@ var build = async function(jsonObj, inputPath, mode){
 /**
  * Input and Output files are expected to be ABS
  */
+//TODO Rename to specify Pandoc is being used
 function toHTML(manifestJson, inputFile, inputPath, mode){
   debug("Creating HTML...");
   var outputFile = path.join(path.parse(inputFile).dir, "temp.html"); //TODO might be failing for windows
@@ -83,6 +92,7 @@ function toHTML(manifestJson, inputFile, inputPath, mode){
 /**
  * Input and Output files are expected to be ABS
  */
+//TODO Rename to indicate wkhtmltopdf is being used
 function toPDF(manifestJson, inputFile, mode){
   debug("Creating PDF...");
   var outputFile = path.join(path.parse(inputFile).dir, "temp.pdf");
@@ -104,6 +114,7 @@ function toPDF(manifestJson, inputFile, mode){
 
 function buildPandocArgs(jsonObj, inputPath, fileName){
   var cliArgs = "-o " + fileName;
+  //TODO make this JSON available in DEBUG=defaults
   if(jsonObj){
     for (var key in jsonObj){
       if(jsonObj[key].includes("--template")){
@@ -131,6 +142,7 @@ function buildPandocArgs(jsonObj, inputPath, fileName){
 
 function buildWkhtmltopdfOptions(optionsJson, fileName){
   debugPDF("Adding wkhtmltopdf options from Manifest");
+  //TODO make this JSON available in DEBUG=defaults
   var defaultOptions = {
     output: fileName,
     enableLocalFileAccess: true,
