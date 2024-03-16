@@ -28,7 +28,7 @@ exports.debbugOptions = {
   "merge:linkcheck": "",
 };
 
-var markdownMerge = function(manifestJSON, relPathManifest, qaMode, noLinkCheck, maintainAssetPaths){
+var start = function(manifestJSON, relPathManifest, qaMode, noLinkCheck, maintainAssetPaths){
   onlyQA = qaMode || false;
   var inputJSON = manifestJSON.input;
   var outputFileStr = path.join(relPathManifest, manifestJSON.output.name);
@@ -455,4 +455,4 @@ function removeTempFiles(fileArr){
   });
 }
 
-exports.markdownMerge = markdownMerge;
+exports.start = start;
