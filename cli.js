@@ -1,5 +1,5 @@
 const packageInfo = require("./package.json");
-const mergeMarkdown = require("./index.js");
+const manifestUtil = require("./manifest.js");
 const merge = require("./merge.js");
 const presentation = require("./presentation.js");
 const minimist = require("minimist");
@@ -11,7 +11,6 @@ const yaml = require('js-yaml');
 //Mac: DEBUG=* merge-markdown....
 //WIN: set DEBUG=* & merge-markdown....
 const debug = require("debug");
-const { dir, count } = require("console");
 const debugArgs = debug("args");
 const debugCLI = debug("cli");
 
@@ -21,7 +20,7 @@ const debbugOptions = {
         "args": "See CLI argument messages",
         "cli": "Validate CLI logic"
     },
-    ...mergeMarkdown.debbugOptions,
+    ...manifestUtil.debbugOptions,
     ...merge.debbugOptions,
     ...presentation.debbugOptions
 };
@@ -34,6 +33,7 @@ function run() {
     var argsQA = args.qa;
     var argsNoLinkcheck = args.nolinkcheck;
     var argsCreate = args.c || args.create;
+    var argsMaintainAssetPaths = args.maintainAssetPaths;
 
     debugArgs(JSON.stringify(args, null, 2));
 
@@ -63,191 +63,58 @@ function run() {
         return;
     }
     if (argsCreate) {
-        var createPath = ".";
+        var inputFilesPath = ".";
         if (typeof argsCreate === 'string') {
-            createPath = argsCreate;
+            inputFilesPath = argsCreate;
         }
-        console.log(createPath);
-        createManifest(createPath);
+        console.log(inputFilesPath);
+        manifestUtil.createManifestFile(inputFilesPath);
         return;
     }
 
     //Require -m
     //If file, expect a manifest file, otherwise look for default file in given directory
-    var manifestDirPath = "";
     var manifestPath;
-    if (argsManifest && argsManifest[0] != undefined && argsManifest[0] != "") {
-        manifestPath = getManifestFile(argsManifest);
+    // if (argsManifest && argsManifest[0] != undefined && argsManifest[0] != "") {
+    if( argsManifest && typeof argsManifest === 'string'){
+        manifestPath = manifestUtil.getManifestFile(argsManifest);
     } else { //if there is no -m check for a default manifest file
-        console.log("No manifest parameter given. Consider auto-creating one");
+        manifestPath = manifestUtil.getManifestFile("./");
+    }
+    if (manifestPath == undefined || manifestPath == "") {
+        console.log("No manifest found. Consider auto-creating with -c or specify a manifest with -m");
         console.log(HELP.default);
         return;
     }
-    if (manifestPath == undefined || manifestPath == "") return;
-    manifestDirPath = path.dirname(manifestPath);
-
-    // manifestJSON = getManifestJSON(manifestPath, argQA); ///????
-
-    //merge-markdown cxreate:manifest
-    //Looks through the entired director/subdirectory for md files and adds them to the input: as relative directories
-    //standard output
-    //outputs it into the current directory
-    //TODO 
-
+    
+    debugCLI("manifest found at: " +manifestPath);
+    console.log("Using: " + manifestPath);
+    
+    var manifestJSON = manifestUtil.getManifestJSON(manifestPath, argsQA);
+    // manifestJSON =  manifest.fixDeprecatedManifestEntry(manifestJSON);
+    
+    var relativeManifestPath = path.relative(process.cwd(), path.dirname(manifestPath));
+    console.log(relativeManifestPath);
+    // merge.start(manifestJSON, relativeManifestPath, argsQA, argsNoLinkcheck, argsMaintainAssetPaths); 
 
 }
-exports.run = run;
 
-/**
- * Gets a valid file of manifest.[yaml|yml|json]
- * @param {} inputArg file/directory given in -m param
- * @returns file
- */
-function getManifestFile(inputArg) {
-    try {
-        var fsStat = fs.lstatSync(inputArg);
-        if (fsStat.isFile()) { //Set if file is given
-            const e = path.extname(inputArg).toLowerCase();
-            if (e === '.yml' || e === '.yaml' || e === '.json') {
-                debugCLI("Using given manifest: " + inputArg);
-                return inputArg;
-            } else {
-                console.log("Manifest file can only be yml|yaml|json");
-                console.log(HELP.default);
-                return;
-            }
-        } else if (fsStat.isDirectory()) { //Search for default manifest if directory
-            debugCLI("Searching for manifest.yaml|yml|json in " + inputArg);
-            const directory = inputArg;
-            const possibleFileNames = ['manifest.yaml', 'manifest.yml', 'manifest.json'];
-            //Look for a manifest file in the given directory
-            for (const fileName of possibleFileNames) {
-                const filePath = path.join(directory, fileName);
-                try {
-                    var fileStat = fs.lstatSync(filePath);
-                    if (fileStat.isFile()) {
-                        debugCLI("Using default manifest: " + filePath);
-                        return filePath;
-                    }
-                } catch (err) {
-                    debugCLI(filePath + " DNE.");
-                }
-            }
-            console.log("No default manifest file found in " + directory);
-        }
-    }
-    catch (err) {
-        console.error(err);
-    }
-}
-
-/**
- * Autocreates a starter manifest file 
- * @param {*} dir location of input files
- */
-function createManifest(dir) {
-    const jsonObject = {
-        input: {},
-        output: {
-            "name": path.join(dir, "target/mergedFile.md"),
-            "doctoc": true,
-            "pandoc": {
-                "css": "-c path/to/theme.css",
-                "latexTemplate": "--template path/to/latex/template.html"
-            },
-            "wkhtmltopdf": {
-                "marginBottom": ".7in",
-                "marginTop": "1in",
-                "marginLeft": ".7in",
-                "marginRight": ".7in",
-                "pageSize": "Letter",
-                "headerFontSize": 8,
-                "headerSpacing": 5,
-                "headerRight": "[section]",
-                "footerLine": true,
-                "footerFontSize": 8,
-                "footerLeft": "[doctitle]",
-                "footerCenter": "",
-                "footerRight": "[page]",
-            }
-        },
-        qa: { exclude: "(frontmatter|preamble)" },
-        replace: {
-            "<!--{timestamp}-->": "01/01/2024",
-            "<!--{title}-->": "My Title",
-            "<!--{author}-->": "Chuck Grant",
-            "### My h3 title": "#### My h4 title"
-        }
-    };
-    var inputArr = findMarkdownFiles(dir);
-    var counter = 0;
-    inputArr.forEach(file => {
-        var inputOptions = {
-            noYAML: true, 
-            doctoc: true,
-            replace: {
-                "\\[#\\]": counter
-            }
-        };
-        jsonObject.input[file] = JSON.stringify(inputOptions);
-        counter++;
-    });
-
-    //Write YAML File
-    const yamlString = yaml.dump(jsonObject);
-    const manifestPath = path.join(process.cwd(), 'manifest.yml')
-    try {
-        fs.writeFileSync(manifestPath, yamlString);
-        console.log('YAML file successfully created: ' + manifestPath);
-    } catch (error) {
-        console.error('Error writing: ' + manifestPath, error);
-    }
-}
-
-/**
- * Finds all markdown (.md) files within a directory
- * @param {*} directoryPath path to search
- * @returns array of .md paths
- */
-function findMarkdownFiles(directoryPath) {
-    let markdownFiles = [];
-    // Synchronously read the contents of the directory
-    const files = fs.readdirSync(directoryPath);
-    // Iterate through each file in the directory
-    for (const file of files) {
-        const filePath = path.join(directoryPath, file);
-        const stats = fs.statSync(filePath);
-        // Check if the file is a directory
-        if (stats.isDirectory()) {
-            // Recursively search for .md files in the subdirectory
-            markdownFiles = markdownFiles.concat(findMarkdownFiles(filePath));
-        } else {
-            if (path.extname(file).toLowerCase() === '.md') {
-                markdownFiles.push(filePath);
-            }
-        }
-    }
-    return markdownFiles;
-}
-
-
-const DEF_MANIFEST_NAME = "manifest";
-const DEF_MANIFEST_EXTS = ["md", "yaml", "yml", "json"];
 const HELP = {
     default:
         `Usage: merge-markdown [ARGS]
 Arguments:
   -m, --manifest <manifestFile>            Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
-  -c, --create <path>                      auto-creates manifest file in <path>. Default is current directory
+  -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
   --qa                                     QA mode.
   --nolinkcheck                            Skips linkchecking
+  --maintainAssetPaths                     Retains original asset paths
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
   --html                                   Output to HTML. Must have Pandoc installed!
   -h, --help                               Displays this screen
   -h [manifest|options|outputOptions|qa]   See examples
   -d, --debug                              See debug Options
-Default manifest: `+ DEF_MANIFEST_NAME + ".[" + DEF_MANIFEST_EXTS.join("|") + `] unless specified in -m.
+Default manifest: `+ manifestUtil.DEF_MANIFEST_NAME + ".[" + manifestUtil.DEF_MANIFEST_EXTS.join("|") + `] unless specified in -m.
 
 Download Pandoc: https://pandoc.org/installing.html
 Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
@@ -293,3 +160,5 @@ Example: exclude all filenames with "frontmatter" by default
     qa: {exclude: "(frontmatter|preamble)"}
 ---`
 }
+
+exports.run = run;
