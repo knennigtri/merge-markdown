@@ -58,6 +58,10 @@ var start = function(manifestJSON, relPathManifest, qaMode, noLinkCheck, maintai
     }  
     var origContent = fs.readFileSync(inputFileStr, "utf-8");
     
+    //Force a new line at the end of the file to help with file merging
+    origContent += "\n";
+    origContent += "";
+    
     //updates all relative asset paths to the relative output location
     var generatedContent = updateAssetRelPaths(origContent,path.dirname(inputFileStr), path.dirname(outputFileStr),keepAssetPaths);
 
@@ -115,7 +119,7 @@ function createSingleFile(list, outputFileStr, manifestJSON){
           console.error("Error reading file for doctoc: " +outputFileStr);
         } 
         manifestJSON.output.doctoc;
-        var outDoctoc = buildTOC(data,manifestJSON.output.doctoc, manifestJSON.doctoc);
+        var outDoctoc = optionBuildTOC(data,manifestJSON.output.doctoc, manifestJSON.doctoc);
 
         fs.writeFile(outputFileStr, outDoctoc, "utf-8", function (err) {
           if (err) {
@@ -145,12 +149,12 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
   if(fileOptions && Object.prototype.hasOwnProperty.call(fileOptions,"noYAML")){ 
     if(fileOptions.noYAML){
       debug("Using [Local] noYAML...");
-      scrubbedContent = removeYAML(origContent);
+      scrubbedContent = optionRemoveYAML(origContent);
     }
   } else //Apply global noYAML option
   if(Object.prototype.hasOwnProperty.call(globalOptions,"noYAML") && globalOptions.noYAML){ 
     debug("Using [Global] noYAML...");
-    scrubbedContent = removeYAML(origContent);
+    scrubbedContent = optionRemoveYAML(origContent);
   }
 
   /* Apply find and replace */
@@ -164,15 +168,15 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
         }
       }
       debug("Using [Local/Global] Find/Replace...");
-      scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
+      scrubbedContent = optionReplaceStrings(scrubbedContent,fileOptions.replace);
     } else {
       debug("Using [Local] Find/Replace...");
-      scrubbedContent = replaceStrings(scrubbedContent,fileOptions.replace);
+      scrubbedContent = optionReplaceStrings(scrubbedContent,fileOptions.replace);
     }
   } else //Apply global replace
   if(Object.prototype.hasOwnProperty.call(globalOptions,"replace")){
     debug("Using [Global] Find/Replace...");
-    scrubbedContent = replaceStrings(scrubbedContent,globalOptions.replace);
+    scrubbedContent = optionReplaceStrings(scrubbedContent,globalOptions.replace);
   }
 
   //Add TOC
@@ -180,15 +184,15 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
     if(fileOptions.doctoc){
       if(Object.prototype.hasOwnProperty.call(globalOptions,"doctoc")){
         debugDoctoc("Using [Local/Global] DocToc...");
-        scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc, globalOptions.doctoc);
+        scrubbedContent = optionBuildTOC(scrubbedContent,fileOptions.doctoc, globalOptions.doctoc);
       } else {
         debugDoctoc("Using [Local] DocToc...");
-        scrubbedContent = buildTOC(scrubbedContent,fileOptions.doctoc);
+        scrubbedContent = optionBuildTOC(scrubbedContent,fileOptions.doctoc);
       }
     }
   } else if(Object.prototype.hasOwnProperty.call(globalOptions,"doctoc") && globalOptions.doctoc){
     debug("Using [Global] DocToc...");
-    scrubbedContent = buildTOC(scrubbedContent, null, globalOptions.doctoc);
+    scrubbedContent = optionBuildTOC(scrubbedContent, null, globalOptions.doctoc);
   }
 
   return scrubbedContent;
@@ -196,7 +200,6 @@ function applyContentOptions(origContent, fileOptions, globalOptions) {
 
 /** Searches for ![*](relPath) or src="relPath" in a string and replaces the asset
  * relPath with an absolute one
- * Debug=merge:relLinks
  */
 function updateAssetRelPaths(fileContents,inputFilePath, mergedFilePath, keepAssetPaths){
   var resultContent=[];
@@ -259,7 +262,7 @@ function updateAssetRelPaths(fileContents,inputFilePath, mergedFilePath, keepAss
  * @param {*} fileContents String that might contain YAML
  * @returns String that has YAML removed
  */
-function removeYAML(fileContents) {
+function optionRemoveYAML(fileContents) {
   debug("[OPTION] Remove YAML...");
   var resultContent = fileContents;
   var lines = fileContents.split("\n");
@@ -303,7 +306,7 @@ function removeYAML(fileContents) {
  * Regex values are allowed and will be wrapped with /str/g
  * Debug=merge:replace
  */
-function replaceStrings(fileContents,replacements){
+function optionReplaceStrings(fileContents,replacements){
   debug("[OPTION] Find and Replace Strings...");
   var replacedContent = fileContents;
   Object.keys(replacements).forEach(function(replaceKey) {
@@ -319,7 +322,7 @@ function replaceStrings(fileContents,replacements){
 /*
 
 */
-function buildTOC(fileContents,doctocLocal, doctocGlobal){
+function optionBuildTOC(fileContents,doctocLocal, doctocGlobal){
   debug("[OPTION] Running doctoc...");
   var includeTOC = false;
 
