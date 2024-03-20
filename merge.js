@@ -112,15 +112,10 @@ function createSingleFile(list, outputFileStr, manifestJSON){
   if(!fs.existsSync(outputPath)){
     fs.mkdirSync(outputPath);
   }
-  concat(list, outputFileStr).then(() => {
+  concat(list).then((resultContent) => {
     if(Object.prototype.hasOwnProperty.call(manifestJSON.output,"doctoc") && manifestJSON.output.doctoc){
-      fs.readFile(outputFileStr, "utf-8", function (err, data) {  
-        if (err) {
-          console.error("Error reading file for doctoc: " +outputFileStr);
-        } 
         manifestJSON.output.doctoc;
-        var outDoctoc = optionBuildTOC(data,manifestJSON.output.doctoc, manifestJSON.doctoc);
-
+        var outDoctoc = optionBuildTOC(resultContent,manifestJSON.output.doctoc, manifestJSON.doctoc);
         fs.writeFile(outputFileStr, outDoctoc, "utf-8", function (err) {
           if (err) {
             console.error("Error writing file for doctoc: " +outputFileStr);
@@ -129,11 +124,10 @@ function createSingleFile(list, outputFileStr, manifestJSON){
           console.log(outputFileStr + " created.");
           return outputFileStr;
         });
-      });
     } else {
       removeTempFiles(list); //cleanup
-      console.log(outputFileStr + " created.");
-      return outputFileStr;
+      console.log(resultContent + " created.");
+      return resultContent;
     }
   });
 }
