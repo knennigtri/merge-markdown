@@ -13,17 +13,16 @@ exports.debbugOptions = {
 };
 
 const DEF_MANIFEST_NAME = "manifest";
-const DEF_MANIFEST_EXTS = ["yml", "yaml", "json"];
+const DEF_MANIFEST_EXTS = [".yml", ".yaml", ".json"];
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
  * DEBUG=index:manifest:json
  */
 exports.getManifestJSON = function (inputManifestFile, qaMode) {
-  var fileType = inputManifestFile.split(".").pop();
+  var fileType = path.extname(inputManifestFile).toLowerCase();
   if (!DEF_MANIFEST_EXTS.includes(fileType)) {
-    console.log("Manifest extension must be: .[" + DEF_MANIFEST_EXTS.join("|") + "]");
-    console.log(MSG_HELP);
+    console.log("Manifest extension must be: [" + DEF_MANIFEST_EXTS.join("|") + "]");
     return;
   }
   console.log("Found manifest to use: " + inputManifestFile);
@@ -159,6 +158,7 @@ exports.getManifestFile = function (inputArg) {
     var fsStat = fs.lstatSync(inputArg);
     if (fsStat.isFile()) { //Set if file is given
       const e = path.extname(inputArg).toLowerCase();
+      debugManifest(e)
       if (DEF_MANIFEST_EXTS.includes(e)) {
         debugManifest("Using given manifest: " + inputArg);
         return inputArg;
@@ -169,7 +169,7 @@ exports.getManifestFile = function (inputArg) {
     } else if (fsStat.isDirectory()) { //Search for default manifest if directory
       debugManifest("Searching for manifest.yaml|yml|json in " + inputArg);
       const directory = inputArg;
-      const possibleFileNames = DEF_MANIFEST_EXTS.map(ext => `manifest.${ext}`);
+      const possibleFileNames = DEF_MANIFEST_EXTS.map(ext => `manifest${ext}`);
       //Look for a manifest file in the given directory
       for (const fileName of possibleFileNames) {
         const filePath = path.join(directory, fileName);
