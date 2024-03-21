@@ -4,9 +4,7 @@ const merge = require("./merge.js");
 const presentation = require("./presentation.js");
 const minimist = require("minimist");
 const args = minimist(process.argv.slice(2));
-var fs = require("fs");
 var path = require("path");
-const yaml = require('js-yaml');
 //https://www.npmjs.com/package/debug
 //Mac: DEBUG=* merge-markdown....
 //WIN: set DEBUG=* & merge-markdown....
@@ -31,7 +29,7 @@ function run() {
     var argsDebug = args.d || args.debug;
     var argsManifest = args.m || args.manifest;
     var argsQA = args.qa;
-    var argsNoLinkcheck = args.nolinkcheck;
+    var argsSkipLinkcheck = args.skipLinkcheck;
     var argsCreate = args.c || args.create;
     var argsMaintainAssetPaths = args.maintainAssetPaths;
 
@@ -54,14 +52,10 @@ function run() {
         console.log("Options: " + JSON.stringify(debbugOptions, null, 2));
         return;
     }
-    if (argsQA) {
-        console.log("QA mode");
-        return;
-    }
-    if (argsNoLinkcheck) {
-        console.log("No Linkcheck");
-        return;
-    }
+    if (argsQA) console.log("QA mode");
+    if (argsSkipLinkcheck) console.log("noLinkcheck mode");
+    if (argsMaintainAssetPaths) console.log("maintainAssetPaths mode");
+
     if (argsCreate) {
         var inputFilesPath = ".";
         if (typeof argsCreate === 'string') {
@@ -76,27 +70,31 @@ function run() {
     //If file, expect a manifest file, otherwise look for default file in given directory
     var manifestPath;
     // if (argsManifest && argsManifest[0] != undefined && argsManifest[0] != "") {
-    if( argsManifest && typeof argsManifest === 'string'){
-        manifestPath = manifestUtil.getManifestFile(argsManifest);
+    if (argsManifest && typeof argsManifest === 'string') {
+        manifestPath = manifestUtil.getFile(argsManifest);
     } else { //if there is no -m check for a default manifest file
-        manifestPath = manifestUtil.getManifestFile("./");
+        manifestPath = manifestUtil.getFile("./");
     }
     if (manifestPath == undefined || manifestPath == "") {
         console.log("No manifest found. Consider auto-creating with -c or specify a manifest with -m");
         console.log(HELP.default);
         return;
     }
-    
-    debugCLI("manifest found at: " +manifestPath);
-    console.log("Using: " + manifestPath);
-    
-    var manifestJSON = manifestUtil.getManifestJSON(manifestPath, argsQA);
-    // manifestJSON =  manifest.fixDeprecatedManifestEntry(manifestJSON);
-    
-    var relativeManifestPath = path.relative(process.cwd(), path.dirname(manifestPath));
-    console.log(relativeManifestPath);
-    // merge.start(manifestJSON, relativeManifestPath, argsQA, argsNoLinkcheck, argsMaintainAssetPaths); 
 
+    debugCLI("manifest found at: " + manifestPath);
+    console.log("Using: " + manifestPath);
+
+    //Run merge-markdown
+    var manifestJSON = manifestUtil.getJSON(manifestPath, argsQA);
+    var relativeManifestPath = path.relative(process.cwd(), path.dirname(manifestPath));
+    merge.start(manifestJSON, relativeManifestPath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths);
+
+    //Add presentation
+    if (args.pdf) {
+        presentation.build(manifestJSON, relativeManifestPath, presentation.MODE.pdf);
+    } else if (args.html) {
+        presentation.build(manifestJSON, relativeManifestPath, presentation.MODE.html);
+    }
 }
 
 const HELP = {
@@ -107,7 +105,7 @@ Arguments:
   -v, --version                            Displays version of this package
   -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
   --qa                                     QA mode.
-  --nolinkcheck                            Skips linkchecking
+  --skipLinkcheck                            Skips linkchecking
   --maintainAssetPaths                     Retains original asset paths
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
   --html                                   Output to HTML. Must have Pandoc installed!
