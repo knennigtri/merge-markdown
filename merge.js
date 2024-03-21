@@ -22,13 +22,13 @@ var EXT = {
 };
 exports.EXT = EXT;
 exports.debbugOptions = {
-  "merge": "",
-  "rellinks": "",
-  "o:yaml": "",
-  "o:doctoc": "",
-  "o:replace": "",
-  "linkcheck": "",
-  "linkcheck:deep": "",
+  "merge": "messages for merge process",
+  "rellinks": "relative links",
+  "o:yaml": "yaml removal",
+  "o:doctoc": "doctoc messages",
+  "o:replace": "regex replace messages",
+  "linkcheck": "linkcheck validation",
+  "linkcheck:deep": "deep linkcheck validation",
 };
 
 function start(manifestJSON, relPathToManifest, qaMode, skip_linkcheck, maintainAssetPaths) {
@@ -126,7 +126,7 @@ function createSingleFile(list, outputFileStr, manifestJSON) {
     }
   }).then((result) => {
     deleteGeneratedFiles(list); //cleanup
-    console.log(result + " created!");
+    console.log(result + " created");
     return result;
   });
 }
