@@ -23,24 +23,25 @@ var EXT = {
 exports.EXT = EXT;
 exports.debbugOptions = {
   "merge": "",
-  "merge:rellinks": "",
-  "merge:yaml": "",
-  "merge:doctoc": "",
-  "merge:replace": "",
-  "merge:linkcheck": "",
+  "rellinks": "",
+  "o:yaml": "",
+  "o:doctoc": "",
+  "o:replace": "",
+  "linkcheck": "",
+  "linkcheck:deep": "",
 };
 
-var start = function (manifestJSON, relPathManifest, qaMode, noLinkCheck, maintainAssetPaths) {
+function start(manifestJSON, relPathToManifest, qaMode, skip_linkcheck, maintainAssetPaths) {
   onlyQA = qaMode || false;
   var inputJSON = manifestJSON.input;
-  var outputFileStr = path.join(relPathManifest, manifestJSON.output.name);
-  var doNotCreateLinkcheckFile = noLinkCheck;
-  var keepAssetPaths = maintainAssetPaths | false;
+  var outputFileStr = path.join(relPathToManifest, manifestJSON.output.name);
+  var skipLinkcheck = skip_linkcheck || false;
+  var keepAssetPaths = maintainAssetPaths || false;
   var qaRegex;
   if (manifestJSON.qa) qaRegex = new RegExp(manifestJSON.qa.exclude);
   if (onlyQA) console.log("QA exclude regex: " + qaRegex);
 
-  if (doNotCreateLinkcheckFile) console.log("Skipping linkcheck on all files");
+  if (skipLinkcheck) console.log("Skipping linkcheck on all files");
 
   //removes old .md files
   deleteGeneratedFiles([
@@ -53,7 +54,7 @@ var start = function (manifestJSON, relPathManifest, qaMode, noLinkCheck, mainta
   var fileArr = [];
   var refFileArr = [];
   Object.keys(inputJSON).forEach(function (inputKey) {
-    var inputFileStr = path.join(relPathManifest, inputKey);
+    var inputFileStr = path.join(relPathToManifest, inputKey);
     console.log("--" + inputFileStr + "--");
     if (onlyQA && qaRegex.test(inputFileStr)) {
       console.warn("Skipping " + inputKey + " for QA");
@@ -79,10 +80,10 @@ var start = function (manifestJSON, relPathManifest, qaMode, noLinkCheck, mainta
     var tempFile = inputFileStr + ".temp";
     fs.writeFileSync(tempFile, generatedContent);
 
-    if (!doNotCreateLinkcheckFile) {
+    if (!skipLinkcheck) {
       //checks for broken links within the content
       debug("--Create/Update linkcheck file--");
-      linkcheck(tempFile, updateExtension(outputFileStr, EXT.linkcheck));
+      linkcheck(tempFile, updateExtension(outputFileStr, EXT.linkcheck))
     }
 
     //add the  temp file to the list to merge together
@@ -118,7 +119,7 @@ function createSingleFile(list, outputFileStr, manifestJSON) {
   concat(list).then((resultContent) => {
     if (Object.prototype.hasOwnProperty.call(manifestJSON.output, "doctoc") && manifestJSON.output.doctoc) {
       manifestJSON.output.doctoc;
-      var outDoctoc = optionBuildTOC(resultContent, manifestJSON.output.doctoc, manifestJSON.doctoc);    
+      var outDoctoc = optionBuildTOC(resultContent, manifestJSON.output.doctoc, manifestJSON.doctoc);
       return safelyWriteFile(outputFileStr, outDoctoc);
     } else {
       return resultContent;
@@ -448,11 +449,11 @@ function deleteGeneratedFiles(fileArr) {
   });
 }
 
-function safelyWriteFile(filePath, contents, append){
+function safelyWriteFile(filePath, contents, append) {
   try {
     //Create the output directory structure if it doesn't exist
     mkdirp.sync(path.dirname(filePath));
-    if(append){
+    if (append) {
       fs.appendFileSync(filePath, contents, "utf-8");
     } else {
       fs.writeFileSync(filePath, contents, "utf-8");
