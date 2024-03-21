@@ -48,6 +48,7 @@
     "js-yaml": "^4.1.0",
     "markdown-link-check": "^3.10.2",
     "minimist": "^1.2.6",
+    "mkdirp": "^3.0.1",
     "node-pandoc": "^0.3.0",
     "valid-url": "^1.0.9",
     "wkhtmltopdf": "^0.4.0"

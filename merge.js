@@ -1,6 +1,7 @@
 "use strict";
 var path = require("path");
 var fs  =  require("fs");
+const mkdirp = require("mkdirp");
 var concat = require("concat");
 var markdownLinkCheck = require("markdown-link-check");
 var doctoc = require("doctoc/lib/transform");
@@ -116,6 +117,9 @@ function createSingleFile(list, outputFileStr, manifestJSON){
     if(Object.prototype.hasOwnProperty.call(manifestJSON.output,"doctoc") && manifestJSON.output.doctoc){
         manifestJSON.output.doctoc;
         var outDoctoc = optionBuildTOC(resultContent,manifestJSON.output.doctoc, manifestJSON.doctoc);
+        
+        //Create the output directory structure if it doesn't exist
+        mkdirp.sync(path.dirname(outputFileStr));
         fs.writeFile(outputFileStr, outDoctoc, "utf-8", function (err) {
           if (err) {
             console.error("Error writing file for doctoc: " +outputFileStr);
@@ -383,14 +387,8 @@ function optionBuildTOC(fileContents,doctocLocal, doctocGlobal){
  * DEBUG=merge:linkcheck
  */
 function linkCheck(inputFileStr, outputFileStr) {
-  var outputFolder = path.dirname(outputFileStr);
-  if(!fs.existsSync(outputFolder)){
-    fs.mkdirSync(outputFolder);
-  } else {
-    if(fs.existsSync(outputFileStr)){
-      fs.unlinkSync(outputFileStr);
-    }
-  }
+  //Make the output directory if DNE
+  mkdirp.sync(path.dirname(outputFileStr));
   
   var inputFolder = path.dirname(inputFileStr);
   var base = new URL(path.join("file:",path.resolve(inputFolder))); //TODO Might be failing on windows
