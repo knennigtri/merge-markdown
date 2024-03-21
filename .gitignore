@@ -86,3 +86,4 @@ typings/
 # FuseBox cache
 .fusebox/
 
+manifest.yml
