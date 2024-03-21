@@ -19,7 +19,7 @@ const DEF_MANIFEST_EXTS = [".yml", ".yaml", ".json"];
  * Creates a valid manifest JSON based on input (or no input)
  * DEBUG=index:manifest:json
  */
-exports.getManifestJSON = function (inputManifestFile, qaMode) {
+exports.getJSON = function (inputManifestFile, qaMode) {
   var fileType = path.extname(inputManifestFile).toLowerCase();
   if (!DEF_MANIFEST_EXTS.includes(fileType)) {
     console.log("Manifest extension must be: [" + DEF_MANIFEST_EXTS.join("|") + "]");
@@ -51,7 +51,7 @@ exports.getManifestJSON = function (inputManifestFile, qaMode) {
     console.log("Manifest is missing output.name. " + jsonObj.output.name + " will be used.");
     debugmanifestJson("OUTPUT:\n" + JSON.stringify(jsonObj.output, null, 2));
   } else {
-    jsonObj = fixDeprecatedManifestEntry(jsonObj);
+    jsonObj = fixDeprecatedEntry(jsonObj);
   }
 
   if (jsonObj.output.name.split(".").pop() != "md") {
@@ -66,7 +66,7 @@ exports.getManifestJSON = function (inputManifestFile, qaMode) {
     jsonObj.input = inputList;
     debugmanifestJson("INPUT:\n" + JSON.stringify(jsonObj.input, null, 2));
   } else {
-    jsonObj = fixDeprecatedManifestEntry(jsonObj);
+    jsonObj = fixDeprecatedEntry(jsonObj);
   }
 
   if (qaMode) {
@@ -83,7 +83,7 @@ exports.getManifestJSON = function (inputManifestFile, qaMode) {
  * allow for non-destructive updates to mege-markdown.
  * Important if users are coming from earlier versions of merge-markdown
  */
-function fixDeprecatedManifestEntry(manifestFix) {
+function fixDeprecatedEntry(manifestFix) {
   var updatesNeeded = "";
   //Fix output to allow for keys under the output
   if (typeof manifestFix.output === "string") {
@@ -153,7 +153,7 @@ function fixDeprecatedManifestEntry(manifestFix) {
  * @param {} inputArg file/directory given in -m param
  * @returns file
  */
-exports.getManifestFile = function (inputArg) {
+exports.getFile = function (inputArg) {
   try {
     var fsStat = fs.lstatSync(inputArg);
     if (fsStat.isFile()) { //Set if file is given
