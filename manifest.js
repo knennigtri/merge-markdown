@@ -19,7 +19,7 @@ const DEF_MANIFEST_EXTS = [".yml", ".yaml", ".json"];
  * Creates a valid manifest JSON based on input (or no input)
  * DEBUG=index:manifest:json
  */
-exports.getJSON = function (inputManifestFile, qaMode) {
+exports.getManifestObj = function (inputManifestFile, qaMode) {
   var fileType = path.extname(inputManifestFile).toLowerCase();
   if (!DEF_MANIFEST_EXTS.includes(fileType)) {
     console.log("Manifest extension must be: [" + DEF_MANIFEST_EXTS.join("|") + "]");
