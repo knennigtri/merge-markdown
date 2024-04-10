@@ -4,14 +4,12 @@ const merge = require("./merge.js");
 const presentation = require("./presentation.js");
 const minimist = require("minimist");
 const args = minimist(process.argv.slice(2));
-var path = require("path");
 //https://www.npmjs.com/package/debug
 //Mac: DEBUG=* merge-markdown....
 //WIN: set DEBUG=* & merge-markdown....
 const debug = require("debug");
 const debugArgs = debug("args");
 const debugCLI = debug("cli");
-
 const debbugOptions = {
     ...{
         "*": "Output all debugging messages",
@@ -68,41 +66,34 @@ function run() {
 
     //Require -m
     //If file, expect a manifest file, otherwise look for default file in given directory
-    var manifestPath;
+    var manifestFilePath;
     // if (argsManifest && argsManifest[0] != undefined && argsManifest[0] != "") {
     if (argsManifest && typeof argsManifest === 'string') {
-        manifestPath = manifestUtil.getFile(argsManifest);
+        manifestFilePath = manifestUtil.getFile(argsManifest);
     } else { //if there is no -m check for a default manifest file
-        manifestPath = manifestUtil.getFile("./");
+        manifestFilePath = manifestUtil.getFile("./");
     }
-    if (manifestPath == undefined || manifestPath == "") {
+    if (manifestFilePath == undefined || manifestFilePath == "") {
         console.log("No manifest found. Consider auto-creating with -c or specify a manifest with -m");
         console.log(HELP.default);
         return;
     }
 
-    debugCLI("manifest found at: " + manifestPath);
-    console.log("Using: " + manifestPath);
+    debugCLI("manifest found at: " + manifestFilePath);
+    console.log("Using: " + manifestFilePath);
 
-    //Run merge-markdown
-    var manifestJSON = manifestUtil.getManifestObj(manifestPath, argsQA);
-    var relativeManifestPath = path.relative(process.cwd(), path.dirname(manifestPath));
-    merge.start(manifestJSON, relativeManifestPath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths)
+    merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths)
         .then(resultMarkdownFile => {
             //Add presentation
             if (args.pdf) {
-                // presentation.build(manifestJSON, presentation.MODE.pdf, relativeManifestPath);
-                debugCLI("PDF");
+                presentation.build(resultMarkdownFile, presentation.MODE.pdf, manifestFilePath);
             } else if (args.html) {
-                // presentation.build(manifestJSON, relativeManifestPath, presentation.MODE.html);
-                // presentation.build(resultMarkdownFile, presentation.MODE.html, manifestPath)
-                debugCLI("HTML");
+                presentation.build(resultMarkdownFile, presentation.MODE.html, manifestFilePath)
             }
         })
         .catch((error) => {
             console.error(`Error creating file: ${error}`);
-            // Handle the error appropriately
-          });
+        });
 }
 
 const HELP = {

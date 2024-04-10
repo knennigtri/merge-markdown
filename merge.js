@@ -1,21 +1,19 @@
-"use strict";
-var path = require("path");
-var fs = require("fs");
+const manifestUtil = require("./manifest.js");
+const path = require("path");
+const fs = require("fs");
 const mkdirp = require("mkdirp");
-var concat = require("concat");
-
-var markdownLinkCheck = require("markdown-link-check");
-var doctoc = require("doctoc/lib/transform");
-var validUrl = require("valid-url");
-var debug = require("debug")("merge");
-var debugRelLinks = require("debug")("rellinks");
-var debugYaml = require("debug")("o:yaml");
-var debugDoctoc = require("debug")("o:doctoc");
-var debugReplace = require("debug")("o:replace");
-var debugLinkcheck = require("debug")("linkcheck");
-var debugLinkcheckDeep = require("debug")("linkcheck:deep");
-var onlyQA;
-var EXT = {
+const concat = require("concat");
+const markdownLinkCheck = require("markdown-link-check");
+const doctoc = require("doctoc/lib/transform");
+const validUrl = require("valid-url");
+const debug = require("debug")("merge");
+const debugRelLinks = require("debug")("rellinks");
+const debugYaml = require("debug")("o:yaml");
+const debugDoctoc = require("debug")("o:doctoc");
+const debugReplace = require("debug")("o:replace");
+const debugLinkcheck = require("debug")("linkcheck");
+const debugLinkcheckDeep = require("debug")("linkcheck:deep");
+const EXT = {
   "linkcheck": ".linkcheck.md",
   "qa": ".qa.md",
   "out": ".out.md",
@@ -32,89 +30,87 @@ exports.debbugOptions = {
   "linkcheck:deep": "deep linkcheck validation",
 };
 
-function start(manifestJSON, relPathToManifest, qaMode, skip_linkcheck, maintainAssetPaths) {
-  // return new Promise((resolve, reject) => {
-    onlyQA = qaMode || false;
-    var inputJSON = manifestJSON.input;
-    var outputFileStr = path.join(relPathToManifest, manifestJSON.output.name);
-    var skipLinkcheck = skip_linkcheck || false;
-    var keepAssetPaths = maintainAssetPaths || false;
-    var qaRegex;
-    if (manifestJSON.qa) qaRegex = new RegExp(manifestJSON.qa.exclude);
-    if (onlyQA) console.log("QA exclude regex: " + qaRegex);
+function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
+  var onlyQA = qaMode || false;
+  var manifestJSON = manifestUtil.getManifestObj(manifestFile, onlyQA);
+  var relManifestPath = path.relative(process.cwd(), path.dirname(manifestFile));
+  var outputFileStr = path.join(relManifestPath, manifestJSON.output.name);
+  var skipLinkcheck = skip_linkcheck || false;
+  var keepAssetPaths = maintainAssetPaths || false;
+  var qaRegex;
+  if (manifestJSON.qa) qaRegex = new RegExp(manifestJSON.qa.exclude);
+  if (onlyQA) console.log("QA exclude regex: " + qaRegex);
 
-    if (skipLinkcheck) console.log("Skipping linkcheck on all files");
+  if (skipLinkcheck) console.log("Skipping linkcheck on all files");
 
-    //removes old .md files
-    deleteGeneratedFiles([
-      outputFileStr,
-      updateExtension(outputFileStr, EXT.linkcheck),
-      updateExtension(outputFileStr, EXT.qa)
-    ]);
+  //removes old .md files
+  deleteGeneratedFiles([
+    outputFileStr,
+    updateExtension(outputFileStr, EXT.linkcheck),
+    updateExtension(outputFileStr, EXT.qa)
+  ]);
 
-    //Iterate through all of the input files in manifest apply options
-    var fileArr = [];
-    var refFileArr = [];
-    Object.keys(inputJSON).forEach(function (inputKey) {
-      var inputFileStr = path.join(relPathToManifest, inputKey);
-      console.log("--" + inputFileStr + "--");
-      if (onlyQA && qaRegex.test(inputFileStr)) {
-        console.warn("Skipping " + inputKey + " for QA");
-        return;
-      }
-      if (!fs.existsSync(inputFileStr)) {
-        console.warn(inputKey + " does not exist. Skipping.");
-        return;
-      }
-      var origContent = fs.readFileSync(inputFileStr, "utf-8");
-
-      //Force a new line at the end of the file to help with file merging
-      origContent += "\n";
-      origContent += "";
-
-      //updates all relative asset paths to the relative output location
-      var generatedContent = updateAssetRelPaths(origContent, path.dirname(inputFileStr), path.dirname(outputFileStr), keepAssetPaths);
-
-      debug("--Apply file OPTIONS--");
-      //Content, local options, global options
-      generatedContent = applyContentOptions(generatedContent, inputJSON[inputKey], manifestJSON);
-
-      var tempFile = inputFileStr + ".temp";
-      fs.writeFileSync(tempFile, generatedContent);
-
-      if (!skipLinkcheck) {
-        //checks for broken links within the content
-        debug("--Create/Update linkcheck file--");
-        linkcheck(tempFile, updateExtension(outputFileStr, EXT.linkcheck))
-      }
-
-      //add the  temp file to the list to merge together
-      fileArr.push(tempFile);
-      debug(path.basename(tempFile));
-      console.log("...added to merge list");
-
-      //Adds any same name .ref.md files to refFilesList
-      var refFileStr = updateExtension(inputFileStr, EXT.ref);
-      if (fs.existsSync(refFileStr)) {
-        console.log(path.basename(refFileStr) + " added to references merge list");
-        refFileArr.push(refFileStr);
-      }
-    });
-
-    console.log("+++++++++++++");
-    //Merge lists and output single markdown file
-    var mergedFileArr = fileArr.concat(refFileArr);
-
-    console.log("Creating Merged Markdown:\n " + mergedFileArr.join("\n "));
-    if (onlyQA) {
-      outputFileStr = updateExtension(outputFileStr, EXT.qa);
+  //Iterate through all of the input files in manifest apply options
+  var fileArr = [];
+  var refFileArr = [];
+  Object.keys(manifestJSON.input).forEach(function (inputKey) {
+    var inputFileStr = path.join(relManifestPath, inputKey);
+    console.log("--" + inputFileStr + "--");
+    if (onlyQA && qaRegex.test(inputFileStr)) {
+      console.warn("Skipping " + inputKey + " for QA");
+      return;
     }
-    return createSingleFile(mergedFileArr, outputFileStr, manifestJSON);
-    // resolve(outputFileStr);
-  // });
+    if (!fs.existsSync(inputFileStr)) {
+      console.warn(inputKey + " does not exist. Skipping.");
+      return;
+    }
+    var origContent = fs.readFileSync(inputFileStr, "utf-8");
+
+    //Force a new line at the end of the file to help with file merging
+    origContent += "\n";
+    origContent += "";
+
+    //updates all relative asset paths to the relative output location
+    var generatedContent = updateAssetRelPaths(origContent, path.dirname(inputFileStr), path.dirname(outputFileStr), keepAssetPaths);
+
+    debug("--Apply file OPTIONS--");
+    //Content, local options, global options
+    generatedContent = applyContentOptions(generatedContent, manifestJSON.input[inputKey], manifestJSON);
+
+    var tempFile = inputFileStr + ".temp";
+    fs.writeFileSync(tempFile, generatedContent);
+
+    if (!skipLinkcheck) {
+      //checks for broken links within the content
+      debug("--Create/Update linkcheck file--");
+      linkcheck(tempFile, updateExtension(outputFileStr, EXT.linkcheck))
+    }
+
+    //add the  temp file to the list to merge together
+    fileArr.push(tempFile);
+    debug(path.basename(tempFile));
+    console.log("...added to merge list");
+
+    //Adds any same name .ref.md files to refFilesList
+    var refFileStr = updateExtension(inputFileStr, EXT.ref);
+    if (fs.existsSync(refFileStr)) {
+      console.log(path.basename(refFileStr) + " added to references merge list");
+      refFileArr.push(refFileStr);
+    }
+  });
+
+  console.log("+++++++++++++");
+  //Merge lists and output single markdown file
+  var mergedFileArr = fileArr.concat(refFileArr);
+
+  console.log("Creating Merged Markdown:\n " + mergedFileArr.join("\n "));
+  if (onlyQA) {
+    outputFileStr = updateExtension(outputFileStr, EXT.qa);
+  }
+  return createSingleFile(mergedFileArr, outputFileStr, manifestJSON);
 };
 
-function createSingleFile(list, outputFileStr, manifestJSON) {
+async function createSingleFile(list, outputFileStr, manifestJSON) {
   debug("Creating single file");
   if (!list || list.length === 0) {
     console.log("List to merge is not valid. Aborting..");
@@ -126,7 +122,7 @@ function createSingleFile(list, outputFileStr, manifestJSON) {
       var outDoctoc = optionBuildTOC(resultContent, manifestJSON.output.doctoc, manifestJSON.doctoc);
       return safelyWriteFile(outputFileStr, outDoctoc);
     } else {
-      return safelyWriteFile(outputFileStr,resultContent);
+      return safelyWriteFile(outputFileStr, resultContent);
     }
   }).then((result) => {
     deleteGeneratedFiles(list); //cleanup

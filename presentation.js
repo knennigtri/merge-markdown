@@ -1,14 +1,15 @@
-var path = require("path");
-var nodePandoc = require("node-pandoc");
-var wkhtmltopdf = require("wkhtmltopdf");
-var debug = require("debug")("presentation");
-var debugPandoc = require("debug")("html");
-var debugPandocOptions = require("debug")("html:options");
-var debugWkhtmltopdf = require("debug")("pdf");
-var debugWkhtmltopdfOptions = require("debug")("pdf:options");
-var debugDefaults = require("debug")("defaults")
-var fs = require("fs");
-var MODE = {
+const manifestUtil = require("./manifest.js");
+const fs = require("fs");
+const path = require("path");
+const nodePandoc = require("node-pandoc");
+const wkhtmltopdf = require("wkhtmltopdf");
+const debug = require("debug")("presentation");
+const debugPandoc = require("debug")("html");
+const debugPandocOptions = require("debug")("html:options");
+const debugWkhtmltopdf = require("debug")("pdf");
+const debugWkhtmltopdfOptions = require("debug")("pdf:options");
+const debugDefaults = require("debug")("defaults")
+const MODE = {
   "pdf": "pdf",
   "html": "html"
 };
@@ -22,45 +23,43 @@ exports.debbugOptions = {
   "pdf:options": "wkhtmltopdf options messages"
 };
 
-var build = async function (jsonObj, inputPath, mode) {
+var build = async function (inputFile, mode, manifestFile) {
+  let manifestObj = manifestUtil.getManifestObj(manifestFile);
+
   console.log("Creating presentation...");
   debug("Presentation output: " + mode);
-  var absInputPath = path.resolve(inputPath);
+  var absInputPath = path.resolve(manifestFile);
   debug("Input: " + absInputPath);
 
-  //Set the output location of documents
-  var absManifestOutputPath = path.parse(jsonObj.output.name).dir;
-  var absManifestOutputFileName = path.parse(jsonObj.output.name).base;
-  var absOutputPath = path.join(absInputPath, absManifestOutputPath);
-  //Location of merge-markdown file
-  var absMMFileName = path.join(absOutputPath, absManifestOutputFileName);
-
-  console.log(mode.toUpperCase() + " mode selected for " + absManifestOutputFileName);
+  console.log(mode.toUpperCase() + " mode selected for " + path.parse(inputFile).base);
   console.log("+++++++++++++");
-  pandocWriteToFile(absMMFileName, jsonObj.output.pandoc, absInputPath)
+  pandocWriteToFile(inputFile, manifestObj.output.pandoc, absInputPath)
     .then(resultHtmlFile => {
+      debug("in Then")
       if (mode == MODE.pdf) {
-        return wkhtmltopdfWriteToFile(resultHtmlFile, jsonObj.output.wkhtmltopdf)
+        return wkhtmltopdfWriteToFile(resultHtmlFile, manifestObj.output.wkhtmltopdf)
           .then(resultPdfFile => {
             return resultPdfFile;
           });
       } else {
+        debug("returning HTML File")
         return resultHtmlFile;
       }
-    }).then((resultFileToRename) => {
-      renameToManifestOutputName(resultFileToRename, jsonObj.output.name, mode);
+    }).then((resultFile) => {
+      debug("writing File")
+      renameToManifestOutputName(resultFile, manifestObj.output.name, mode);
     });
 };
 
 // Input and Output files are expected to be ABS
 function pandocWriteToFile(inputFile, pandocParams, inputPath) {
   debug("Creating HTML using Pandoc...");
-  var outputFile = path.join(path.parse(inputFile).dir, "temp.html"); //TODO might be failing for windows
+  var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
   var pandocArgs = buildPandocArgs(pandocParams, outputFile, inputPath);
   debugPandoc("input: " + inputFile);
   debugPandoc("Args: '" + pandocArgs + "'");
   return new Promise((resolve, reject) => {
-    nodePandoc(inputFile, pandocArgs, function (err, result) {
+    nodePandoc(inputFile, pandocArgs, (err) => {
       if (err) {
         console.error("Verify the pandoc arguments according to pandoc documentation");
         console.error("Make sure pandoc is installed! https://pandoc.org/installing.html")
@@ -117,7 +116,7 @@ function buildPandocArgs(params, fileName, inputPath) {
       }
     }
   } else {
-    debugWkhtmltopdf("No pandoc Args given in manifest. Using defaults.");
+    debugPandoc("No pandoc Args given in manifest. Using defaults.");
   }
   return cliArgs;
 }
