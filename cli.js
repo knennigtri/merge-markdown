@@ -85,16 +85,24 @@ function run() {
     console.log("Using: " + manifestPath);
 
     //Run merge-markdown
-    var manifestJSON = manifestUtil.getJSON(manifestPath, argsQA);
+    var manifestJSON = manifestUtil.getManifestObj(manifestPath, argsQA);
     var relativeManifestPath = path.relative(process.cwd(), path.dirname(manifestPath));
-    merge.start(manifestJSON, relativeManifestPath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths);
-
-    //Add presentation
-    if (args.pdf) {
-        presentation.build(manifestJSON, relativeManifestPath, presentation.MODE.pdf);
-    } else if (args.html) {
-        presentation.build(manifestJSON, relativeManifestPath, presentation.MODE.html);
-    }
+    merge.start(manifestJSON, relativeManifestPath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths)
+        .then(resultMarkdownFile => {
+            //Add presentation
+            if (args.pdf) {
+                // presentation.build(manifestJSON, presentation.MODE.pdf, relativeManifestPath);
+                debugCLI("PDF");
+            } else if (args.html) {
+                // presentation.build(manifestJSON, relativeManifestPath, presentation.MODE.html);
+                // presentation.build(resultMarkdownFile, presentation.MODE.html, manifestPath)
+                debugCLI("HTML");
+            }
+        })
+        .catch((error) => {
+            console.error(`Error creating file: ${error}`);
+            // Handle the error appropriately
+          });
 }
 
 const HELP = {
