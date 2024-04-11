@@ -45,8 +45,8 @@ function run() {
         return;
     }
     if (argsDebug) {
-        console.log("[Mac] $ DEBUG:<option> mergemarkdown -m <file>");
-        console.log("[Win] $ set DEBUG=<option> & mergemarkdown -m <file>");
+        console.log("[Mac] $ DEBUG:<option> " + cliName + " -m <file>");
+        console.log("[Win] $ set DEBUG=<option> & " + cliName + " -m <file>");
         console.log("Options: " + JSON.stringify(debbugOptions, null, 2));
         return;
     }
@@ -96,6 +96,7 @@ function run() {
         });
 }
 
+const cliName = packageInfo.name.replace("@knennigtri/", "");
 const HELP = {
     default:
         `Usage: merge-markdown [ARGS]
