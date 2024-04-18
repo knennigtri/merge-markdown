@@ -85,11 +85,13 @@ function run() {
     merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths)
         .then(resultMarkdownFile => {
             //Add presentation
-            if (args.pdf) {
-                presentation.build(resultMarkdownFile, presentation.MODE.pdf, manifestFilePath);
-            } else if (args.html) {
-                presentation.build(resultMarkdownFile, presentation.MODE.html, manifestFilePath)
-            }
+            var outputMode = "";
+            if (args.html) outputMode = presentation.MODE.html;
+            if (args.pdf) outputMode = presentation.MODE.pdf;
+            presentation.build(resultMarkdownFile, outputMode, manifestFilePath)
+            .then(resultFile => {
+                console.log(resultFile + " successfully created.")
+            })
         })
         .catch((error) => {
             console.error(`Error creating file: ${error}`);
