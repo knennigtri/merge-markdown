@@ -68,22 +68,22 @@ npm install -g @knennigtri/merge-markdown
 
 ## Command Line Tool
 
-Use default `./manifest.[md|yaml|yml|json]` for input
+Use default `./manifest[.yml|.yaml|.json]` for input
 
 ```shell
 > merge-markdown
 ```
 
-Merge based on manifest file
+Create an inital manifest with markdown files in a directory
+
+```shell
+> merge-markdown -c my/path/src
+```
+
+Merge based on existing manifest file
 
 ```shell
 > merge-markdown -m myManifest.md
-```
-
-Merge based on `path/to/files` default manifest or merges all files in a default order
-
-```shell
-> merge-markdown -m path/to/files
 ```
 
 Output to PDF
@@ -97,15 +97,18 @@ Output to PDF
 ```shell
 Usage: merge-markdown [ARGS]
 Arguments:
-  -m <manifestFile>                        Path to input folder, yaml, or json manifest
+  -m, --manifest <manifestFile>            Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
+  -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
   --qa                                     QA mode.
-  --nolinkcheck                            Skips linkchecking
+  --skipLinkcheck                          Skips linkchecking
+  --maintainAssetPaths                     Retains original asset paths
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
   --html                                   Output to HTML. Must have Pandoc installed!
   -h, --help                               Displays this screen
   -h [manifest|options|outputOptions|qa]   See examples
-Default manifest: manifest.[md|yaml|yml|json] unless specified in -m. 
+  -d, --debug                              See debug Options
+Default manifest: manifest[.yml|.yaml|.json] unless specified in -m.
 
 Download Pandoc: https://pandoc.org/installing.html
 Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
@@ -113,7 +116,7 @@ Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
 
 ## Manifest file format
 
-`manifest.[md|yaml|yml|json]`:
+`manifest[.yml|.yaml|.json]`:
 This file can be in YAML or JSON format.
 
 * `input`: No `input` will merge all .md files in the same directory as the manifest.
@@ -286,13 +289,40 @@ Sometimes the [markdown-link-check](https://www.npmjs.com/package/markdown-link-
 
 #### Debug Mode
 
-[Debug](https://www.npmjs.com/package/debug) is used in this tool. Available debug options:
+[Debug](https://www.npmjs.com/package/debug) is used in this tool:
 
-* index:[ input | manifest ]
-* index:manifest:[ json | generate ]
-* merge:[ relinks | yaml | doctoc | replace | linkcheck ]
-* presentation:[ html | pdf ]:options
-* presentation:verbose
+Mac or Linux:
+```shell
+ > DEBUG:options merge-markdown -m file
+ ```
+
+Windows:
+```shell
+> set DEBUG=options & merge-markdown -m file
+```
+
+```
+Options: {
+  "*": "Output all debugging messages",
+  "args": "See CLI argument messages",
+  "cli": "Validate CLI logic",
+  "manifest": "",
+  "manifest:deprecation": "",
+  "manifest:json": "",
+  "merge": "messages for merge process",
+  "rellinks": "relative links",
+  "o:yaml": "yaml removal",
+  "o:doctoc": "doctoc messages",
+  "o:replace": "regex replace messages",
+  "linkcheck": "linkcheck validation",
+  "linkcheck:deep": "deep linkcheck validation",
+  "presentation": "",
+  "html": "pandoc messages for html",
+  "html:options": "pandoc options messages",
+  "pdf": "wkhtmltopdf messages for pdf",
+  "pdf:options": "wkhtmltopdf options messages"
+}
+```
 
 ## Manifest Examples
 

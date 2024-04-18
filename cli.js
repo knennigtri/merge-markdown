@@ -107,14 +107,14 @@ Arguments:
   -v, --version                            Displays version of this package
   -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
   --qa                                     QA mode.
-  --skipLinkcheck                            Skips linkchecking
+  --skipLinkcheck                          Skips linkchecking
   --maintainAssetPaths                     Retains original asset paths
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
   --html                                   Output to HTML. Must have Pandoc installed!
   -h, --help                               Displays this screen
   -h [manifest|options|outputOptions|qa]   See examples
   -d, --debug                              See debug Options
-Default manifest: `+ manifestUtil.DEF_MANIFEST_NAME + ".[" + manifestUtil.DEF_MANIFEST_EXTS.join("|") + `] unless specified in -m.
+Default manifest: `+ manifestUtil.DEF_MANIFEST_NAME + "[" + manifestUtil.DEF_MANIFEST_EXTS.join("|") + `] unless specified in -m.
 
 Download Pandoc: https://pandoc.org/installing.html
 Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
