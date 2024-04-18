@@ -24,31 +24,36 @@ exports.debbugOptions = {
 };
 
 var build = async function (inputFile, mode, manifestFile) {
+  if((mode != MODE.pdf) && (mode != MODE.html)) return inputFile;
+
   let manifestObj = manifestUtil.getManifestObj(manifestFile);
 
   console.log("Creating presentation...");
   debug("Presentation output: " + mode);
-  var absInputPath = path.resolve(manifestFile);
-  debug("Input: " + absInputPath);
+  var absInputPath = path.dirname(path.resolve(manifestFile));
+  debug("abdInputPath: " + absInputPath);
 
   console.log(mode.toUpperCase() + " mode selected for " + path.parse(inputFile).base);
   console.log("+++++++++++++");
-  pandocWriteToFile(inputFile, manifestObj.output.pandoc, absInputPath)
-    .then(resultHtmlFile => {
-      debug("in Then")
-      if (mode == MODE.pdf) {
-        return wkhtmltopdfWriteToFile(resultHtmlFile, manifestObj.output.wkhtmltopdf)
-          .then(resultPdfFile => {
-            return resultPdfFile;
+  return new Promise((resolve, reject) => {
+    pandocWriteToFile(inputFile, manifestObj.output.pandoc, absInputPath)
+      .then(resultHtmlFile => {
+        if (mode == MODE.pdf) {
+          wkhtmltopdfWriteToFile(resultHtmlFile, manifestObj.output.wkhtmltopdf, manifestObj.output.name)
+            .then(resultPdfFile => {
+              resolve(resultPdfFile);
+            });
+        } else {
+          var outputNewName = path.parse(manifestObj.output.name).name + ".html";
+          var outputPath = path.parse(resultHtmlFile).dir;
+          var outputFile = path.join(outputPath, outputNewName);
+          debug("temp.html >> " + outputNewName);
+          fs.rename(resultHtmlFile, outputFile, () => {
+            resolve(outputFile);
           });
-      } else {
-        debug("returning HTML File")
-        return resultHtmlFile;
-      }
-    }).then((resultFile) => {
-      debug("writing File")
-      renameToManifestOutputName(resultFile, manifestObj.output.name, mode);
-    });
+        }
+      });
+  });
 };
 
 // Input and Output files are expected to be ABS
@@ -72,9 +77,10 @@ function pandocWriteToFile(inputFile, pandocParams, inputPath) {
 }
 
 // Input and Output files are expected to be ABS
-function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams) {
+function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams, outputFile) {
   debug("Creating PDF using wkhtmltopdf...");
-  var outputFile = path.join(path.parse(inputFile).dir, "temp.pdf");
+  var outputName = path.parse(outputFile).name;
+  var outputFile = path.join(path.parse(inputFile).dir, outputName + ".pdf");
   var options = buildWkhtmltopdfOptions(wkhtmltopdfParams, outputFile);
   debugWkhtmltopdf("input: " + inputFile);
   debugWkhtmltopdf("Args: " + JSON.stringify(options, null, 2));
@@ -153,20 +159,6 @@ function buildWkhtmltopdfOptions(params, fileName) {
   }
   debugWkhtmltopdf("No options given in manifest. Using Default wkhtmltopdf options.");
   return finalOptions;
-}
-
-function renameToManifestOutputName(absInputFile, outputFile, extension) {
-  console.log(" Renaming " + path.parse(absInputFile).base + "...");
-  var outputTitle = path.parse(outputFile).name;
-  var absInputPath = path.parse(absInputFile).dir;
-
-  var absOutput = path.join(absInputPath, outputTitle + "." + extension);
-
-  fs.rename(absInputFile, absOutput, () => {
-    var manifestOutputDir = path.parse(outputFile).dir;
-    var mOutput = path.join(manifestOutputDir, path.parse(absOutput).base);
-    console.log(mOutput + " created.");
-  });
 }
 
 exports.build = build;
