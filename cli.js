@@ -88,10 +88,10 @@ function run() {
             var outputMode = "";
             if (args.html) outputMode = presentation.MODE.html;
             if (args.pdf) outputMode = presentation.MODE.pdf;
-            presentation.build(resultMarkdownFile, outputMode, manifestFilePath)
-            .then(resultFile => {
-                console.log(resultFile + " successfully created.")
-            })
+            return presentation.build(resultMarkdownFile, outputMode, manifestFilePath)
+        })
+        .then(resultFile => {
+            console.log(resultFile + " created.")
         })
         .catch((error) => {
             console.error(`Error creating file: ${error}`);
