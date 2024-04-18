@@ -9,7 +9,7 @@
   "author": "Kevin Nennig <nen.devpr@gmail.com>",
   "scripts": {
     "preversion": "git fetch --tags && npm run lint && npm run test:noLogs",
-    "version": "npm run build",
+    "version": "npm audit fix && npm run build",
     "postversion": "git push --follow-tags",
     "lint": "eslint '**/*.js?(x)'",
     "lint:fix": "npm run lint -- --fix",
