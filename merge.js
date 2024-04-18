@@ -126,7 +126,6 @@ async function createSingleFile(list, outputFileStr, manifestJSON) {
     }
   }).then((result) => {
     deleteGeneratedFiles(list); //cleanup
-    console.log(result + " created");
     return result;
   });
 }
