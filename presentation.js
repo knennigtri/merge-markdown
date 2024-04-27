@@ -26,20 +26,28 @@ exports.debbugOptions = {
 var build = async function (inputFile, mode, manifestFile) {
   if((mode != MODE.pdf) && (mode != MODE.html)) return inputFile;
 
-  let manifestObj = manifestUtil.getManifestObj(manifestFile);
-
-  console.log("Creating presentation...");
-  debug("Presentation output: " + mode);
-  var absInputPath = path.dirname(path.resolve(manifestFile));
-  debug("abdInputPath: " + absInputPath);
-
   console.log(mode.toUpperCase() + " mode selected for " + path.parse(inputFile).base);
   console.log("+++++++++++++");
+  
+  let manifestObj = manifestUtil.getManifestObj(manifestFile);
+  let manifestPath = path.dirname(path.resolve(manifestFile));
+
+  const fileNames = {};
+  var parsed = path.parse(inputFile)
+  for (const key in MODE) {
+    if (MODE.hasOwnProperty(key)) {
+      const ext = MODE[key];
+      const fileName = path.join(parsed.dir,parsed.name + "." + ext);
+      fileNames[key] = fileName;
+    }
+  }
+  deleteGeneratedFiles(fileNames);
+
   return new Promise((resolve, reject) => {
-    pandocWriteToFile(inputFile, manifestObj.output.pandoc, absInputPath)
+    pandocWriteToFile(inputFile, manifestObj.output.pandoc, manifestPath)
       .then(resultHtmlFile => {
         if (mode == MODE.pdf) {
-          wkhtmltopdfWriteToFile(resultHtmlFile, manifestObj.output.wkhtmltopdf, manifestObj.output.name)
+          wkhtmltopdfWriteToFile(resultHtmlFile, manifestObj.output.wkhtmltopdf, fileNames.pdf)
             .then(resultPdfFile => {
               resolve(resultPdfFile);
             });
@@ -57,10 +65,10 @@ var build = async function (inputFile, mode, manifestFile) {
 };
 
 // Input and Output files are expected to be ABS
-function pandocWriteToFile(inputFile, pandocParams, inputPath) {
+function pandocWriteToFile(inputFile, pandocParams, manifestPath) {
   debug("Creating HTML using Pandoc...");
   var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
-  var pandocArgs = buildPandocArgs(pandocParams, outputFile, inputPath);
+  var pandocArgs = buildPandocArgs(pandocParams, outputFile, manifestPath);
   debugPandoc("input: " + inputFile);
   debugPandoc("Args: '" + pandocArgs + "'");
   return new Promise((resolve, reject) => {
@@ -79,8 +87,6 @@ function pandocWriteToFile(inputFile, pandocParams, inputPath) {
 // Input and Output files are expected to be ABS
 function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams, outputFile) {
   debug("Creating PDF using wkhtmltopdf...");
-  var outputName = path.parse(outputFile).name;
-  var outputFile = path.join(path.parse(inputFile).dir, outputName + ".pdf");
   var options = buildWkhtmltopdfOptions(wkhtmltopdfParams, outputFile);
   debugWkhtmltopdf("input: " + inputFile);
   debugWkhtmltopdf("Args: " + JSON.stringify(options, null, 2));
@@ -159,6 +165,18 @@ function buildWkhtmltopdfOptions(params, fileName) {
   }
   debugWkhtmltopdf("No options given in manifest. Using Default wkhtmltopdf options.");
   return finalOptions;
+}
+
+function deleteGeneratedFiles(fileObj) {
+  for (const key in fileObj) {
+    if (fileObj.hasOwnProperty(key)) {
+      const filePath = fileObj[key];
+      if (fs.existsSync(filePath)) {
+        console.log("Deleting: " + filePath);
+        fs.unlinkSync(filePath);
+      }
+    }
+  }
 }
 
 exports.build = build;
