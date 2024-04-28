@@ -2,6 +2,8 @@ const packageInfo = require("./package.json");
 const manifestUtil = require("./manifest.js");
 const merge = require("./merge.js");
 const presentation = require("./presentation.js");
+const path = require('path');
+const fs = require('fs');
 const minimist = require("minimist");
 const args = minimist(process.argv.slice(2));
 //https://www.npmjs.com/package/debug
@@ -30,6 +32,7 @@ function run() {
     var argsSkipLinkcheck = args.skipLinkcheck;
     var argsCreate = args.c || args.create;
     var argsMaintainAssetPaths = args.maintainAssetPaths;
+    var docker = args.getDockerFiles;
 
     debugArgs(JSON.stringify(args, null, 2));
 
@@ -53,6 +56,20 @@ function run() {
     if (argsQA) console.log("QA mode");
     if (argsSkipLinkcheck) console.log("noLinkcheck mode");
     if (argsMaintainAssetPaths) console.log("maintainAssetPaths mode");
+
+    if(docker){
+        console.log("Downloading docker files...")
+        const dockerFileNames = ['docker-compose.yml', 'Dockerfile'];
+        dockerFileNames.forEach((fileName) => {
+            const sourcePath = path.join(__dirname, fileName);
+            const destinationPath = path.join("./", fileName);
+    
+            // Copy the Docker file
+            fs.copyFileSync(sourcePath, destinationPath);
+            console.log("Copied " + fileName + " to " + path.resolve(destinationPath));
+        });
+        return;
+    }
 
     if (argsCreate) {
         var inputFilesPath = ".";
@@ -106,13 +123,15 @@ Arguments:
   -m, --manifest <manifestFile>            Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
   -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
+  --getDockerFiles                         Downloads the Docker files to your local project
   --qa                                     QA mode.
   --skipLinkcheck                          Skips linkchecking
   --maintainAssetPaths                     Retains original asset paths
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
   --html                                   Output to HTML. Must have Pandoc installed!
   -h, --help                               Displays this screen
-  -h [manifest|options|outputOptions|qa]   See examples
+  -h manifest | options |
+    outputOptions | qa | docker            See examples
   -d, --debug                              See debug Options
 Default manifest: `+ manifestUtil.DEF_MANIFEST_NAME + "[" + manifestUtil.DEF_MANIFEST_EXTS.join("|") + `] unless specified in -m.
 
@@ -158,7 +177,20 @@ wkhtmltopdf:                              wkhtmltopdf options. See https://www.n
 Example: exclude all filenames with "frontmatter" by default
 ---
     qa: {exclude: "(frontmatter|preamble)"}
----`
+---`,
+    docker:
+    `Download the Docker image and yml:
+    merge-markdown --getDockerFiles
+
+Setup docker compose with your local project:
+    docker compose up -d --build
+
+Execute merge-markdown in docker:
+    docker compose exec node merge-markdown -m yourManifest.yml --pdf
+
+Download the desired output:
+    docker compose cp node:/home/runner/workspace/yourOutput.pdf .
+    `
 }
 
 exports.run = run;
