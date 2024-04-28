@@ -5,6 +5,8 @@ output/
 Output/
 merged/
 Merged/
+Target/
+target/
 notes.txt
 *.temp
 *+*
