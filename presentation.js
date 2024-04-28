@@ -172,7 +172,7 @@ function deleteGeneratedFiles(fileObj) {
     if (fileObj.hasOwnProperty(key)) {
       const filePath = fileObj[key];
       if (fs.existsSync(filePath)) {
-        console.log("Deleting: " + filePath);
+        debug("Deleting: " + filePath);
         fs.unlinkSync(filePath);
       }
     }
