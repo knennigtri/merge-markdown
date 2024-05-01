@@ -83,7 +83,7 @@ function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
     if (!skipLinkcheck) {
       //checks for broken links within the content
       debug("--Create/Update linkcheck file--");
-      linkcheck(tempFile, updateExtension(outputFileStr, EXT.linkcheck))
+      linkcheck(tempFile, updateExtension(outputFileStr, EXT.linkcheck));
     }
 
     //add the  temp file to the list to merge together
@@ -108,7 +108,7 @@ function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
     outputFileStr = updateExtension(outputFileStr, EXT.qa);
   }
   return createSingleFile(mergedFileArr, outputFileStr, manifestJSON);
-};
+}
 
 async function createSingleFile(list, outputFileStr, manifestJSON) {
   debug("Creating single file");
@@ -403,15 +403,15 @@ function linkcheck(inputFileStr, outputFileStr) {
       results.forEach(function (result) {
         var icon = "";
         switch (result.status) {
-          case "alive":
-            icon = "✓";
-            break;
-          case "dead":
-            icon = "x";
-            break;
-          case "ignored":
-            icon = "-";
-            break;
+        case "alive":
+          icon = "✓";
+          break;
+        case "dead":
+          icon = "x";
+          break;
+        case "ignored":
+          icon = "-";
+          break;
         }
         var statusStr = "[" + icon + "] " + result.link + " is " + result.status;
         debugLinkcheckDeep(statusStr);

@@ -8,7 +8,7 @@ const debugPandoc = require("debug")("html");
 const debugPandocOptions = require("debug")("html:options");
 const debugWkhtmltopdf = require("debug")("pdf");
 const debugWkhtmltopdfOptions = require("debug")("pdf:options");
-const debugDefaults = require("debug")("defaults")
+const debugDefaults = require("debug")("defaults");
 const MODE = {
   "pdf": "pdf",
   "html": "html"
@@ -33,9 +33,9 @@ var build = async function (inputFile, mode, manifestFile) {
   let manifestPath = path.dirname(path.resolve(manifestFile));
 
   const fileNames = {};
-  var parsed = path.parse(inputFile)
+  var parsed = path.parse(inputFile);
   for (const key in MODE) {
-    if (MODE.hasOwnProperty(key)) {
+    if (key in MODE) {
       const ext = MODE[key];
       const fileName = path.join(parsed.dir,parsed.name + "." + ext);
       fileNames[key] = fileName;
@@ -75,7 +75,7 @@ function pandocWriteToFile(inputFile, pandocParams, manifestPath) {
     nodePandoc(inputFile, pandocArgs, (err) => {
       if (err) {
         console.error("Verify the pandoc arguments according to pandoc documentation");
-        console.error("Make sure pandoc is installed! https://pandoc.org/installing.html")
+        console.error("Make sure pandoc is installed! https://pandoc.org/installing.html");
         reject(err);
       }
       console.log(" pandoc: " + path.parse(inputFile).base + " >> " + path.parse(outputFile).base);
@@ -169,7 +169,7 @@ function buildWkhtmltopdfOptions(params, fileName) {
 
 function deleteGeneratedFiles(fileObj) {
   for (const key in fileObj) {
-    if (fileObj.hasOwnProperty(key)) {
+    if (key in fileObj) {
       const filePath = fileObj[key];
       if (fs.existsSync(filePath)) {
         debug("Deleting: " + filePath);

@@ -45,26 +45,19 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
   }
 
   // If the manifest doesn"t have an output, generate the output name based on the manifest directory
-  if (!jsonObj.output) {
-    jsonObj.output = {};
-    jsonObj.output.name = generateFileNameFromFolder(inputManifestFile);
-    console.log("Manifest is missing output.name. " + jsonObj.output.name + " will be used.");
-    debugmanifestJson("OUTPUT:\n" + JSON.stringify(jsonObj.output, null, 2));
+  if (!jsonObj.output || !jsonObj.output.name) {
+    throw new Error("Manifest is missing output.name. Consider auto-creating an initial manifest");
   } else {
     jsonObj = fixDeprecatedEntry(jsonObj);
   }
 
   if (jsonObj.output.name.split(".").pop() != "md") {
-    console.log("output.name needs to be a .md file but found: " + jsonObj.output.name);
-    return;
+    throw new Error("output.name needs to be a .md file but found: " + jsonObj.output.name);
   }
 
   // If the manifest doesn"t have an input, build the input with md files in the manifest directory
   if (!jsonObj.input) {
-    console.log("Manifest is missing input, .md files in same directoy as manifest will be used.");
-    var inputList = generateInputListFromFolder(inputManifestFile, jsonObj.output.name);
-    jsonObj.input = inputList;
-    debugmanifestJson("INPUT:\n" + JSON.stringify(jsonObj.input, null, 2));
+    throw new Error("Manifest is missing input. Consider auto-creating an initial manifest");
   } else {
     jsonObj = fixDeprecatedEntry(jsonObj);
   }
@@ -154,42 +147,37 @@ function fixDeprecatedEntry(manifestFix) {
  * @returns file
  */
 exports.getFile = function (inputArg) {
-  try {
-    var fsStat = fs.lstatSync(inputArg);
-    if (fsStat.isFile()) { //Set if file is given
-      const e = path.extname(inputArg).toLowerCase();
-      debugManifest(e)
-      if (DEF_MANIFEST_EXTS.includes(e)) {
-        debugManifest("Using given manifest: " + inputArg);
-        return inputArg;
-      } else {
-        console.log("Manifest file can only be yml|yaml|json");
-        return;
-      }
-    } else if (fsStat.isDirectory()) { //Search for default manifest if directory
-      debugManifest("Searching for manifest.yaml|yml|json in " + inputArg);
-      const directory = inputArg;
-      const possibleFileNames = DEF_MANIFEST_EXTS.map(ext => `manifest${ext}`);
-      //Look for a manifest file in the given directory
-      for (const fileName of possibleFileNames) {
-        const filePath = path.join(directory, fileName);
-        try {
-          var fileStat = fs.lstatSync(filePath);
-          if (fileStat.isFile()) {
-            debugManifest("Using default manifest: " + filePath);
-            return filePath;
-          }
-        } catch (err) {
-          debugManifest(filePath + " DNE.");
-        }
-      }
-      console.log("No default manifest file found in " + directory);
+  var fsStat = fs.lstatSync(inputArg);
+  if (fsStat.isFile()) { //Set if file is given
+    const e = path.extname(inputArg).toLowerCase();
+    debugManifest(e);
+    if (DEF_MANIFEST_EXTS.includes(e)) {
+      debugManifest("Using given manifest: " + inputArg);
+      return inputArg;
+    } else {
+      console.log("Manifest file can only be yml|yaml|json");
+      return;
     }
+  } else if (fsStat.isDirectory()) { //Search for default manifest if directory
+    debugManifest("Searching for manifest.yaml|yml|json in " + inputArg);
+    const directory = inputArg;
+    const possibleFileNames = DEF_MANIFEST_EXTS.map(ext => `manifest${ext}`);
+    //Look for a manifest file in the given directory
+    for (const fileName of possibleFileNames) {
+      const filePath = path.join(directory, fileName);
+      try {
+        var fileStat = fs.lstatSync(filePath);
+        if (fileStat.isFile()) {
+          debugManifest("Using default manifest: " + filePath);
+          return filePath;
+        }
+      } catch (err) {
+        debugManifest(filePath + " DNE.");
+      }
+    }
+    console.log("No default manifest file found in " + directory);
   }
-  catch (err) {
-    console.error(err);
-  }
-}
+};
 
 /**
 * Autocreates a starter manifest file 
@@ -245,14 +233,14 @@ exports.createManifestFile = function (dir) {
 
   //Write YAML File
   const yamlString = yaml.dump(jsonObject);
-  const manifestPath = path.join(process.cwd(), 'manifest.yml')
+  const manifestPath = path.join(process.cwd(), "manifest.yml");
   try {
     fs.writeFileSync(manifestPath, yamlString);
-    console.log('YAML file successfully created: ' + manifestPath);
+    console.log("YAML file successfully created: " + manifestPath);
   } catch (error) {
-    console.error('Error writing: ' + manifestPath, error);
+    console.error("Error writing: " + manifestPath, error);
   }
-}
+};
 
 /**
 * Finds all markdown (.md) files within a directory
@@ -272,7 +260,7 @@ function findMarkdownFiles(directoryPath) {
       // Recursively search for .md files in the subdirectory
       markdownFiles = markdownFiles.concat(findMarkdownFiles(filePath));
     } else {
-      if (path.extname(file).toLowerCase() === '.md') {
+      if (path.extname(file).toLowerCase() === ".md") {
         markdownFiles.push(filePath);
       }
     }
