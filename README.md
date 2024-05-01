@@ -117,6 +117,7 @@ Default manifest: manifest[.yml|.yaml|.json] unless specified in -m.
 
 Download Pandoc: https://pandoc.org/installing.html
 Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
+Download Docker: https://docs.docker.com/get-docker/
 ```
 
 ## Manifest file format
