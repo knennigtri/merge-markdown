@@ -10,6 +10,7 @@ target/
 notes.txt
 *.temp
 *+*
+TODO.md
 
 # Logs
 logs
