@@ -42,7 +42,7 @@
   ],
   "license": "ISC",
   "dependencies": {
-    "broken-link-checker": "^0.7.8",
+    "broken-link-checker": "^0.6.7",
     "concat": "^1.0.3",
     "debug": "^4.3.4",
     "doctoc": "^2.2.0",
