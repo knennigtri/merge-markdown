@@ -1,10 +1,10 @@
 ---
 input:
  ../../frontmatter.md: ""
- lorem-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1: "}}
+ lorem-module/lorem-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1: "}}
  ipsum-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 2: "}}
 output: 
- name: merged/manifest-yaml.md
+ name: merged/linkcheck/my-path/manifest-yaml.md
  doctoc: true
 qa: {exclude: "(frontmatter|preamble)"}
 replace:

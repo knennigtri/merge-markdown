@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-var mergeMarkdown = require("../index.js");
+var module = require("../cli.js");
 
-mergeMarkdown.run();
+module.run();

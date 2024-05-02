@@ -1,136 +1,140 @@
-var path = require("path");
-var nodePandoc = require("node-pandoc");
-var wkhtmltopdf = require("wkhtmltopdf");
-var debug = require("debug")("presentation");
-var debugHTML = require("debug")("presentation:html");
-var debugHTMLOptions = require("debug")("presentation:html:options");
-var debugPDF = require("debug")("presentation:pdf");
-var debugPDFOptions = require("debug")("presentation:pdf:options");
-var verbose = require("debug")("verbose");
-var fs = require("fs");
-var MODE = {
+const manifestUtil = require("./manifest.js");
+const fs = require("fs");
+const path = require("path");
+const nodePandoc = require("node-pandoc");
+const wkhtmltopdf = require("wkhtmltopdf");
+const debug = require("debug")("presentation");
+const debugPandoc = require("debug")("html");
+const debugPandocOptions = require("debug")("html:options");
+const debugWkhtmltopdf = require("debug")("pdf");
+const debugWkhtmltopdfOptions = require("debug")("pdf:options");
+const debugDefaults = require("debug")("defaults");
+const MODE = {
   "pdf": "pdf",
   "html": "html"
 };
-var EXT = {
-  "pdf": "."+MODE.pdf,
-  "html": "."+MODE.html
-};
 
 exports.MODE = MODE;
-
-var build = async function(jsonObj, inputPath, mode){
-  //TODO remove?
-  var promise = new Promise(res => {
-    setTimeout(() => res("Now it's done!"), 5000);
-  });
-  await promise; 
-
-  console.log("Creating presentation...");
-  
-  debug("Presentation output: " + mode);
-  var absInputPath = path.resolve(inputPath);
-
-  // var manifestABSPath = path.parse(inputPath).dir;
-  debug("Input: " + absInputPath);
-
-  //Set the output location of documents
-  var absManifestOutputPath = path.parse(jsonObj.output.name).dir;
-  var absManifestOutputFileName = path.parse(jsonObj.output.name).base;
-  var absOutputPath = path.join(absInputPath,absManifestOutputPath);
-  //Location of merge-markdown file
-  var absMMFileName = path.join(absOutputPath,absManifestOutputFileName);
-
-  console.log(mode.toUpperCase() + " mode selected for " + absManifestOutputFileName);
-  console.log("+++++++++++++");
-  toHTML(jsonObj, absMMFileName, absInputPath, mode);
-  //TODO Test this:
-  // var html = await toHTML(jsonObj, absMMFileName, absInputPath, mode);
-  // var pdf = await toPDF()..
-  // var final = final rename()..
+exports.debbugOptions = {
+  "presentation": "",
+  "html": "pandoc messages for html",
+  "html:options": "pandoc options messages",
+  "pdf": "wkhtmltopdf messages for pdf",
+  "pdf:options": "wkhtmltopdf options messages"
 };
 
-/**
- * Input and Output files are expected to be ABS
- */
-function toHTML(manifestJson, inputFile, inputPath, mode){
-  debug("Creating HTML...");
+var build = async function (inputFile, mode, manifestFile) {
+  if((mode != MODE.pdf) && (mode != MODE.html)) return inputFile;
+
+  console.log(mode.toUpperCase() + " mode selected for " + path.parse(inputFile).base);
+  console.log("+++++++++++++");
+  
+  let manifestObj = manifestUtil.getManifestObj(manifestFile);
+  let manifestPath = path.dirname(path.resolve(manifestFile));
+
+  const fileNames = {};
+  var parsed = path.parse(inputFile);
+  for (const key in MODE) {
+    if (key in MODE) {
+      const ext = MODE[key];
+      const fileName = path.join(parsed.dir,parsed.name + "." + ext);
+      fileNames[key] = fileName;
+    }
+  }
+  deleteGeneratedFiles(fileNames);
+
+  return new Promise((resolve, reject) => {
+    pandocWriteToFile(inputFile, manifestObj.output.pandoc, manifestPath)
+      .then(resultHtmlFile => {
+        if (mode == MODE.pdf) {
+          wkhtmltopdfWriteToFile(resultHtmlFile, manifestObj.output.wkhtmltopdf, fileNames.pdf)
+            .then(resultPdfFile => {
+              resolve(resultPdfFile);
+            });
+        } else {
+          var outputNewName = path.parse(manifestObj.output.name).name + ".html";
+          var outputPath = path.parse(resultHtmlFile).dir;
+          var outputFile = path.join(outputPath, outputNewName);
+          debug("temp.html >> " + outputNewName);
+          fs.rename(resultHtmlFile, outputFile, () => {
+            resolve(outputFile);
+          });
+        }
+      });
+  });
+};
+
+// Input and Output files are expected to be ABS
+function pandocWriteToFile(inputFile, pandocParams, manifestPath) {
+  debug("Creating HTML using Pandoc...");
   var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
-  var pandocArgs = buildPandocArgs(manifestJson.output.pandoc, inputPath, outputFile);
-  debugHTML("input: "+inputFile);
-  debugHTML("Args: '" + pandocArgs + "'");
-  nodePandoc(inputFile, pandocArgs, function (err, result) {
-    if (err) {
-      console.error("Error: Verify the pandoc arguments according to pandoc documentation");
-      console.error(err);
-    } else {
-      console.log(" pandoc: "+ path.parse(inputFile).base + " >> "+ path.parse(outputFile).base);
-      switch (mode){
-      case MODE.pdf:
-        toPDF(manifestJson, outputFile, mode);
-        break;
-      case MODE.html:
-        renameToManifestOutputName(manifestJson, outputFile, mode);
-        break;
-      default:
-        return;
+  var pandocArgs = buildPandocArgs(pandocParams, outputFile, manifestPath);
+  debugPandoc("input: " + inputFile);
+  debugPandoc("Args: '" + pandocArgs + "'");
+  return new Promise((resolve, reject) => {
+    nodePandoc(inputFile, pandocArgs, (err) => {
+      if (err) {
+        console.error("Verify the pandoc arguments according to pandoc documentation");
+        console.error("Make sure pandoc is installed! https://pandoc.org/installing.html");
+        reject(err);
       }
-      verbose(result);
-    }
+      console.log(" pandoc: " + path.parse(inputFile).base + " >> " + path.parse(outputFile).base);
+      resolve(outputFile);
+    });
   });
 }
 
-/**
- * Input and Output files are expected to be ABS
- */
-function toPDF(manifestJson, inputFile, mode){
-  debug("Creating PDF...");
-  var outputFile = path.join(path.parse(inputFile).dir, "temp.pdf");
-  var options = buildWkhtmltopdfOptions(manifestJson.output.wkhtmltopdf, outputFile);
-  debugPDF("input: "+inputFile);
-  debugPDF("Args: "+JSON.stringify(options, null, 2));
-  wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
-    if (err) {
-      if(err.toString().includes("spawn wkhtmltopdf ENOENT")) console.error("Error: Make sure wkhtmltopdf is installed from http://wkhtmltopdf.org/downloads.html");
-      else console.error("Error: Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
-      console.error(err);
-    } else {
-      console.log(" wkhtmltopdf: "+ path.parse(inputFile).base + " >> "+ path.parse(outputFile).base);
-      renameToManifestOutputName(manifestJson, outputFile, mode);
-      verbose(result);
-    }
-  });
-}
-
-function buildPandocArgs(jsonObj, inputPath, fileName){
-  var cliArgs = "-o " + fileName;
-  if(jsonObj){
-    for (var key in jsonObj){
-      if(jsonObj[key].includes("--template")){
-        var templatePath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
-        templatePath = path.join(inputPath,templatePath);
-        debugHTMLOptions("template added: " + templatePath);
-        cliArgs += " --template " + templatePath;
-      } else if(jsonObj[key].includes("-c ")){
-        var ccsPath = jsonObj[key].substring(jsonObj[key].indexOf(" ") + 1);
-        ccsPath = path.join(inputPath,ccsPath); 
-        debugHTMLOptions("css added: " + ccsPath);
-        cliArgs += " -c " +ccsPath;
-      } else if(jsonObj[key].includes("-o")){
-        debugHTMLOptions("Arg [ -o ] cannot be changed. Ignoring.");
+// Input and Output files are expected to be ABS
+function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams, outputFile) {
+  debug("Creating PDF using wkhtmltopdf...");
+  var options = buildWkhtmltopdfOptions(wkhtmltopdfParams, outputFile);
+  debugWkhtmltopdf("input: " + inputFile);
+  debugWkhtmltopdf("Args: " + JSON.stringify(options, null, 2));
+  return new Promise((resolve, reject) => {
+    wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
+      if (err) {
+        if (err.toString().includes("spawn wkhtmltopdf ENOENT")) console.error("Make sure wkhtmltopdf is installed! http://wkhtmltopdf.org/downloads.html");
+        else console.error("Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
+        reject(err);
       } else {
-        debugHTMLOptions("Arg [ "+jsonObj[key]+" ] added.");
-        cliArgs += " " + jsonObj[key];
+        console.log("wkhtmltopdf: " + path.parse(inputFile).base + " >> " + path.parse(outputFile).base);
+        resolve(outputFile);
+      }
+    });
+  });
+}
+
+function buildPandocArgs(params, fileName, inputPath) {
+  var cliArgs = "-o " + fileName;
+  debugDefaults("Defaults for pandoc:");
+  debugDefaults(cliArgs);
+  if (params) {
+    for (var key in params) {
+      if (params[key].includes("--template")) {
+        var templatePath = params[key].substring(params[key].indexOf(" ") + 1);
+        templatePath = path.join(inputPath, templatePath);
+        debugPandocOptions("template added: " + templatePath);
+        cliArgs += " --template " + templatePath;
+      } else if (params[key].includes("-c ")) {
+        var ccsPath = params[key].substring(params[key].indexOf(" ") + 1);
+        ccsPath = path.join(inputPath, ccsPath);
+        debugPandocOptions("css added: " + ccsPath);
+        cliArgs += " -c " + ccsPath;
+      } else if (params[key].includes("-o")) {
+        debugPandocOptions("Arg [ -o ] cannot be changed. Ignoring.");
+      } else {
+        debugPandocOptions("Arg [ " + params[key] + " ] added.");
+        cliArgs += " " + params[key];
       }
     }
   } else {
-    debugHTML("No pandoc Args given in manifest. Using default arguments: '" + cliArgs + "'");
+    debugPandoc("No pandoc Args given in manifest. Using defaults.");
   }
   return cliArgs;
 }
 
-function buildWkhtmltopdfOptions(optionsJson, fileName){
-  debugPDF("Adding wkhtmltopdf options from Manifest");
+function buildWkhtmltopdfOptions(params, fileName) {
+  debugWkhtmltopdf("Adding wkhtmltopdf options from Manifest");
   var defaultOptions = {
     output: fileName,
     enableLocalFileAccess: true,
@@ -143,39 +147,36 @@ function buildWkhtmltopdfOptions(optionsJson, fileName){
     footerLine: true,
     footerCenter: "Page [page]"
   };
+  debugDefaults("Defaults for wkhtmltopdf:");
+  debugDefaults(defaultOptions);
   var finalOptions = defaultOptions;
-  if(optionsJson){
-    for (var key in optionsJson){
-      if(key == "enableLocalFileAccess" ||
-          key == "disableSmartShrinking" ||
-          key == "output"){
-        debugPDFOptions("Option [ "+key+" ] cannot be changed for output. Ignoring.");
+  if (params) {
+    for (var key in params) {
+      if (key == "enableLocalFileAccess" ||
+        key == "disableSmartShrinking" ||
+        key == "output") {
+        debugWkhtmltopdfOptions("Option [ " + key + " ] cannot be changed for output. Ignoring.");
       } else {
-        debugPDFOptions("Updating ["+key+"] to: " + optionsJson[key]);
-        finalOptions[key] = optionsJson[key];
-      } 
+        debugWkhtmltopdfOptions("Updating [" + key + "] to: " + params[key]);
+        finalOptions[key] = params[key];
+      }
     }
     return finalOptions;
   }
-  debugPDF("No options given in manifest. Using Default wkhtmltopdf options.");
+  debugWkhtmltopdf("No options given in manifest. Using Default wkhtmltopdf options.");
   return finalOptions;
 }
 
-function renameToManifestOutputName(manifestJson, absInputFile, mode){
-  console.log(" Renaming "+path.parse(absInputFile).base+"...");
-  var title = path.parse(manifestJson.output.name).name;
-  var absOutput = path.parse(absInputFile).dir;
-  if(mode == MODE.pdf){
-    absOutput = path.join(absOutput, title + EXT.pdf);
+function deleteGeneratedFiles(fileObj) {
+  for (const key in fileObj) {
+    if (key in fileObj) {
+      const filePath = fileObj[key];
+      if (fs.existsSync(filePath)) {
+        debug("Deleting: " + filePath);
+        fs.unlinkSync(filePath);
+      }
+    }
   }
-  if(mode == MODE.html){
-    absOutput = path.join(absOutput, title + EXT.html);
-  }
-  fs.rename(absInputFile, absOutput,  () => {
-    var manifestOutputDir = path.parse(manifestJson.output.name).dir;
-    var mOutput = path.join(manifestOutputDir,path.parse(absOutput).base);
-    console.log(mOutput + " created.");
-  });
 }
 
 exports.build = build;

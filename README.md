@@ -20,36 +20,44 @@ Takes in a list of markdown files and merges them into a single output file with
     * Find/replace with regex (ex: names, titles, chapter #s, timestamps, etc)
     * Create TOC with doctoc
     * Remove yaml from top of md file
+* NEW: Autocreate a starter manifest
+* NEW: Download docker image for installation convienance with dependencies (pandoc/wkhtmltopdf)
+
+> WARNING: [wkhtmltopdf](https://wkhtmltopdf.org/downloads.html) and [pandoc](https://pandoc.org/installing.html) must be installed prior to using this tool! Download and use the docker image if you want avoid  this.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported Options](#supported-options)
-    - [noYAML](#noyaml)
-    - [replace](#replace)
-    - [doctoc](#doctoc)
-  - [Supported Output Options](#supported-output-options)
-    - [Merged file TOC](#merged-file-toc)
-    - [HTML Output](#html-output)
-    - [PDF Output](#pdf-output)
-  - [Special Modes](#special-modes)
-    - [QA Mode](#qa-mode)
-    - [nolinkcheck Mode](#nolinkcheck-mode)
-    - [Debug Mode](#debug-mode)
-- [Manifest Examples](#manifest-examples)
-  - [YAML used as input](#yaml-used-as-input)
-  - [JSON used as input](#json-used-as-input)
-  - [Replace keys within a single file](#replace-keys-within-a-single-file)
-  - [Options applied to all files](#options-applied-to-all-files)
-  - [Apply output options](#apply-output-options)
-- [Dockerfile](#dockerfile)
-  - [How to use this image](#how-to-use-this-image)
-  - [Basic execution commands](#basic-execution-commands)
+- [merge-markdown](#merge-markdown)
+- [Overview](#overview)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported Options](#supported-options)
+      - [noYAML](#noyaml)
+      - [replace](#replace)
+      - [doctoc](#doctoc)
+    - [Supported Output Options](#supported-output-options)
+      - [Merged file TOC](#merged-file-toc)
+      - [HTML Output](#html-output)
+      - [PDF Output](#pdf-output)
+    - [Special Modes](#special-modes)
+      - [Download Docker Files](#download-docker-files)
+      - [QA Mode](#qa-mode)
+      - [nolinkcheck Mode](#nolinkcheck-mode)
+      - [Debug Mode](#debug-mode)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Apply output options](#apply-output-options)
+  - [Dockerfile](#dockerfile)
+    - [How to use this image](#how-to-use-this-image)
+    - [Basic execution commands](#basic-execution-commands)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -63,60 +71,71 @@ npm install -g @knennigtri/merge-markdown
 
 ## Command Line Tool
 
-Use default `./manifest.[md|yaml|yml|json]` for input
+Use default `./manifest[.yml|.yaml|.json]` for input
 
 ```shell
 > merge-markdown
 ```
 
-Merge based on manifest file
+Create an inital manifest with markdown files in a directory
 
 ```shell
-> merge-markdown -m myManifest.md
+> merge-markdown -c my/path/src
 ```
 
-Merge based on `path/to/files` default manifest or merges all files in a default order
+Merge based on existing manifest file
 
 ```shell
-> merge-markdown -m path/to/files
+> merge-markdown -m myManifest.yml
 ```
 
 Output to PDF
 
 ```shell
-> merge-markdown -m myManifest.md --pdf
+> merge-markdown -m myManifest.yml --pdf
 ```
 
 ## Usage
 
-```shell
+```
 Usage: merge-markdown [ARGS]
 Arguments:
-  -m <manifestFile>                        Path to input folder, yaml, or json manifest
+  -m, --manifest <manifestFile>            Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
-      --qa                                 QA mode.
-      --nolinkcheck                        Skips linkchecking
-      --pdf                                Output to PDF. wkhtmltopdf must be installed http://wkhtmltopdf.org/downloads.html
-      --html                               Output to HTML
+  -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
+  --getDockerFiles                         Downloads the Docker files to your local project
+  --qa                                     QA mode.
+  --skipLinkcheck                          Skips linkchecking
+  --maintainAssetPaths                     Retains original asset paths
+  --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
+  --html                                   Output to HTML. Must have Pandoc installed!
   -h, --help                               Displays this screen
-  -h [manifest|options|outputOptions|qa]   See examples
-Default manifest: manifest.[md|yaml|yml|json] unless specified in -m. 
+  -h manifest | options |
+    outputOptions | qa | docker            See examples
+  -d, --debug                              See debug Options
+Default manifest: manifest[.yml|.yaml|.json] unless specified in -m.
+
+Download Pandoc: https://pandoc.org/installing.html
+Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
+Download Docker: https://docs.docker.com/get-docker/
 ```
 
 ## Manifest file format
 
-`manifest.[md|yaml|yml|json]`:
+`manifest[.yml|.yaml|.json]`:
 This file can be in YAML or JSON format.
 
-* `input`: No `input` will merge all .md files in the same directory as the manifest.
+* `input`: 
   * `myFile1.md: {options}` *Local options*
   * `myFile2.md: {options}`
-* `output`: No  `output` will be save the merged doc in in `merged/<curDir>.out.md`.
+* `output`:
   * `name: path/name.md`: of the resultant file
   * `{outputOptions}` See [Supported Output Options](#supported-output-options)
-* `{options}`: global options. See [Supported Options](#supported-options)
+* `{options}`: *global options*
 
-> Relative or absolute paths can be used for all values
+See [Supported Options](#supported-options)
+Relative or absolute are accepted
+
 
 ### Supported Options
 
@@ -201,6 +220,8 @@ Similar to adding a TOC to the input files, you can add a TOC for the entire mer
 
 You can optionally add pandoc parameters to the manifest. The `key` doesn't matter, only the `value` is evalutated based on [pandoc args](https://pandoc.org/MANUAL.html).
 
+> [pandoc](https://pandoc.org/installing.html) must be installed in order to create HTML!
+
 ```yaml
  output:
    pandoc:
@@ -214,7 +235,10 @@ You can optionally add pandoc parameters to the manifest. The `key` doesn't matt
 
 #### PDF Output
 
-You can optionally add wkhtmltopdf options to the manifest. [wkhtmltopdf](http://wkhtmltopdf.org/downloads.html) must be installed and added to your path to create PDFs!
+You can optionally add wkhtmltopdf options to the manifest. 
+
+> [pandoc](https://pandoc.org/installing.html) must be installed in order to create PDFs!
+> [wkhtmltopdf](http://wkhtmltopdf.org/downloads.html) must be installed and added to your path to create PDFs!
 
 See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to learn more:
 
@@ -235,23 +259,31 @@ See [wkhtmltopdf options](https://www.npmjs.com/package/wkhtmltopdf#options) to 
 Generate HTML only:
 
 ```shell
- merge-markdown -m manifest.md --html
+ merge-markdown -m manifest.yml --html
 ```
 
 Generate a PDF:
 
 ```shell
- merge-markdown -m manifest.md --pdf
+ merge-markdown -m manifest.yml --pdf
 ```
 
 Example files can be found in [test/pdf/src](test/pdf/src). You can also checkout a [working project](https://github.com/knennigtri/example-webpack-project) for css development using webpack.
 
 ### Special Modes
 
+#### Download Docker Files
+
+```shell
+> merge-markdown --getDockerFiles
+```
+
+Downloads the Docker files to your local project. See [Docker](#dockerfile).
+
 #### QA Mode
 
 ```shell
-> merge-markdown -m manifest.json --qa
+> merge-markdown -m manifest.yml --qa
 ```
 
 Output will omit all filenames with `frontmatter` by default
@@ -273,13 +305,40 @@ Sometimes the [markdown-link-check](https://www.npmjs.com/package/markdown-link-
 
 #### Debug Mode
 
-[Debug](https://www.npmjs.com/package/debug) is used in this tool. Available debug options:
+[Debug](https://www.npmjs.com/package/debug) is used in this tool:
 
-* index:[ input | manifest ]
-* index:manifest:[ json | generate ]
-* merge:[ relinks | yaml | doctoc | replace | linkcheck ]
-* presentation:[ html | pdf ]:options
-* presentation:verbose
+Mac or Linux:
+```shell
+ > DEBUG:options merge-markdown -m file
+ ```
+
+Windows:
+```shell
+> set DEBUG=options & merge-markdown -m file
+```
+
+```
+Options: {
+  "*": "Output all debugging messages",
+  "args": "See CLI argument messages",
+  "cli": "Validate CLI logic",
+  "manifest": "",
+  "manifest:deprecation": "",
+  "manifest:json": "",
+  "merge": "messages for merge process",
+  "rellinks": "relative links",
+  "o:yaml": "yaml removal",
+  "o:doctoc": "doctoc messages",
+  "o:replace": "regex replace messages",
+  "linkcheck": "linkcheck validation",
+  "linkcheck:deep": "deep linkcheck validation",
+  "presentation": "",
+  "html": "pandoc messages for html",
+  "html:options": "pandoc options messages",
+  "pdf": "wkhtmltopdf messages for pdf",
+  "pdf:options": "wkhtmltopdf options messages"
+}
+```
 
 ## Manifest Examples
 
@@ -377,7 +436,7 @@ A `Dockerfile` based on a NodeJS image with all required dependencies is also [a
 
 ### How to use this image
 
-All you need to do is copy the `Dockerfile` and `docker-compose.yml` files inside your project, and set
+The `Dockerfile` and `docker-compose.yml` need to be in the same directory as your project and set
 up Docker Compose with the following command:
 
 ```shell

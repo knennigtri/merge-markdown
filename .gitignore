@@ -5,9 +5,12 @@ output/
 Output/
 merged/
 Merged/
+Target/
+target/
 notes.txt
 *.temp
 *+*
+TODO.md
 
 # Logs
 logs
@@ -86,3 +89,4 @@ typings/
 # FuseBox cache
 .fusebox/
 
+manifest.yml
