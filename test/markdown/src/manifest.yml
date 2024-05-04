@@ -1,16 +1,32 @@
----
 input:
- ../../frontmatter.md: ""
- lorem-module/lorem-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1: "}}
- ipsum-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 2: "}}
-output: 
- name: merged/linkcheck/my-path/manifest-yaml.md
- doctoc: true
-qa: {exclude: "(frontmatter|preamble)"}
+  etiam-module.md: '{"noYAML":true,"doctoc":true,"replace":{"\\[#\\]":0}}'
+  frontmatter.md: '{"noYAML":true,"doctoc":true,"replace":{"\\[#\\]":1}}'
+  ipsum-module/ipsum-module.md: '{"noYAML":true,"doctoc":true,"replace":{"\\[#\\]":2}}'
+  ipsum-module.md: '{"noYAML":true,"doctoc":true,"replace":{"\\[#\\]":3}}'
+  lorem-module/lorem-module.md: '{"noYAML":true,"doctoc":true,"replace":{"\\[#\\]":4}}'
+  lorem-module.md: '{"noYAML":true,"doctoc":true,"replace":{"\\[#\\]":5}}'
+output:
+  name: target/mergedFile.md
+  doctoc: true
+  wkhtmltopdf:
+    marginBottom: .7in
+    marginTop: 1in
+    marginLeft: .7in
+    marginRight: .7in
+    pageSize: Letter
+    headerFontSize: 8
+    headerSpacing: 5
+    headerRight: '[section]'
+    footerLine: true
+    footerFontSize: 8
+    footerLeft: '[doctitle]'
+    footerCenter: ''
+    footerRight: '[page]'
+qa:
+  exclude: (frontmatter|preamble)
 replace:
- <!--{timestamp}-->: 05/25/2021
- <!--{returnToMainTOC}-->: "[Return to Course Contents](#course-contents)"
- <!--{courseTitle}-->: My Course Title
- <!--{author}-->: Chuck Grant
- ({#(.*?)}): ""
----
+  <!--{timestamp}-->: 01/01/2024
+  <!--{title}-->: My Title
+  <!--{author}-->: Chuck Grant
+  '### My h3 title': '#### My h4 title'
+  ({#(.*?)}): ''
