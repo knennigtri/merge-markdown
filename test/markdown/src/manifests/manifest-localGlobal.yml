@@ -1,0 +1,19 @@
+---
+input:
+ ../frontmatter.md: 
+  doctoc: false
+ ../lorem-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1: "}}
+ ../ipsum-module.md: {noYAML: true, doctoc: "TOC TEST"}
+output: 
+ name: ../target/myYAMLGuide.md
+ doctoc: true
+qa: {exclude: "(frontmatter|preamble)"}
+doctoc: true
+replace:
+ <!--{timestamp}-->: 05/25/2021
+ <!--{returnToMainTOC}-->: "[Return to Course Contents](#course-contents)"
+ <!--{courseTitle}-->: My Course Title
+ <!--{author}-->: Chuck Grant
+ <!--#-->: Module 44
+ ({#(.*?)}): ""
+---

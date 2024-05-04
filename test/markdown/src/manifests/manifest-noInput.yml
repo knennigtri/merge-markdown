@@ -1,5 +1,5 @@
 ---
 qa: {exclude: "(frontmatter|preamble)"}
 output:
- name: merged/noInput.md
+ name: ../target/noInput.md
 ---

@@ -1,19 +1,18 @@
 ---
 input:
- ../../frontmatter.md: 
-  doctoc: false
- lorem-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1: "}}
- ipsum-module.md: {noYAML: true, doctoc: "TOC TEST"}
+ ../frontmatter.md: ""
+ ../lorem-module.md: ""
+ ../ipsum-module.md: ""
+ ../etiam-module.md: ""
 output: 
- name: merged/myYAMLGuide.md
- doctoc: true
+ name: ../target/onlyGlobalOptions.md
 qa: {exclude: "(frontmatter|preamble)"}
-doctoc: true
+noYAML: true
 replace:
  <!--{timestamp}-->: 05/25/2021
  <!--{returnToMainTOC}-->: "[Return to Course Contents](#course-contents)"
  <!--{courseTitle}-->: My Course Title
  <!--{author}-->: Chuck Grant
- <!--#-->: Module 44
+ <!--#-->: ""
  ({#(.*?)}): ""
 ---
