@@ -26,7 +26,7 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
     console.log("Manifest extension must be: [" + DEF_MANIFEST_EXTS.join("|") + "]");
     return;
   }
-  console.log("Found manifest to use: " + inputManifestFile);
+  debugManifest("Found manifest to use: " + inputManifestFile);
   var fileContents = fs.readFileSync(inputManifestFile, "utf8");
   var jsonObj = "";
   try {
