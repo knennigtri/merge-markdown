@@ -5,7 +5,7 @@ const tar = require('tar');
 const packageInfo = require("./package.json");
 const manifestUtil = require("./manifest.js");
 const debug = require("debug");
-const { Console } = require('console');
+const { exec } = require('child_process');
 var debugDocker = debug("docker");
 exports.debbugOptions = {
     docker: ""
@@ -13,9 +13,8 @@ exports.debbugOptions = {
 
 const docker = new Docker();
 const IMAGE_NAME = "node";
-const IMAGE_TAG = "mm-beta";// + packageInfo.version; //TODO
-const OUTPUT_LOGFILE = 'docker_build_output.log';
-const CONTAINER_NAME = "mergeMarkdown";
+const IMAGE_TAG = "mergemarkdown"
+const CONTAINER_NAME = "mergemarkdown";
 const WORKING_DIR = "/home/runner/workspace/cli";
 const TAR_NAME = "archive.tar.gz";
 
@@ -27,12 +26,20 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
     const manifestPath = path.parse(manifestFilePath).dir || "./";;
     debugDocker(`manifestPath: ${manifestPath}`)
 
-
     try {
-        const imageExists = await dockerImageExists();
+        const imageExists = await dockerImageExists(`${IMAGE_NAME}:${IMAGE_TAG}`);
         if (!imageExists) {
-            debugDocker('Image DNE..');
-            return;
+            debugDocker('Image DNE. Creating...');
+
+            var command = "docker-compose up -d --build";
+            console.log(command);
+            await runDockerCompose(command, manifestPath)
+                .then(output => {
+                    console.log('Success.', output);
+                })
+                .catch(error => {
+                    console.error('Error executing:', error);
+                });
         }
         console.log("--------Docker Container START--------")
         getContainer()
@@ -190,9 +197,11 @@ async function execContainer(containerId, command, attachStd) {
     });
 }
 
-function dockerImageExists() {
+function dockerImageExists(imageName) {
+    if (!imageName) imageName = `${IMAGE_NAME}:${IMAGE_TAG}`;
+
     return new Promise((resolve, reject) => {
-        docker.listImages({ filters: { reference: [`${IMAGE_NAME}:${IMAGE_TAG}`] } }, (err, images) => {
+        docker.listImages({ filters: { reference: [imageName] } }, (err, images) => {
             if (err) {
                 reject(err);
             }
@@ -205,39 +214,18 @@ function dockerImageExists() {
     });
 }
 
-//TODO fix build Image
-function buildDockerImage(contextPath) {
-    const imageName = `${IMAGE_NAME}:${IMAGE_TAG}`;
-    const buildOptions = {
-        context: path.resolve(contextPath),
-        src: ['.'],
-        dockerfile: 'Dockerfile',
-        t: imageName
-    };
+function runDockerCompose(command, cwd) {
     return new Promise((resolve, reject) => {
-        debugDocker(buildOptions)
-        const outputLogStream = fs.createWriteStream(OUTPUT_LOGFILE);
-        const stream = docker.buildImage(buildOptions, (err, stream) => {
-            if (err) {
-                reject(err);
+        exec(command, { cwd }, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+                return;
             }
-            docker.modem.followProgress(stream, onFinished, onProgress);
-
-            function onProgress(event) {
-                // const eventData = JSON.parse(event.stream.toString());
-                outputLogStream.write(event.stream.toString());
-                if (debug.enabled("docker")) {
-                    console.log(event);
-                }
+            if (stderr) {
+                reject(stderr);
+                return;
             }
-            function onFinished(err, output) {
-                if (err) {
-                    console.error('Error building Docker image:', err);
-                } else {
-                    console.log(`Docker image built successfully: ${IMAGE_NAME}:${IMAGE_TAG}`);
-                    resolve(`${IMAGE_NAME}:${IMAGE_TAG}`);
-                }
-            }
+            resolve(stdout);
         });
     });
 }
@@ -290,7 +278,7 @@ async function downloadFromContainer(containerId, srcPath, destPath) {
     stream.pipe(tar.extract({ cwd: destPath }));
     return new Promise((resolve, reject) => {
         stream.on('end', () => {
-            console.log(`Output ${srcPath} downloaded to ${path.join(destPath,path.basename(srcPath))}`);
+            console.log(`Output ${srcPath} downloaded to ${path.join(destPath, path.basename(srcPath))}`);
             resolve(containerId);
         });
         stream.on('error', (err) => {
