@@ -32,4 +32,4 @@ USER root
 WORKDIR /home/runner/workspace
 RUN mkdir cli
 
-COPY --chown=runner:runner . /home/runner/workspace
+COPY --chown=root:root . /home/runner/workspace
