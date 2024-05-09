@@ -29,32 +29,35 @@ Takes in a list of markdown files and merges them into a single output file with
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported Options](#supported-options)
-    - [noYAML](#noyaml)
-    - [replace](#replace)
-    - [doctoc](#doctoc)
-  - [Supported Output Options](#supported-output-options)
-    - [Merged file TOC](#merged-file-toc)
-    - [HTML Output](#html-output)
-    - [PDF Output](#pdf-output)
-  - [Special Modes](#special-modes)
-    - [Download Docker Files](#download-docker-files)
-    - [QA Mode](#qa-mode)
-    - [nolinkcheck Mode](#nolinkcheck-mode)
-    - [Debug Mode](#debug-mode)
-- [Manifest Examples](#manifest-examples)
-  - [YAML used as input](#yaml-used-as-input)
-  - [JSON used as input](#json-used-as-input)
-  - [Replace keys within a single file](#replace-keys-within-a-single-file)
-  - [Options applied to all files](#options-applied-to-all-files)
-  - [Apply output options](#apply-output-options)
-- [Dockerfile](#dockerfile)
-  - [How to use this image](#how-to-use-this-image)
-  - [Basic execution commands](#basic-execution-commands)
+- [merge-markdown](#merge-markdown)
+- [Overview](#overview)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Command Line Tool](#command-line-tool)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported Options](#supported-options)
+      - [noYAML](#noyaml)
+      - [replace](#replace)
+      - [doctoc](#doctoc)
+    - [Supported Output Options](#supported-output-options)
+      - [Merged file TOC](#merged-file-toc)
+      - [HTML Output](#html-output)
+      - [PDF Output](#pdf-output)
+    - [Special Modes](#special-modes)
+      - [Download Docker Files](#download-docker-files)
+      - [QA Mode](#qa-mode)
+      - [nolinkcheck Mode](#nolinkcheck-mode)
+      - [Debug Mode](#debug-mode)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Apply output options](#apply-output-options)
+  - [Using Docker](#using-docker)
+    - [Full CLI](#full-cli)
+    - [Configurable Build](#configurable-build)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -100,6 +103,7 @@ Arguments:
   -m, --manifest <manifestFile>            Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
   -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
+  --docker                                 Run merge-markdown commands in docker
   --getDockerFiles                         Downloads the Docker files to your local project
   --qa                                     QA mode.
   --skipLinkcheck                          Skips linkchecking
@@ -110,7 +114,7 @@ Arguments:
   -h manifest | options |
     outputOptions | qa | docker            See examples
   -d, --debug                              See debug Options
-Default manifest: manifest[.yml|.yaml|.json] unless specified in -m.
+Default is manifest[.yml|.yaml|.json] unless specified in -m.
 
 Download Pandoc: https://pandoc.org/installing.html
 Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
@@ -427,20 +431,34 @@ output:
 ---
 ```
 
-## Dockerfile
+## Using Docker
+To use docker, make sure you have docker [downloaded](https://docs.docker.com/get-docker/) and started. Using docker sidesteps the requirements of installing pandoc and wkhtmltopdf locally and makes this tool more agnostic.
 
-A `Dockerfile` based on a NodeJS image with all required dependencies is also [available](Dockerfile) on the project.
+1. [Full CLI](#full-cli)
+2. [Configurable Build](#configurable-build)
 
-### How to use this image
+### Full CLI
 
-The `Dockerfile` and `docker-compose.yml` need to be in the same directory as your project and set
+1. Run the docker application
+2. Run your merge-markdown command with the `--docker` parameter
+
+```shell
+ merge-markdown -m path/to/manifest.yml --pdf --docker
+```
+
+### Configurable Build
+
+Download the `Dockerfile` and `docker-compose.yml` files:
+```shell
+ merge-markdown --getDockerFiles
+```
+
+`Dockerfile` and `docker-compose.yml` files need to be in the same directory as your project and set
 up Docker Compose with the following command:
 
 ```shell
-docker compose up -d --build
+ docker compose up -d --build
 ```
-
-### Basic execution commands
 
 The docker image will copy all local structure of files and directories of the project into the current
 image's working directory. Once there, the command `merge-markdown` needs to be executed on the `node` service of docker compose to generate the desired output, e.g:
@@ -449,7 +467,7 @@ image's working directory. Once there, the command `merge-markdown` needs to be 
 docker compose exec node merge-markdown -m manifest.yml --pdf
 ```
 
-We are assuming that the project will contain a `manifest.yml` file in the root directory. An example
+The command above assumes the `manifest.yml` file is in the root directory. An example
 of the project file structure could be:
 
 ```none
@@ -469,8 +487,5 @@ project
 Getting the outputs from the container's image could be done with the following command:
 
 ```shell
-docker compose cp node:/home/runner/workspace/output.pdf .
+ docker compose cp node:/home/runner/workspace/output.pdf .
 ```
-
-This is an example to get the outcome of an `merge-markdown` execution which converts markdown files
-into a PDF.
