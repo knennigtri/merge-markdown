@@ -61,7 +61,7 @@ function run() {
   if (argsMaintainAssetPaths) console.log("maintainAssetPaths mode");
 
   if (argsCreate) {
-    if(useDocker) console.log("Docker cannot be used with --Create mode")
+    if(useDocker) console.log("Docker cannot be used with --Create mode");
     var inputFilesPath = ".";
     if (typeof argsCreate === "string") {
       inputFilesPath = argsCreate;
@@ -100,7 +100,7 @@ function run() {
     console.log("[Docker Mode] Building merge-markdown in a container.");
     var manifestDir = path.parse(manifestFilePath).dir;
     downloadDockerFiles(manifestDir);
-    dockerMerger.runMergeMarkdownInDocker(manifestFilePath, process.argv.slice(2).join(' '))
+    dockerMerger.runMergeMarkdownInDocker(manifestFilePath, process.argv.slice(2).join(" "));
     return;
   }
 
