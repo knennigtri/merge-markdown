@@ -1,5 +1,6 @@
 services:
   node:
     build: .
-    image: node:build
+    image: node:mergemarkdown
+    container_name: mergemarkdown
     tty: true
