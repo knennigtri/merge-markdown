@@ -25,7 +25,13 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
   const manifestPath = path.parse(manifestFilePath).dir || "./";
   debugDocker(`manifestPath: ${manifestPath}`);
 
+  
   try {
+    const dockerRunning = await isDockerRunning();
+    if(!dockerRunning){
+      console.error("Docker is not running. Start the Docker engine and retry.");
+      return;
+    }
     const imageExists = await dockerImageExists(`${IMAGE_NAME}:${IMAGE_TAG}`);
     if (!imageExists) {
       console.log("Docker Image DNE. Creating...");
@@ -201,15 +207,24 @@ function dockerImageExists(imageName) {
   var img = imageName || `${IMAGE_NAME}:${IMAGE_TAG}`;
   return new Promise((resolve, reject) => {
     docker.listImages({ filters: { reference: [img] } }, (err, images) => {
-      if (err) {
-        reject(err);
-      }
       if (images.length > 0) {
         resolve(true);
       } else {
         resolve(false);
       }
     });
+  });
+}
+
+function isDockerRunning() {
+  return new Promise((resolve, reject) => {
+      docker.ping((err) => {
+          if (err) {
+              resolve(false); // Docker is not running or not accessible
+          } else {
+              resolve(true); // Docker is running
+          }
+      });
   });
 }
 
