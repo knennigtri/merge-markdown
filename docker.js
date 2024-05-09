@@ -2,7 +2,6 @@ const Docker = require('dockerode');
 const fs = require('fs');
 const path = require("path");
 const tar = require('tar');
-const packageInfo = require("./package.json");
 const manifestUtil = require("./manifest.js");
 const debug = require("debug");
 const { exec } = require('child_process');
@@ -29,11 +28,11 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
     try {
         const imageExists = await dockerImageExists(`${IMAGE_NAME}:${IMAGE_TAG}`);
         if (!imageExists) {
-            debugDocker('Image DNE. Creating...');
+            console.log('Docker Image DNE. Creating...');
 
-            var command = "docker-compose up -d --build";
+            var command = " docker-compose up -d --build";
             console.log(command);
-            await runDockerCompose(command, manifestPath)
+            await runExecCommands(command, manifestPath)
                 .then(output => {
                     console.log('Success.', output);
                 })
@@ -57,7 +56,6 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
                         console.log('Tar archive created successfully');
                         return copyIntoContainer(resultContainer.id, TAR_NAME, WORKING_DIR);
                     })
-
             })
             .then(resultContainerID => {
                 console.log("Extracting files into the container.");
@@ -100,6 +98,7 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
     }
 }
 
+/* Starts a docker container or returns the running container */
 function startContainer(container) {
     return new Promise((resolve, reject) => {
         debugDocker(`Starting container: ${container.id}`)
@@ -120,6 +119,7 @@ function startContainer(container) {
     });
 }
 
+/* Gets the running container or starts and returns it */
 function getContainer(containerName) {
     var name = containerName || CONTAINER_NAME;
     debugDocker(`Getting containter: ${name}`);
@@ -138,7 +138,7 @@ function getContainer(containerName) {
     });
 }
 
-// Function to create a container based on an existing image
+/* Function to create a container based on an existing image */
 function createContainer(containerName, imageName) {
     var name = containerName || CONTAINER_NAME;
     var img = imageName || `${IMAGE_NAME}:${IMAGE_TAG}`;
@@ -156,6 +156,7 @@ function createContainer(containerName, imageName) {
     });
 }
 
+/* execute commands within the running container */
 async function execContainer(containerId, command, attachStd) {
     const execOptions = {
         Cmd: typeof command === 'string' ? command.split(' ') : Array.isArray(command) ? command : [],
@@ -164,7 +165,6 @@ async function execContainer(containerId, command, attachStd) {
     };
 
     const container = docker.getContainer(containerId);
-
     return new Promise((resolve, reject) => {
         container.exec(execOptions, function (err, exec) {
             const dockerConsole = "";
@@ -198,10 +198,9 @@ async function execContainer(containerId, command, attachStd) {
 }
 
 function dockerImageExists(imageName) {
-    if (!imageName) imageName = `${IMAGE_NAME}:${IMAGE_TAG}`;
-
+    var img = imageName || `${IMAGE_NAME}:${IMAGE_TAG}`;
     return new Promise((resolve, reject) => {
-        docker.listImages({ filters: { reference: [imageName] } }, (err, images) => {
+        docker.listImages({ filters: { reference: [img] } }, (err, images) => {
             if (err) {
                 reject(err);
             }
@@ -214,7 +213,8 @@ function dockerImageExists(imageName) {
     });
 }
 
-function runDockerCompose(command, cwd) {
+/* Run command line arguments with exec */
+function runExecCommands(command, cwd) {
     return new Promise((resolve, reject) => {
         exec(command, { cwd }, (error, stdout, stderr) => {
             if (error) {
@@ -230,15 +230,13 @@ function runDockerCompose(command, cwd) {
     });
 }
 
+/* Copy the local tarFilePath into the destDir in the container */
 function copyIntoContainer(containerId, tarFilePath, destDir) {
     debugDocker(`Copying ${tarFilePath} to ${destDir}`)
     return new Promise((resolve, reject) => {
         const container = docker.getContainer(containerId);
 
-        // Create a read stream from the tar archive
         const tarStream = fs.createReadStream(tarFilePath);
-
-        // Copy the tar archive into the container
         container.putArchive(tarStream, { path: destDir }, (err, res) => {
             if (err) {
                 reject(err);
