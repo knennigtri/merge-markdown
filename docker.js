@@ -218,13 +218,13 @@ function dockerImageExists(imageName) {
 
 function isDockerRunning() {
   return new Promise((resolve, reject) => {
-      docker.ping((err) => {
-          if (err) {
-              resolve(false); // Docker is not running or not accessible
-          } else {
-              resolve(true); // Docker is running
-          }
-      });
+    docker.ping((err) => {
+      if (err) {
+        resolve(false); // Docker is not running or not accessible
+      } else {
+        resolve(true); // Docker is running
+      }
+    });
   });
 }
 
