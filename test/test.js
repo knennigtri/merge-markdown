@@ -2,8 +2,8 @@
 var init = require("../index.js");
 var minimist = require("minimist");
 var args = minimist(process.argv.slice(3));
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 
 test(args.hideconsole);
@@ -22,18 +22,18 @@ async function test(hideconsole) {
  */
   var mergeArr = [];
   mergeArr.push( // Test different manifests
-    ["test/markdown/src/myManifest.yml", false, false, false, 'pdf', 0],
-    ["test/markdown/src/myManifest.json", false, false, false, 'pdf', 0],
-    ["test/pdf/src/myManifest.yml", false, false, false, 'pdf', 0],
-    ["test/pdf/src/manifest-noPresentation.yml", false, false, false, 'pdf', 0],
-    ["test/pdf/src/myManifest.yml", false, false, false, 'html', 0],
-    ["test/pdf/src/manifest-noPresentation.yml", false, false, false, 'html', 0]
+    ["test/markdown/src/myManifest.yml", false, false, false, "pdf", 0],
+    ["test/markdown/src/myManifest.json", false, false, false, "pdf", 0],
+    ["test/pdf/src/myManifest.yml", false, false, false, "pdf", 0],
+    ["test/pdf/src/manifest-noPresentation.yml", false, false, false, "pdf", 0],
+    ["test/pdf/src/myManifest.yml", false, false, false, "html", 0],
+    ["test/pdf/src/manifest-noPresentation.yml", false, false, false, "html", 0]
   );
   mergeArr.push( // Test different params
-    ["test/markdown/src/myManifest.yml", true, false, false, 'pdf', 0],
-    ["test/markdown/src/myManifest.yml", false, true, false, 'pdf', 0],
-    ["test/markdown/src/myManifest.yml", false, false, true, 'pdf', 0],
-  )
+    ["test/markdown/src/myManifest.yml", true, false, false, "pdf", 0],
+    ["test/markdown/src/myManifest.yml", false, true, false, "pdf", 0],
+    ["test/markdown/src/myManifest.yml", false, false, true, "pdf", 0],
+  );
   mergeArr.push( // Test IO missing
     ["test/markdown/src/manifests/manifest-noIO.yml", false, false, false, 1],
     ["test/markdown/src/manifests/manifest-noInput.yml", false, false, false, 1],
@@ -49,10 +49,10 @@ async function test(hideconsole) {
       });
       await promise;
     } catch (err) {
-      console.log(err)
+      console.log(err);
       if (mergeArr[i][mergeArr.length - 1]) {
         errors++;
-        errArr.push(['==merge.start==', mergeArr[i]]);
+        errArr.push(["==merge.start==", mergeArr[i]]);
       }
     }
   }
@@ -67,35 +67,35 @@ async function test(hideconsole) {
     ["test/yaml-test", 0],
     ["test/pdf", 0]
   );
-  for (var i = 0; i < createArr.length; i++) {
+  for (var j = 0; j < createArr.length; j++) {
     try {
-      init.manifestUtil.createManifestFile(createArr[i][0]);
+      init.manifestUtil.createManifestFile(createArr[j][0]);
     } catch (err) {
       errors++;
-      if (createArr[i][createArr.length - 1]) {
-        console.log(err)
-        errArr.push(['==manifest.create==', createArr[i]]);
+      if (createArr[j][createArr.length - 1]) {
+        console.log(err);
+        errArr.push(["==manifest.create==", createArr[j]]);
       }
     }
   }
 
-  fs.unlink('./manifest.yml', (err) => {
-    if (err) console.error('Error deleting testing file:', err);
+  fs.unlink("./manifest.yml", (err) => {
+    if (err) console.error("Error deleting testing file:", err);
   });
 
   //TODO write tests for pdf/html output
   //TODO write tests for docker
 
   console.error("Total errors in testing: " + errors);
-  for (var j = 0; j < errArr.length; j++) {
-    console.error("  [" + errArr[j] + "]");
+  for (var k = 0; k < errArr.length; k++) {
+    console.error("  [" + errArr[k] + "]");
   }
-  deleteFoldersAndFiles('test/');
+  deleteFoldersAndFiles("test/");
 }
 
 function deleteFoldersAndFiles(directoryPath) {
-  const foldersToDelete = ['merged', 'target'];
-  const filesToDelete = ['docker-compose.yml', 'Dockerfile'];
+  const foldersToDelete = ["merged", "target"];
+  const filesToDelete = ["docker-compose.yml", "Dockerfile"];
 
   // Function to recursively delete folders and files
   function deleteRecursively(dir) {
