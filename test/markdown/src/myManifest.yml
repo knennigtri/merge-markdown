@@ -6,7 +6,7 @@ input:
   lorem-module/lorem-module.md: '{"noYAML":true,"doctoc":true,"replace":{"\\[#\\]":4}}'
   lorem-module.md: '{"noYAML":true,"doctoc":true,"replace":{"\\[#\\]":5}}'
 output:
-  name: target/mergedFile.md
+  name: merged/mergedFile.md
   doctoc: true
   wkhtmltopdf:
     marginBottom: .7in

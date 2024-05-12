@@ -5,7 +5,7 @@ input:
  ../ipsum-module.md: ""
  ../etiam-module.md: ""
 output: 
- name: ../target/onlyGlobalOptions.md
+ name: ../merged/onlyGlobalOptions.md
 qa: {exclude: "(frontmatter|preamble)"}
 noYAML: true
 replace:

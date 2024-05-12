@@ -3,7 +3,7 @@ input:
  ../frontmatter.md: ''
  ../lorem-module.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 1:"}}
  ../ipsum-module.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 2:"}}
-output: "../target/deprecated-manifest.md"
+output: "../merged/deprecated-manifest.md"
 qa: {exclude: "(frontmatter)"}
 TOC: true
 replace:

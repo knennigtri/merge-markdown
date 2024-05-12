@@ -5,7 +5,7 @@ input:
  ../lorem-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1: "}}
  ../ipsum-module.md: {noYAML: true, doctoc: "TOC TEST"}
 output: 
- name: ../target/myYAMLGuide.md
+ name: ../merged/myYAMLGuide.md
  doctoc: true
 qa: {exclude: "(frontmatter|preamble)"}
 doctoc: true

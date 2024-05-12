@@ -6,7 +6,7 @@ input:
  ../ipsum-module.md: {noYAML: true, doctoc: false, replace: {<!--#-->: "Module 2: "}}
  ../etiam-module.md: {noYAML: true, doctoc: "Hello Contents!", replace: {<!--#-->: "Module 3: "}}
 output: 
- name: ../target/doctoc.md
+ name: ../merged/doctoc.md
  doctoc: true
 qa: {exclude: "(frontmatter|preamble)"}
 doctoc: {maxlevel: 2, notitle: false}

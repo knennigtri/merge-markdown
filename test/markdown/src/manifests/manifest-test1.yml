@@ -4,7 +4,7 @@ input:
  ../lorem-module/lorem-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1: "}}
  ../ipsum-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 2: "}}
 output: 
- name: ../target/manifest-test1.md
+ name: ../merged/manifest-test1.md
  doctoc: true
 qa: {exclude: "(frontmatter|preamble)"}
 replace:
