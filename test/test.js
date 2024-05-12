@@ -15,14 +15,14 @@ async function test(hideconsole){
   );
   // Test IO missing
   arr.push(
-    ["test/markdown/src/manifest-noIO.yml", false, "", false, false],
-    ["test/markdown/src/manifest-noInput.yml", false, "", false, false],
-    ["test/markdown/src/manifest-noOutput.yml", false, "", false, false]
+    ["test/markdown/src/manifests/manifest-noIO.yml", false, "", false, false],
+    ["test/markdown/src/manifests/manifest-noInput.yml", false, "", false, false],
+    ["test/markdown/src/manifests/manifest-noOutput.yml", false, "", false, false]
   );
   // Test only folders as manifest
   arr.push(
     ["test/markdown/src", false, "", false, false],
-    ["test/markdown/src/yaml-test", false, "", false, false],
+    ["test/yaml-test", false, "", false, false],
   );
   // Test pdf and html generation
   arr.push(
@@ -41,7 +41,7 @@ async function test(hideconsole){
   for(var i = 0; i < arr.length; i++){
     try{ 
       // (manifestParam, qaParam, modeParam, noLinkcheckParam, maintainAssetPaths)
-      init.run(arr[i][0],arr[i][1],arr[i][2],arr[i][3],arr[i][4]);
+      init.merge.start(arr[i][0],arr[i][1],arr[i][2],arr[i][3],arr[i][4]);
       var promise = new Promise(res => {
         setTimeout(() => res("Now it's done!"), 500);
       });
