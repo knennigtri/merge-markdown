@@ -57,11 +57,11 @@ function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
     var inputFileStr = path.join(relManifestPath, inputKey);
     console.log("--" + inputFileStr + "--");
     if (onlyQA && qaRegex.test(inputFileStr)) {
-      console.warn("Skipping " + inputKey + " for QA");
+      console.log("Skipping " + inputKey + " for QA");
       return;
     }
     if (!fs.existsSync(inputFileStr)) {
-      console.warn(inputKey + " does not exist. Skipping.");
+      console.log(inputKey + " does not exist. Skipping.");
       return;
     }
     var origContent = fs.readFileSync(inputFileStr, "utf-8");

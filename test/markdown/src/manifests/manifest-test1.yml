@@ -1,18 +1,16 @@
 ---
 input:
- ../../frontmatter.md: ""
- lorem-module.md: ""
- ipsum-module.md: ""
- etiam-module.md: ""
+ ../frontmatter.md: ""
+ ../lorem-module/lorem-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 1: "}}
+ ../ipsum-module.md: {noYAML: true, doctoc: true, replace: {<!--#-->: "Module 2: "}}
 output: 
- name: merged/onlyGlobalOptions.md
+ name: ../merged/manifest-test1.md
+ doctoc: true
 qa: {exclude: "(frontmatter|preamble)"}
-noYAML: true
 replace:
  <!--{timestamp}-->: 05/25/2021
  <!--{returnToMainTOC}-->: "[Return to Course Contents](#course-contents)"
  <!--{courseTitle}-->: My Course Title
  <!--{author}-->: Chuck Grant
- <!--#-->: ""
  ({#(.*?)}): ""
 ---

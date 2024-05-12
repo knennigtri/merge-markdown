@@ -130,6 +130,7 @@ function buildPandocArgs(params, fileName, inputPath) {
   } else {
     debugPandoc("No pandoc Args given in manifest. Using defaults.");
   }
+  debugPandocOptions("Final Args: " + cliArgs);
   return cliArgs;
 }
 
@@ -161,6 +162,7 @@ function buildWkhtmltopdfOptions(params, fileName) {
         finalOptions[key] = params[key];
       }
     }
+    debugWkhtmltopdfOptions("Final Args: " + finalOptions);
     return finalOptions;
   }
   debugWkhtmltopdf("No options given in manifest. Using Default wkhtmltopdf options.");

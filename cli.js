@@ -2,6 +2,7 @@ const packageInfo = require("./package.json");
 const manifestUtil = require("./manifest.js");
 const merge = require("./merge.js");
 const presentation = require("./presentation.js");
+const dockerMerger = require("./docker.js");
 const path = require("path");
 const fs = require("fs");
 const minimist = require("minimist");
@@ -20,7 +21,8 @@ const debbugOptions = {
   },
   ...manifestUtil.debbugOptions,
   ...merge.debbugOptions,
-  ...presentation.debbugOptions
+  ...presentation.debbugOptions,
+  ...dockerMerger.debbugOptions
 };
 
 function run() {
@@ -32,7 +34,8 @@ function run() {
   var argsSkipLinkcheck = args.skipLinkcheck;
   var argsCreate = args.c || args.create;
   var argsMaintainAssetPaths = args.maintainAssetPaths;
-  var docker = args.getDockerFiles;
+  var getDockerFiles = args.getDockerFiles;
+  var useDocker = args.docker || args.Docker;
 
   debugArgs(JSON.stringify(args, null, 2));
 
@@ -48,7 +51,7 @@ function run() {
     return;
   }
   if (argsDebug) {
-    console.log("[Mac] $ DEBUG:<option> " + cliName + " -m <file>");
+    console.log("[Mac] $ DEBUG=<option> " + cliName + " -m <file>");
     console.log("[Win] $ set DEBUG=<option> & " + cliName + " -m <file>");
     console.log("Options: " + JSON.stringify(debbugOptions, null, 2));
     return;
@@ -57,27 +60,19 @@ function run() {
   if (argsSkipLinkcheck) console.log("noLinkcheck mode");
   if (argsMaintainAssetPaths) console.log("maintainAssetPaths mode");
 
-  if (docker) {
-    console.log("Downloading docker files...");
-    const dockerFileNames = ["docker-compose.yml", "Dockerfile"];
-    dockerFileNames.forEach((fileName) => {
-      const sourcePath = path.join(__dirname, fileName);
-      const destinationPath = path.join("./", fileName);
-
-      // Copy the Docker file
-      fs.copyFileSync(sourcePath, destinationPath);
-      console.log("Copied " + fileName + " to " + path.resolve(destinationPath));
-    });
-    return;
-  }
-
   if (argsCreate) {
+    if(useDocker) console.log("Docker cannot be used with --Create mode");
     var inputFilesPath = ".";
     if (typeof argsCreate === "string") {
       inputFilesPath = argsCreate;
     }
     console.log(inputFilesPath);
     manifestUtil.createManifestFile(inputFilesPath);
+    return;
+  }
+
+  if(getDockerFiles) {
+    downloadDockerFiles();
     return;
   }
 
@@ -98,6 +93,14 @@ function run() {
   if (manifestFilePath == undefined || manifestFilePath == "") {
     console.log("No manifest found. Consider auto-creating with -c or specify a manifest with -m");
     console.log(HELP.default);
+    return;
+  }
+
+  if (useDocker) {
+    console.log("[Docker Mode] Building merge-markdown in a container.");
+    var manifestDir = path.parse(manifestFilePath).dir;
+    downloadDockerFiles(manifestDir);
+    dockerMerger.runMergeMarkdownInDocker(manifestFilePath, process.argv.slice(2).join(" "));
     return;
   }
 
@@ -123,6 +126,20 @@ function run() {
   }
 }
 
+function downloadDockerFiles(manifestPath){
+  var downloadPath = manifestPath || "./";
+  console.log("[Docker Mode] Downloading docker files...");
+  const dockerFileNames = ["docker-compose.yml", "Dockerfile"];
+  dockerFileNames.forEach((fileName) => {
+    const sourcePath = path.join(__dirname, fileName);
+    const destinationPath = path.join(downloadPath, fileName);
+
+    // Copy the Docker file
+    fs.copyFileSync(sourcePath, destinationPath);
+    console.log("  Copied " + fileName + " to " + path.resolve(destinationPath));
+  });
+}
+
 const cliName = packageInfo.name.replace("@knennigtri/", "");
 const HELP = {
   default:
@@ -131,6 +148,7 @@ Arguments:
   -m, --manifest <manifestFile>            Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
   -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
+  --docker                                 Run merge-markdown commands in docker
   --getDockerFiles                         Downloads the Docker files to your local project
   --qa                                     QA mode.
   --skipLinkcheck                          Skips linkchecking
@@ -141,7 +159,7 @@ Arguments:
   -h manifest | options |
     outputOptions | qa | docker            See examples
   -d, --debug                              See debug Options
-Default manifest: `+ manifestUtil.DEF_MANIFEST_NAME + "[" + manifestUtil.DEF_MANIFEST_EXTS.join("|") + `] unless specified in -m.
+Default is ${manifestUtil.DEF_MANIFEST_NAME}[${manifestUtil.DEF_MANIFEST_EXTS.join("|")}] unless specified in -m.
 
 Download Pandoc: https://pandoc.org/installing.html
 Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
@@ -193,17 +211,14 @@ Example: exclude all filenames with "frontmatter" by default
     qa: {exclude: "(frontmatter|preamble)"}
 ---`,
   docker:
-        `Download the Docker image and yml:
+        `REQUIRED: Download Docker: https://docs.docker.com/get-docker/
+
+  1. Start Docker
+  2. Run:
+    merge-markdown -m manifest.yml --docker
+
+  Alternatively you can download the docker files directly:
     merge-markdown --getDockerFiles
-
-Setup docker compose with your local project:
-    docker compose up -d --build
-
-Execute merge-markdown in docker:
-    docker compose exec node merge-markdown -m yourManifest.yml --pdf
-
-Download the desired output:
-    docker compose cp node:/home/runner/workspace/yourOutput.pdf .
     `
 };
 

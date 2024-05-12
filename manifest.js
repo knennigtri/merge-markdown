@@ -2,9 +2,10 @@
 var fs = require("fs");
 var path = require("path");
 var yaml = require("js-yaml");
-var debugManifest = require("debug")("manifest");
-var debugDeprication = require("debug")("manifest:deprecation");
-var debugmanifestJson = require("debug")("manifest:json");
+const debug = require("debug");
+var debugManifest = debug("manifest");
+var debugDeprication = debug("manifest:deprecation");
+var debugmanifestJson = debug("manifest:json");
 
 exports.debbugOptions = {
   "manifest": "",
@@ -25,7 +26,7 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
     console.log("Manifest extension must be: [" + DEF_MANIFEST_EXTS.join("|") + "]");
     return;
   }
-  console.log("Found manifest to use: " + inputManifestFile);
+  debugManifest("Found manifest to use: " + inputManifestFile);
   var fileContents = fs.readFileSync(inputManifestFile, "utf8");
   var jsonObj = "";
   try {
@@ -45,22 +46,12 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
   }
 
   // If the manifest doesn"t have an output, generate the output name based on the manifest directory
-  if (!jsonObj.output || !jsonObj.output.name) {
-    throw new Error("Manifest is missing output.name. Consider auto-creating an initial manifest");
-  } else {
-    jsonObj = fixDeprecatedEntry(jsonObj);
-  }
+  if (!jsonObj.output || !jsonObj.output.name) throw new Error("Manifest is missing output.name. Consider auto-creating an initial manifest");
+  // jsonObj = fixDeprecatedEntry(jsonObj);
+  if (jsonObj.output.name.split(".").pop() != "md") throw new Error("output.name needs to be a .md file but found: " + jsonObj.output.name);
+  if (!jsonObj.input) throw new Error("Manifest is missing input. Consider auto-creating an initial manifest");
 
-  if (jsonObj.output.name.split(".").pop() != "md") {
-    throw new Error("output.name needs to be a .md file but found: " + jsonObj.output.name);
-  }
-
-  // If the manifest doesn"t have an input, build the input with md files in the manifest directory
-  if (!jsonObj.input) {
-    throw new Error("Manifest is missing input. Consider auto-creating an initial manifest");
-  } else {
-    jsonObj = fixDeprecatedEntry(jsonObj);
-  }
+  jsonObj = fixDeprecatedEntry(jsonObj);
 
   if (qaMode) {
     if (!jsonObj.qa || !jsonObj.qa.exclude) {
@@ -168,14 +159,14 @@ exports.getFile = function (inputArg) {
       try {
         var fileStat = fs.lstatSync(filePath);
         if (fileStat.isFile()) {
-          debugManifest("Using default manifest: " + filePath);
+          debugManifest(`Using default manifest[${DEF_MANIFEST_EXTS.join("|")}]: ${filePath}`);
           return filePath;
         }
       } catch (err) {
         debugManifest(filePath + " DNE.");
       }
     }
-    console.log("No default manifest file found in " + directory);
+    console.log(`No default manifest[${DEF_MANIFEST_EXTS.join("|")}] file found in ${directory}`);
   }
 };
 
@@ -214,7 +205,8 @@ exports.createManifestFile = function (dir) {
       "<!--{timestamp}-->": "01/01/2024",
       "<!--{title}-->": "My Title",
       "<!--{author}-->": "Chuck Grant",
-      "### My h3 title": "#### My h4 title"
+      "### My h3 title": "#### My h4 title",
+      "({#(.*?)})": ""
     }
   };
   var inputArr = findMarkdownFiles(dir);
