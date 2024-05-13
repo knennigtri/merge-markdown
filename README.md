@@ -1,6 +1,6 @@
 # merge-markdown
 
-[![Build & Publish to NPM and GHP](https://github.com/knennigtri/merge-markdown/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/knennigtri/merge-markdown/actions/workflows/release.yml)
+[![Build & Publish to NPM and GHP](https://github.com/knennigtri/merge-markdown/actions/workflows/release.yml/badge.svg?branch=dev)](https://github.com/knennigtri/merge-markdown/actions/workflows/release.yml)
 
 # Overview
 
