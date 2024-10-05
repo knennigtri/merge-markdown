@@ -16,6 +16,12 @@ const IMAGE_TAG = "mergemarkdown";
 const CONTAINER_NAME = "mergemarkdown";
 const WORKING_DIR = "/home/runner/workspace/cli";
 const TAR_NAME = "archive.tar.gz";
+const EXCLUDE_PATHS = [
+  /.*\/node-modules\/.*/,
+  /.*\/merged\/.*/,
+  /.*\/target\/.*/,
+];
+
 
 async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
   debugDocker(`manifestFilePath: ${manifestFilePath}`);
@@ -24,6 +30,11 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
   debugDocker(`outputPath: ${outputPath}`);
   const manifestPath = path.parse(manifestFilePath).dir || "./";
   debugDocker(`manifestPath: ${manifestPath}`);
+
+  const excludePaths = [
+    ...(EXCLUDE_PATHS || []), // Add EXCLUDE_PATHS if it exists
+    ...(manifest.docker?.excludePaths || []) // Add manifest.docker.excludePaths if it exists
+  ];
 
   
   try {
@@ -57,7 +68,7 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
       })
       .then(resultContainer => {
         console.log("Copying this project to the docker container.");
-        return createTarArchive(manifestPath, TAR_NAME)
+        return createTarArchive(manifestPath, TAR_NAME, excludePaths)
           .then(() => {
             console.log("Tar archive created successfully");
             return copyIntoContainer(resultContainer.id, TAR_NAME, WORKING_DIR);
@@ -262,27 +273,45 @@ function copyIntoContainer(containerId, tarFilePath, destDir) {
   });
 }
 
-/* Takes the sourceDir and compresses it into a tar at tafFilePath */
-function createTarArchive(sourceDir, tarFilePath) {
+/* Takes the sourceDir and compresses it into a tar at tarFilePath, excluding specified paths using regex */
+function createTarArchive(sourceDir, tarFilePath, excludedPaths = []) {
   debugDocker(`${sourceDir} to tarball ${tarFilePath}`);
+  
   return new Promise((resolve, reject) => {
     const tarStream = tar.c({
       gzip: true,
-      cwd: sourceDir // Change to the source directory
+      cwd: sourceDir,
+      filter: (filePath) => {
+        // Get the relative path of the file from the sourceDir
+        const relativePath = path.relative(sourceDir, filePath);
+        
+        // Check if any of the excludedPaths matches the relativePath using regex
+        return !excludedPaths.some(excludedPath => {
+          const regex = typeof excludedPath === "string" ? new RegExp(excludedPath) : excludedPath;
+          // console.log("File ignored: " + regex);
+          return regex.test(relativePath);
+        });
+      }
     }, ["."]);
+
     const fileStream = fs.createWriteStream(tarFilePath);
+
     tarStream.pipe(fileStream);
+    
     tarStream.on("end", () => {
       resolve();
     });
+    
     tarStream.on("error", (err) => {
       reject(err);
     });
+    
     fileStream.on("error", (err) => {
       reject(err);
     });
   });
 }
+
 
 /* Downloads the srcPath in the containerId to the local destPath */
 async function downloadFromContainer(containerId, srcPath, destPath) {

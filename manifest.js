@@ -200,6 +200,13 @@ exports.createManifestFile = function (dir) {
         "footerRight": "[page]",
       }
     },
+    docker: {
+      excludePaths: [
+        "/.*\\/node-modules\\/.*/",
+        "/.*\\/merged\\/.*/",
+        "/.*\\/target\\/.*/"
+      ]
+    },
     qa: { exclude: "(frontmatter|preamble)" },
     replace: {
       "<!--{timestamp}-->": "01/01/2024",
