@@ -22,6 +22,11 @@ output:
     footerLeft: '[doctitle]'
     footerCenter: ''
     footerRight: '[page]'
+docker:
+  excludePaths:
+    - /.*\/node-modules\/.*/,
+    - /.*\/merged\/.*/,
+    - /.*\/target\/.*/,
 qa:
   exclude: (frontmatter|preamble)
 replace:
