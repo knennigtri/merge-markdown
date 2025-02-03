@@ -66,11 +66,18 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
           });
       })
       .then(resultContainer => {
+        console.log("Cleaning the working directory.");
+        const command = `rm -rf ${WORKING_DIR} && 
+                         mkdir -p ${WORKING_DIR}`;
+        debugDocker(command);
+        return execContainer(resultContainer.id, command)
+      })
+      .then(resultContainerID => {
         console.log("Copying this project to the docker container.");
         return createTarArchive(manifestPath, TAR_NAME, excludePaths)
           .then(() => {
             console.log("Tar archive created successfully");
-            return copyIntoContainer(resultContainer.id, TAR_NAME, WORKING_DIR);
+            return copyIntoContainer(resultContainerID, TAR_NAME, WORKING_DIR);
           });
       })
       .then(resultContainerID => {
@@ -81,7 +88,6 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
       })
       .then(resultContainerID => {
         debugDocker(`Running container is ${resultContainerID}`);
-
 
         var mergeMarkdown = buildMergeMarkdownCommand(mergeMarkdownArgs);
         
@@ -314,7 +320,6 @@ function createTarArchive(sourceDir, tarFilePath, excludedPaths = []) {
     });
   });
 }
-
 
 /* Downloads the srcPath in the containerId to the local destPath */
 async function downloadFromContainer(containerId, srcPath, destPath) {
