@@ -42,7 +42,6 @@ Takes in a list of markdown files and merges them into a single output file with
     - [HTML Output](#html-output)
     - [PDF Output](#pdf-output)
   - [Special Modes](#special-modes)
-    - [Download Docker Files](#download-docker-files)
     - [QA Mode](#qa-mode)
     - [nolinkcheck Mode](#nolinkcheck-mode)
     - [Debug Mode](#debug-mode)
@@ -54,6 +53,7 @@ Takes in a list of markdown files and merges them into a single output file with
   - [Apply output options](#apply-output-options)
 - [Using Docker](#using-docker)
   - [Full CLI](#full-cli)
+    - [Exclude certain files from copying into Docker](#exclude-certain-files-from-copying-into-docker)
   - [Configurable Build](#configurable-build)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -116,6 +116,7 @@ Default is manifest[.yml|.yaml|.json] unless specified in -m.
 Download Pandoc: https://pandoc.org/installing.html
 Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
 Download Docker: https://docs.docker.com/get-docker/
+  Pandoc and wkhtmltopdf are not needed if running in docker
 ```
 
 ## Manifest file format
@@ -270,14 +271,6 @@ Example files can be found in [test/pdf/src](test/pdf/src). You can also checkou
 
 ### Special Modes
 
-#### Download Docker Files
-
-```shell
-> merge-markdown --getDockerFiles
-```
-
-Downloads the Docker files to your local project. See [Docker](#dockerfile).
-
 #### QA Mode
 
 ```shell
@@ -334,7 +327,8 @@ Options: {
   "html": "pandoc messages for html",
   "html:options": "pandoc options messages",
   "pdf": "wkhtmltopdf messages for pdf",
-  "pdf:options": "wkhtmltopdf options messages"
+  "pdf:options": "wkhtmltopdf options messages",
+  "docker": ""
 }
 ```
 
@@ -441,6 +435,21 @@ To use docker, make sure you have docker [downloaded](https://docs.docker.com/ge
 
 ```shell
  merge-markdown -m path/to/manifest.yml --pdf --docker
+```
+
+#### Exclude certain files from copying into Docker
+For speed purposes, you can optionally exclude certain files and folders from copying into docker. By default, these folders are not copied:
+  ```
+  const EXCLUDE_PATHS = [
+    /.*\/node-modules\/.*/,
+    /.*\/merged\/.*/,
+    /.*\/target\/.*/,
+  ];
+  ```
+To add more paths, update the manifest file:
+```
+docker:
+  excludePaths: ["my/excluded/path", "temp.txt"]
 ```
 
 ### Configurable Build

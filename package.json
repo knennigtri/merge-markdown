@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Prepare input files to merge together and optionally output html/pdf presentation",
   "repository": {
     "type": "git",
@@ -11,6 +11,7 @@
     "preversion": "git fetch --tags && npm run lint:fix && npm run test:noLogs",
     "version": "npm audit fix && npm run build",
     "postversion": "git push --follow-tags",
+    "clean": "rimraf \"**/merged\"",
     "lint": "eslint '**/*.js?(x)'",
     "lint:fix": "npm run lint -- --fix",
     "test": "node test/test.js",
@@ -22,7 +23,7 @@
     "publish:bugfix": "npm publish --tag bugfix",
     "wkhtmltopdf": "wkhtmltopdf -T 1in -B 1in -L .7in -R .7in --page-size Letter --footer-line --footer-center 'Page [page]' --enable-local-file-access --disable-smart-shrinking test/pdf/src/merged/presentationAdded.html test/pdf/src/merged/presentationAdded.pdf"
   },
-  "main": "index.js",
+  "main": "src/index.js",
   "keywords": [
     "markdown",
     "merge",

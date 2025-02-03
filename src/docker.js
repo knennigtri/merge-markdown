@@ -22,7 +22,6 @@ const EXCLUDE_PATHS = [
   /.*\/target\/.*/,
 ];
 
-
 async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
   debugDocker(`manifestFilePath: ${manifestFilePath}`);
   const manifest = manifestUtil.getManifestObj(manifestFilePath, false);
@@ -47,7 +46,7 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
     if (!imageExists) {
       console.log("Docker Image DNE. Creating...");
 
-      var command = " docker-compose up -d --build";
+      var command = "docker compose -f docker-compose.yml up -d --build";
       console.log(command);
       await runExecCommands(command, manifestPath)
         .then(output => {
@@ -67,34 +66,44 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
           });
       })
       .then(resultContainer => {
+        console.log("Cleaning the docker working directory.");
+        const command = `rm -rf ${WORKING_DIR}`;
+        debugDocker(command);
+        return execContainer(resultContainer, command);
+      })
+      .then(resultContainer => {
+        // Recreate the working directory
+        const command = `mkdir -p ${WORKING_DIR}`;
+        debugDocker(command);
+        return execContainer(resultContainer, command);
+      })
+      .then(resultContainer => {
         console.log("Copying this project to the docker container.");
         return createTarArchive(manifestPath, TAR_NAME, excludePaths)
           .then(() => {
             console.log("Tar archive created successfully");
-            return copyIntoContainer(resultContainer.id, TAR_NAME, WORKING_DIR);
+            return copyIntoContainer(resultContainer, TAR_NAME, WORKING_DIR);
           });
       })
-      .then(resultContainerID => {
+      .then(resultContainer => {
         console.log("Extracting files into the container.");
         var extractCommand = `tar xzf ${WORKING_DIR}/${TAR_NAME} -C ${WORKING_DIR}`;
         debugDocker(extractCommand);
-        return execContainer(resultContainerID, extractCommand);
+        return execContainer(resultContainer, extractCommand);
       })
-      .then(resultContainerID => {
-        debugDocker(`Running container is ${resultContainerID}`);
-        var mergeMarkdown = `merge-markdown ${mergeMarkdownArgs}`;
-        mergeMarkdown = mergeMarkdown.replace(/-m \S+\/\S+\/\S+\//, "-m ");
-        mergeMarkdown = mergeMarkdown.replace("--docker", "");
+      .then(resultContainer => {
+        debugDocker(`Running container is ${resultContainer.id}`);
+        var mergeMarkdown = buildMergeMarkdownCommand(mergeMarkdownArgs);
         const commands = [`cd ${WORKING_DIR}`, mergeMarkdown].join(" && ");
         const cmd = ["/bin/sh", "-c", commands];
         debugDocker(cmd);
         debugDocker("Merging in Docker");
-        return execContainer(resultContainerID, cmd, true);
+        return execContainer(resultContainer, cmd, true);
 
       })
-      .then(resultContainerID => {
+      .then(resultContainer => {
         debugDocker("Downloading locally");
-        return downloadFromContainer(resultContainerID, path.join(WORKING_DIR, outputPath));
+        return downloadFromContainer(resultContainer, path.join(WORKING_DIR, outputPath));
       })
       .then(() => {
         if (!debug.enabled("docker")) {
@@ -174,17 +183,18 @@ function createContainer(containerName, imageName) {
 }
 
 /* execute commands within the running container */
-async function execContainer(containerId, command, attachStd) {
+async function execContainer(container, command, attachStd) {
   const execOptions = {
     Cmd: typeof command === "string" ? command.split(" ") : Array.isArray(command) ? command : [],
     AttachStdout: attachStd,
     AttachStderr: attachStd,
   };
 
-  const container = docker.getContainer(containerId);
   return new Promise((resolve, reject) => {
     container.exec(execOptions, function (err, exec) {
-      const dockerConsole = "";
+      console.log("Executing command: ", execOptions.Cmd.join(" "));
+      const dockerConsole = "  ";
+      let finalOutput = "";
       if (err) {
         console.error("Error creating exec instance:", err);
         reject(err);
@@ -195,7 +205,7 @@ async function execContainer(containerId, command, attachStd) {
             reject(err);
           } else {
             stream.on("data", function (chunk) {
-              console.log(dockerConsole + chunk.toString());
+              finalOutput = finalOutput + dockerConsole + chunk;
             });
             exec.inspect(function (err, data) {
               if (err) {
@@ -205,7 +215,8 @@ async function execContainer(containerId, command, attachStd) {
               }
             });
             stream.on("end", function () {
-              resolve(containerId);
+              console.log(finalOutput);
+              resolve(container);
             });
           }
         });
@@ -257,10 +268,9 @@ function runExecCommands(command, cwd) {
 }
 
 /* Copy the local tarFilePath into the destDir in the container */
-function copyIntoContainer(containerId, tarFilePath, destDir) {
+function copyIntoContainer(container, tarFilePath, destDir) {
   debugDocker(`Copying ${tarFilePath} to ${destDir}`);
   return new Promise((resolve, reject) => {
-    const container = docker.getContainer(containerId);
 
     const tarStream = fs.createReadStream(tarFilePath);
     container.putArchive(tarStream, { path: destDir }, (err) => {
@@ -268,7 +278,7 @@ function copyIntoContainer(containerId, tarFilePath, destDir) {
         reject(err);
         return;
       }
-      resolve(containerId);
+      resolve(container);
     });
   });
 }
@@ -312,21 +322,37 @@ function createTarArchive(sourceDir, tarFilePath, excludedPaths = []) {
   });
 }
 
-
-/* Downloads the srcPath in the containerId to the local destPath */
-async function downloadFromContainer(containerId, srcPath, destPath) {
-  const stream = await docker.getContainer(containerId).getArchive({ path: srcPath });
+/* Downloads the srcPath in the container to the local destPath */
+async function downloadFromContainer(container, srcPath, destPath) {
+  const stream = await container.getArchive({ path: srcPath });
   if (!destPath) destPath = "./";
   stream.pipe(tar.extract({ cwd: destPath }));
   return new Promise((resolve, reject) => {
     stream.on("end", () => {
-      console.log(`Output ${srcPath} downloaded to ${path.join(destPath, path.basename(srcPath))}`);
-      resolve(containerId);
+      console.log(`Output ${srcPath.replace(WORKING_DIR, ".")} downloaded to ${path.join(path.resolve(destPath), path.basename(srcPath))}`);
+      resolve(container);
     });
     stream.on("error", (err) => {
       reject(err);
     });
   });
+}
+
+function buildMergeMarkdownCommand(origArgs) {
+  let argsArray = origArgs.split(" ");
+  const mIndex = argsArray.indexOf("-m");
+
+  if (mIndex !== -1 && mIndex + 1 < argsArray.length) {
+    let mValue = argsArray[mIndex + 1];
+    let fileName = path.basename(mValue); // Extract only the filename
+
+    argsArray[mIndex + 1] = fileName; // Replace the original path with filename
+  }
+
+  let mmCommand = `merge-markdown ${argsArray.join(" ")}`;
+  mmCommand = mmCommand.replace("--docker", "");
+
+  return mmCommand;
 }
 
 exports.runMergeMarkdownInDocker = runMergeMarkdownInDocker;

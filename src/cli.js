@@ -1,4 +1,4 @@
-const packageInfo = require("./package.json");
+const packageInfo = require("../package.json");
 const manifestUtil = require("./manifest.js");
 const merge = require("./merge.js");
 const presentation = require("./presentation.js");
@@ -131,7 +131,7 @@ function downloadDockerFiles(manifestPath){
   console.log("[Docker Mode] Downloading docker files...");
   const dockerFileNames = ["docker-compose.yml", "Dockerfile"];
   dockerFileNames.forEach((fileName) => {
-    const sourcePath = path.join(__dirname, fileName);
+    const sourcePath = path.join(__dirname, "../docker/", fileName);
     const destinationPath = path.join(downloadPath, fileName);
 
     // Copy the Docker file
