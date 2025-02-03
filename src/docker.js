@@ -22,7 +22,6 @@ const EXCLUDE_PATHS = [
   /.*\/target\/.*/,
 ];
 
-
 async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
   debugDocker(`manifestFilePath: ${manifestFilePath}`);
   const manifest = manifestUtil.getManifestObj(manifestFilePath, false);
@@ -47,7 +46,7 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
     if (!imageExists) {
       console.log("Docker Image DNE. Creating...");
 
-      var command = " docker-compose up -d --build";
+      var command = `docker compose -f docker-compose.yml up -d --build`;
       console.log(command);
       await runExecCommands(command, manifestPath)
         .then(output => {
@@ -82,9 +81,10 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
       })
       .then(resultContainerID => {
         debugDocker(`Running container is ${resultContainerID}`);
-        var mergeMarkdown = `merge-markdown ${mergeMarkdownArgs}`;
-        mergeMarkdown = mergeMarkdown.replace(/-m \S+\/\S+\/\S+\//, "-m ");
-        mergeMarkdown = mergeMarkdown.replace("--docker", "");
+
+
+        var mergeMarkdown = buildMergeMarkdownCommand(mergeMarkdownArgs);
+        
         const commands = [`cd ${WORKING_DIR}`, mergeMarkdown].join(" && ");
         const cmd = ["/bin/sh", "-c", commands];
         debugDocker(cmd);
@@ -184,7 +184,9 @@ async function execContainer(containerId, command, attachStd) {
   const container = docker.getContainer(containerId);
   return new Promise((resolve, reject) => {
     container.exec(execOptions, function (err, exec) {
-      const dockerConsole = "";
+      console.log("Executing command: ", execOptions.Cmd.join(" "));
+      const dockerConsole = "  ";
+      let finalOutput = "";
       if (err) {
         console.error("Error creating exec instance:", err);
         reject(err);
@@ -195,7 +197,7 @@ async function execContainer(containerId, command, attachStd) {
             reject(err);
           } else {
             stream.on("data", function (chunk) {
-              console.log(dockerConsole + chunk.toString());
+              finalOutput = finalOutput + dockerConsole + chunk;
             });
             exec.inspect(function (err, data) {
               if (err) {
@@ -205,6 +207,7 @@ async function execContainer(containerId, command, attachStd) {
               }
             });
             stream.on("end", function () {
+              console.log(finalOutput);
               resolve(containerId);
             });
           }
@@ -320,13 +323,30 @@ async function downloadFromContainer(containerId, srcPath, destPath) {
   stream.pipe(tar.extract({ cwd: destPath }));
   return new Promise((resolve, reject) => {
     stream.on("end", () => {
-      console.log(`Output ${srcPath} downloaded to ${path.join(destPath, path.basename(srcPath))}`);
+      console.log(`Output ${srcPath.replace(WORKING_DIR, '.')} downloaded to ${path.join(path.resolve(destPath), path.basename(srcPath))}`);
       resolve(containerId);
     });
     stream.on("error", (err) => {
       reject(err);
     });
   });
+}
+
+function buildMergeMarkdownCommand(origArgs) {
+  let argsArray = origArgs.split(" ");
+  const mIndex = argsArray.indexOf("-m");
+
+  if (mIndex !== -1 && mIndex + 1 < argsArray.length) {
+      let mValue = argsArray[mIndex + 1];
+      let fileName = path.basename(mValue); // Extract only the filename
+
+      argsArray[mIndex + 1] = fileName; // Replace the original path with filename
+  }
+
+  let mmCommand = `merge-markdown ${argsArray.join(" ")}`;
+  mmCommand = mmCommand.replace("--docker", "");
+
+  return mmCommand;
 }
 
 exports.runMergeMarkdownInDocker = runMergeMarkdownInDocker;
