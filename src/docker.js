@@ -46,7 +46,7 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
     if (!imageExists) {
       console.log("Docker Image DNE. Creating...");
 
-      var command = `docker compose -f docker-compose.yml up -d --build`;
+      var command = "docker compose -f docker-compose.yml up -d --build";
       console.log(command);
       await runExecCommands(command, manifestPath)
         .then(output => {
@@ -69,13 +69,13 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
         console.log("Cleaning the docker working directory.");
         const command = `rm -rf ${WORKING_DIR}`;
         debugDocker(command);
-        return execContainer(resultContainer, command)
+        return execContainer(resultContainer, command);
       })
       .then(resultContainer => {
         // Recreate the working directory
         const command = `mkdir -p ${WORKING_DIR}`;
         debugDocker(command);
-        return execContainer(resultContainer, command)
+        return execContainer(resultContainer, command);
       })
       .then(resultContainer => {
         console.log("Copying this project to the docker container.");
@@ -329,7 +329,7 @@ async function downloadFromContainer(container, srcPath, destPath) {
   stream.pipe(tar.extract({ cwd: destPath }));
   return new Promise((resolve, reject) => {
     stream.on("end", () => {
-      console.log(`Output ${srcPath.replace(WORKING_DIR, '.')} downloaded to ${path.join(path.resolve(destPath), path.basename(srcPath))}`);
+      console.log(`Output ${srcPath.replace(WORKING_DIR, ".")} downloaded to ${path.join(path.resolve(destPath), path.basename(srcPath))}`);
       resolve(container);
     });
     stream.on("error", (err) => {
@@ -343,10 +343,10 @@ function buildMergeMarkdownCommand(origArgs) {
   const mIndex = argsArray.indexOf("-m");
 
   if (mIndex !== -1 && mIndex + 1 < argsArray.length) {
-      let mValue = argsArray[mIndex + 1];
-      let fileName = path.basename(mValue); // Extract only the filename
+    let mValue = argsArray[mIndex + 1];
+    let fileName = path.basename(mValue); // Extract only the filename
 
-      argsArray[mIndex + 1] = fileName; // Replace the original path with filename
+    argsArray[mIndex + 1] = fileName; // Replace the original path with filename
   }
 
   let mmCommand = `merge-markdown ${argsArray.join(" ")}`;
