@@ -22,7 +22,7 @@
     "publish:bugfix": "npm publish --tag bugfix",
     "wkhtmltopdf": "wkhtmltopdf -T 1in -B 1in -L .7in -R .7in --page-size Letter --footer-line --footer-center 'Page [page]' --enable-local-file-access --disable-smart-shrinking test/pdf/src/merged/presentationAdded.html test/pdf/src/merged/presentationAdded.pdf"
   },
-  "main": "index.js",
+  "main": "src/index.js",
   "keywords": [
     "markdown",
     "merge",

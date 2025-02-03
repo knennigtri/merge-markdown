@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-var module = require("../cli.js");
+var module = require("../src/cli.js");
 
 module.run();

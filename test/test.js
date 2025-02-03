@@ -1,5 +1,5 @@
 "use strict";
-var init = require("../index.js");
+var init = require("../src/index.js");
 var minimist = require("minimist");
 var args = minimist(process.argv.slice(3));
 const fs = require("fs");

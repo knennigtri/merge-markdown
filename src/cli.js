@@ -1,4 +1,4 @@
-const packageInfo = require("./package.json");
+const packageInfo = require("../package.json");
 const manifestUtil = require("./manifest.js");
 const merge = require("./merge.js");
 const presentation = require("./presentation.js");
