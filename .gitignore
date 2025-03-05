@@ -14,6 +14,7 @@ notes.txt
 *+*
 TODO.md
 manifest.yml
+dist/*
 
 # Logs
 logs
