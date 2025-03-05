@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "Prepare input files to merge together and optionally output html/pdf presentation",
   "repository": {
     "type": "git",
@@ -77,6 +77,7 @@
     "@babel/core": "^7.26.9",
     "@babel/preset-env": "^7.26.9",
     "depcheck": "^1.4.3",
+    "dotenv": "^16.4.7",
     "eslint": "^8.24.0"
   }
 }
