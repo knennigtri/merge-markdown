@@ -177,6 +177,15 @@ exports.getFile = function (inputArg) {
 exports.createManifestFile = function (dir) {
   const jsonObject = {
     input: {},
+    noYAML: true,
+    doctoc: true,
+    replace: {
+      "<!--{timestamp}-->": "01/01/2024",
+      "<!--{title}-->": "My Title",
+      "<!--{author}-->": "Chuck Grant",
+      "### My h3 title": "#### My h4 title",
+      "({#(.*?)})": ""
+    },
     output: {
       "name": path.join(dir, "target/mergedFile.md"),
       "doctoc": true,
@@ -199,7 +208,7 @@ exports.createManifestFile = function (dir) {
         "footerCenter": "",
         "footerRight": "[page]",
       }
-    },
+    },  
     docker: {
       excludePaths: [
         "/.*\\/node-modules\\/.*/",
@@ -207,26 +216,17 @@ exports.createManifestFile = function (dir) {
         "/.*\\/target\\/.*/"
       ]
     },
-    qa: { exclude: "(frontmatter|preamble)" },
-    replace: {
-      "<!--{timestamp}-->": "01/01/2024",
-      "<!--{title}-->": "My Title",
-      "<!--{author}-->": "Chuck Grant",
-      "### My h3 title": "#### My h4 title",
-      "({#(.*?)})": ""
-    }
+    qa: { exclude: "(frontmatter|preamble)" }
   };
   var inputArr = findMarkdownFiles(dir);
   var counter = 0;
   inputArr.forEach(file => {
     var inputOptions = {
-      noYAML: true,
-      doctoc: true,
       replace: {
         "\\[#\\]": counter
       }
     };
-    jsonObject.input[file] = JSON.stringify(inputOptions);
+    jsonObject.input[file] = inputOptions;
     counter++;
   });
 

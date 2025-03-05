@@ -93,3 +93,6 @@ typings/
 .fusebox/
 
 
+archive.tar.gz
+Dockerfile
+docker-compose.yml
