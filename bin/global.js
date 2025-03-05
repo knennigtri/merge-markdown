@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 
-// Check if the environment is production
-const isProduction = process.env.NODE_ENV === 'production';
+// Load environment variables from .env file
+require('dotenv').config();
+
+// Default to production unless NODE_ENV is explicitly set to dev
+const isProduction = process.env.NODE_ENV !== "dev";
 
 // Conditionally require the appropriate module
-const module = isProduction ? require("../dist/cli.js") : require("../src/cli.js");
+const cliModule = isProduction ? require("../dist/cli.js") : require("../src/cli.js");
 
-module.run();
+cliModule.run();
