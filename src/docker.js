@@ -67,13 +67,7 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
       })
       .then(resultContainer => {
         console.log("Cleaning the docker working directory.");
-        const command = `rm -rf ${WORKING_DIR}`;
-        debugDocker(command);
-        return execContainer(resultContainer, command);
-      })
-      .then(resultContainer => {
-        // Recreate the working directory
-        const command = `mkdir -p ${WORKING_DIR}`;
+        const command = `rm -rf ${WORKING_DIR}/*`;
         debugDocker(command);
         return execContainer(resultContainer, command);
       })
