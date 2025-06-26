@@ -17,7 +17,7 @@ const CONTAINER_NAME = "mergemarkdown";
 const WORKING_DIR = "/home/runner/workspace/cli";
 const TAR_NAME = "archive.tar.gz";
 const EXCLUDE_PATHS = [
-  /.*\/node-modules\/.*/,
+  /.*\/node_modules\/.*/,
   /.*\/merged\/.*/,
   /.*\/target\/.*/,
 ];
@@ -73,6 +73,7 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
       })
       .then(resultContainer => {
         console.log("Copying this project to the docker container.");
+        console.log("excludePaths: ", JSON.stringify(excludePaths));
         return createTarArchive(manifestPath, TAR_NAME, excludePaths)
           .then(() => {
             console.log("Tar archive created successfully");
