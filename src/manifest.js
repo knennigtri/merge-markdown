@@ -227,8 +227,8 @@ exports.createManifestFile = function (dir, fullProject) {
   // TODO - Test
   if (fullProject){
     jsonObject.input["theme/frontmatter.md"] = {noYAML: false, doctoc: false};
-    jsonObject.output.pandoc.css = "theme/theme.css"
-    jsonObject.output.pandoc.latexTemplate = "theme/template.html"
+    jsonObject.output.pandoc.css = "-c theme/theme.css"
+    jsonObject.output.pandoc.latexTemplate = "--template theme/template.html"
   }
 
   var inputArr = findMarkdownFiles(dir);
@@ -343,6 +343,7 @@ function writeNPMFile() {
           console.log('package.json updated with merge-markdown configurations.');
           console.log('Run `npm install` to install the project dependencies to use the npm scripts.');
           console.log("It's highly recommended to install docker for optimal use: https://docs.docker.com/engine/install");
+          console.log("Run `npm run merge-markdown` to build your project. (Requires docker)");
           
           resolve(packageJsonPath);
         } catch (error) {
