@@ -120,11 +120,11 @@ function run() {
     merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths)
       .then(resultMarkdownFile => {
         //Add presentation
-        var outputMode = "";
-        if (argsWORD) outputMode = presentation.MODE.word;
-        if (argsHTML) outputMode = presentation.MODE.html;
-        if (argsPDF) outputMode = presentation.MODE.pdf;
-        return presentation.build(resultMarkdownFile, outputMode, manifestFilePath);
+        var outputFormat = "";
+        if (argsWORD) outputFormat = presentation.OUTPUT_FORMAT.word;
+        if (argsHTML) outputFormat = presentation.OUTPUT_FORMAT.html;
+        if (argsPDF) outputFormat = presentation.OUTPUT_FORMAT.pdf;
+        return presentation.build(resultMarkdownFile, outputFormat, manifestFilePath);
       })
       .then(resultFile => {
         console.log(resultFile + " created.");

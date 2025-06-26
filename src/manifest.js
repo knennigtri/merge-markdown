@@ -196,7 +196,8 @@ exports.createManifestFile = function (dir, fullProject) {
       "doctoc": true,
       "pandoc": {
         "css": "-c path/to/theme.css",
-        "latexTemplate": "--template path/to/latex/template.html"
+        "latexTemplate": "--template path/to/latex/template.html",
+        "referenceDoc": "--reference-doc theme/reference.docx"
       },
       "wkhtmltopdf": {
         "marginBottom": ".7in",
