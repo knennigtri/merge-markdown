@@ -70,15 +70,13 @@ function run() {
     if (typeof argsCreate === "string") {
       inputFilesPath = argsCreate;
     }
-    manifestUtil.createManifestFile(inputFilesPath);
+    manifestUtil.createManifestFile(inputFilesPath, argsFullProject);
     if(argsFullProject){
-      //TODO copy theme to local project
-      // Copy theme folder from src to current working directory
       const themeSourcePath = path.join(__dirname, 'theme');
-      console.log('Theme folder source: ' + themeSourcePath);
+      debugCLI('Theme folder source: ' + themeSourcePath);
       const themeDestPath = path.join(process.cwd(), 'theme');
       fs.cpSync(themeSourcePath, themeDestPath, {recursive: true});
-      console.log('Theme folder copied to: ' + themeDestPath);
+      debugCLI('Theme folder copied to: ' + themeDestPath);
     }
     return;
   }
