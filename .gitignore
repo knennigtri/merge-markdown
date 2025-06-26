@@ -98,3 +98,4 @@ typings/
 archive.tar.gz
 Dockerfile
 docker-compose.yml
+test/package.json
