@@ -109,7 +109,6 @@ function run() {
   if (argsUseDocker) {
     console.log("[Docker Mode] Building merge-markdown in a container.");
     var manifestDir = path.parse(manifestFilePath).dir;
-    downloadDockerFiles(manifestDir);
     dockerMerger.runMergeMarkdownInDocker(manifestFilePath, process.argv.slice(2).join(" "));
     return;
   }

@@ -318,7 +318,7 @@ function writeNPMFile() {
             ...packageJson.scripts,
             "pre": "rimraf merged || rimraf target || true",
             "merge-markdown": "npm run pre && npm run mm:docker && npm run cleanup", 
-            "cleanup": "rimraf Dockerfile docker-compose.yml || true",
+            "cleanup": "",
             "mm:docker": "merge-markdown -m manifest.yml --pdf --docker",
             "mm:html": "merge-markdown -m manifest.yml --html",
             "mm:word": "merge-markdown -m manifest.yml --word",

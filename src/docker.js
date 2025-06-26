@@ -46,7 +46,8 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
     if (!imageExists) {
       console.log("Docker Image DNE. Creating...");
 
-      var command = "docker compose -f docker-compose.yml up -d --build";
+
+      var command = `docker compose -f ${__dirname}/docker/docker-compose.yml up -d --build`;
       console.log(command);
       await runExecCommands(command, manifestPath)
         .then(output => {
