@@ -72,11 +72,11 @@ function run() {
     }
     manifestUtil.createManifestFile(inputFilesPath, argsFullProject);
     if(argsFullProject){
-      const themeSourcePath = path.join(__dirname, 'theme');
-      debugCLI('Theme folder source: ' + themeSourcePath);
-      const themeDestPath = path.join(process.cwd(), 'theme');
+      const themeSourcePath = path.join(__dirname, "theme");
+      debugCLI("Theme folder source: " + themeSourcePath);
+      const themeDestPath = path.join(process.cwd(), "theme");
       fs.cpSync(themeSourcePath, themeDestPath, {recursive: true});
-      debugCLI('Theme folder copied to: ' + themeDestPath);
+      debugCLI("Theme folder copied to: " + themeDestPath);
     }
     return;
   }

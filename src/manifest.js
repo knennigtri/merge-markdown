@@ -3,7 +3,7 @@ var fs = require("fs");
 var path = require("path");
 var yaml = require("js-yaml");
 const debug = require("debug");
-const { spawn } = require('child_process');
+const { spawn } = require("child_process");
 var debugManifest = debug("manifest");
 var debugDeprication = debug("manifest:deprecation");
 var debugmanifestJson = debug("manifest:json");
@@ -197,7 +197,7 @@ exports.createManifestFile = function (dir, fullProject) {
       "pandoc": {
         "css": "-c path/to/theme.css",
         "latexTemplate": "--template path/to/latex/template.html",
-        "referenceDoc": "--reference-doc theme/reference.docx"
+        "referenceDoc": "--reference-doc path/to/reference.docx"
       },
       "wkhtmltopdf": {
         "marginBottom": ".7in",
@@ -228,8 +228,9 @@ exports.createManifestFile = function (dir, fullProject) {
   // TODO - Test
   if (fullProject){
     jsonObject.input["theme/frontmatter.md"] = {noYAML: false, doctoc: false};
-    jsonObject.output.pandoc.css = "-c theme/theme.css"
-    jsonObject.output.pandoc.latexTemplate = "--template theme/template.html"
+    jsonObject.output.pandoc.css = "-c theme/theme.css";
+    jsonObject.output.pandoc.latexTemplate = "--template theme/template.html";
+    jsonObject.output.pandoc.referenceDoc = "--reference-doc theme/reference.docx";
   }
 
   var inputArr = findMarkdownFiles(dir);
@@ -287,30 +288,30 @@ function findMarkdownFiles(directoryPath) {
 }
 
 function writeNPMFile() {
-  const packageJsonPath = path.join(process.cwd(), 'package.json');
+  const packageJsonPath = path.join(process.cwd(), "package.json");
   
   // Check if package.json already exists
   if (fs.existsSync(packageJsonPath)) {
-    console.log('package.json already exists, skipping npm init');
+    console.log("package.json already exists, skipping npm init");
     return;
   }
 
   return new Promise((resolve, reject) => {
-    console.log('Running npm init - please fill out your project details...');
+    console.log("Running npm init - please fill out your project details...");
     
     // Run npm init interactively
-    const npmInit = spawn('npm', ['init'], {
-      stdio: 'inherit',
+    const npmInit = spawn("npm", ["init"], {
+      stdio: "inherit",
       shell: true
     });
 
-    npmInit.on('close', (code) => {
+    npmInit.on("close", (code) => {
       if (code === 0) {
-        debugManifest('package.json created successfully');
+        debugManifest("package.json created successfully");
         
         // Now read and modify the package.json
         try {
-          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
           
           // Add your custom fields to package.json
           packageJson.scripts = {
@@ -341,24 +342,24 @@ function writeNPMFile() {
           
           // Write the modified package.json back
           fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-          console.log('package.json updated with merge-markdown configurations.');
-          console.log('Run `npm install` to install the project dependencies to use the npm scripts.');
+          console.log("package.json updated with merge-markdown configurations.");
+          console.log("Run `npm install` to install the project dependencies to use the npm scripts.");
           console.log("It's highly recommended to install docker for optimal use: https://docs.docker.com/engine/install");
           console.log("Run `npm run merge-markdown` to build your project. (Requires docker)");
           
           resolve(packageJsonPath);
         } catch (error) {
-          console.error('Error modifying package.json:', error);
+          console.error("Error modifying package.json:", error);
           reject(error);
         }
       } else {
-        console.error('npm init failed with code:', code);
+        console.error("npm init failed with code:", code);
         reject(new Error(`npm init failed with code: ${code}`));
       }
     });
 
-    npmInit.on('error', (error) => {
-      console.error('Error running npm init:', error);
+    npmInit.on("error", (error) => {
+      console.error("Error running npm init:", error);
       reject(error);
     });
   });
