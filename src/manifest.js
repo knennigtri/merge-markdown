@@ -229,7 +229,6 @@ exports.createManifestFile = function (dir, fullProject) {
     jsonObject.input["theme/frontmatter.md"] = {noYAML: false, doctoc: false};
     jsonObject.output.pandoc.css = "theme/theme.css"
     jsonObject.output.pandoc.latexTemplate = "theme/template.html"
-    writeNPMFile();
   }
 
   var inputArr = findMarkdownFiles(dir);
@@ -252,6 +251,11 @@ exports.createManifestFile = function (dir, fullProject) {
     console.log("YAML file successfully created: " + manifestPath);
   } catch (error) {
     console.error("Error writing: " + manifestPath, error);
+  }
+
+  // Write the package.json file if the fullProject flag is set
+  if(fullProject) {
+    writeNPMFile();
   }
 };
 
@@ -316,7 +320,8 @@ function writeNPMFile() {
             "mm:docker": "merge-markdown -m manifest.yml --pdf --docker",
             "mm:html": "merge-markdown -m manifest.yml --html",
             "mm:word": "merge-markdown -m manifest.yml --word",
-            "install:docker": "brew install caskroom/cask/brew-cask; brew cask install docker",
+            "install:docker:mac": "brew install caskroom/cask/brew-cask; brew cask install docker",
+            "install:docker:win": "powershell -Command \"Start-Process -Wait -FilePath 'winget' -ArgumentList 'install -e --id Docker.DockerDesktop'\"",
           };
           
           packageJson.dependencies = {
@@ -328,10 +333,16 @@ function writeNPMFile() {
           packageJson.devDependencies = {
             ...packageJson.devDependencies
           };
+
+          packageJson.bugs = {
+            "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
+          };
           
           // Write the modified package.json back
           fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-          console.log('package.json updated with merge-markdown configuration');
+          console.log('package.json updated with merge-markdown configurations.');
+          console.log('Run `npm install` to install the project dependencies to use the npm scripts.');
+          console.log("It's highly recommended to install docker for optimal use: https://docs.docker.com/engine/install");
           
           resolve(packageJsonPath);
         } catch (error) {
