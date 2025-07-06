@@ -22,41 +22,26 @@ Takes in a list of markdown files and merges them into a single output.md file w
     * Create TOC with doctoc
     * Remove yaml from top of md file
 
-> WARNING: Recommended approach is to use Docker with `--docker` rather than running locally.
-
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [merge-markdown](#merge-markdown)
-- [Overview](#overview)
-- [Contents](#contents)
-  - [Installation](#installation)
-  - [Basic Use](#basic-use)
-  - [Usage](#usage)
-  - [Manifest file format](#manifest-file-format)
-    - [Supported Options](#supported-options)
-      - [noYAML](#noyaml)
-      - [replace](#replace)
-      - [doctoc](#doctoc)
-    - [Supported Output Options](#supported-output-options)
-      - [Merged file TOC](#merged-file-toc)
-      - [HTML and Word Output](#html-and-word-output)
-      - [PDF Output](#pdf-output)
-    - [Special Modes](#special-modes)
-      - [QA Mode](#qa-mode)
-      - [nolinkcheck Mode](#nolinkcheck-mode)
-      - [Debug Mode](#debug-mode)
-  - [Manifest Examples](#manifest-examples)
-    - [YAML used as input](#yaml-used-as-input)
-    - [JSON used as input](#json-used-as-input)
-    - [Replace keys within a single file](#replace-keys-within-a-single-file)
-    - [Options applied to all files](#options-applied-to-all-files)
-    - [Apply output options](#apply-output-options)
-  - [Using Docker](#using-docker)
-    - [Full CLI](#full-cli)
-      - [Exclude certain files from copying into Docker](#exclude-certain-files-from-copying-into-docker)
-    - [Configurable Build](#configurable-build)
+- [Installation](#installation)
+- [Basic Use](#basic-use)
+- [Usage](#usage)
+- [Manifest file format](#manifest-file-format)
+  - [Supported Options](#supported-options)
+  - [Supported Output Options](#supported-output-options)
+  - [Special Modes](#special-modes)
+- [Manifest Examples](#manifest-examples)
+  - [YAML used as input](#yaml-used-as-input)
+  - [JSON used as input](#json-used-as-input)
+  - [Replace keys within a single file](#replace-keys-within-a-single-file)
+  - [Options applied to all files](#options-applied-to-all-files)
+  - [Apply output options](#apply-output-options)
+- [Using Docker](#using-docker)
+  - [Full CLI](#full-cli)
+  - [Configurable Build](#configurable-build)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
