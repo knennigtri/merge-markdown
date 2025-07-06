@@ -77,6 +77,9 @@ function run() {
       const themeDestPath = path.join(process.cwd(), "theme");
       fs.cpSync(themeSourcePath, themeDestPath, {recursive: true});
       debugCLI("Theme folder copied to: " + themeDestPath);
+      const quickstartPath = path.join(__dirname, "quickstart.md");
+      fs.cpSync(quickstartPath, path.join(process.cwd(), "quickstart.md"));
+      debugCLI("Quickstart file copied to: " + path.join(process.cwd(), "quickstart.md"));  
     }
     return;
   }

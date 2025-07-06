@@ -16,7 +16,7 @@
     "lint:fix": "npm run lint -- --fix",
     "test": "node test/test.js",
     "test:noLogs": "node test/test.js -- --hideconsole",
-    "build": "npm run readmeTOC && babel src --out-dir dist && cpy 'src/theme/**/*' dist/theme --parents && npm ci && npm i --package-lock-only && depcheck ./",
+    "build": "npm run readmeTOC && babel src --out-dir dist && cpy 'src/theme/**/*' dist/theme --parents && cpy 'quickstart.md' dist/ && npm ci && npm i --package-lock-only && depcheck ./",
     "readmeTOC": "doctoc README.md --github --title='# Contents'",
     "local": "npm pack",
     "release:bugfix": "npm version patch && publish:bugfix",
