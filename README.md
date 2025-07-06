@@ -4,57 +4,59 @@
 
 # Overview
 
-Takes in a list of markdown files and merges them into a single output file with optional HTML and PDF output. Other advantages:
+Takes in a list of markdown files and merges them into a single output.md file with optional Word, HTML, or PDF output. Other advantages:
 
-* Merge all md files in a folder
+* Auto-create a manifest.yml (based on the directory), sample theme folder, and package.json
+* Run in docker to reduce dependencies and discrepancies
 * auto-resolution of all relative links in files for assets, other markdown files no matter their location locally
 * built in link checker of final file
-* Use a Manifest file (json/yaml):
+* Use the Manifest file (json/yaml):
   * Specify the input list of files (relative or absolute)
   * Specify the output file (relative or absolute)
-    * Add pandoc arguments for HTML output
-    * Add wkhtmltopdf for PDF output
+    * Add pandoc arguments for Word/HTML output
+    * Add wkhtmltopdf arguments for PDF output
     * Create a TOC with doctoc
   * QA feature for optional file exclusions for reviewing
   * Per input file or globally:
     * Find/replace with regex (ex: names, titles, chapter #s, timestamps, etc)
     * Create TOC with doctoc
     * Remove yaml from top of md file
-* NEW: Autocreate a starter manifest
-* NEW: Download docker image for installation convienance with dependencies (pandoc/wkhtmltopdf)
 
-> WARNING: [wkhtmltopdf](https://wkhtmltopdf.org/downloads.html) and [pandoc](https://pandoc.org/installing.html) must be installed prior to using this tool! Download and use the docker image if you want avoid  this.
+> WARNING: Recommended approach is to use Docker with `--docker` rather than running locally.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
-- [Installation](#installation)
-- [Command Line Tool](#command-line-tool)
-- [Usage](#usage)
-- [Manifest file format](#manifest-file-format)
-  - [Supported Options](#supported-options)
-    - [noYAML](#noyaml)
-    - [replace](#replace)
-    - [doctoc](#doctoc)
-  - [Supported Output Options](#supported-output-options)
-    - [Merged file TOC](#merged-file-toc)
-    - [HTML and Word Output](#html-and-word-output)
-    - [PDF Output](#pdf-output)
-  - [Special Modes](#special-modes)
-    - [QA Mode](#qa-mode)
-    - [nolinkcheck Mode](#nolinkcheck-mode)
-    - [Debug Mode](#debug-mode)
-- [Manifest Examples](#manifest-examples)
-  - [YAML used as input](#yaml-used-as-input)
-  - [JSON used as input](#json-used-as-input)
-  - [Replace keys within a single file](#replace-keys-within-a-single-file)
-  - [Options applied to all files](#options-applied-to-all-files)
-  - [Apply output options](#apply-output-options)
-- [Using Docker](#using-docker)
-  - [Full CLI](#full-cli)
-    - [Exclude certain files from copying into Docker](#exclude-certain-files-from-copying-into-docker)
-  - [Configurable Build](#configurable-build)
+- [merge-markdown](#merge-markdown)
+- [Overview](#overview)
+- [Contents](#contents)
+  - [Installation](#installation)
+  - [Basic Use](#basic-use)
+  - [Usage](#usage)
+  - [Manifest file format](#manifest-file-format)
+    - [Supported Options](#supported-options)
+      - [noYAML](#noyaml)
+      - [replace](#replace)
+      - [doctoc](#doctoc)
+    - [Supported Output Options](#supported-output-options)
+      - [Merged file TOC](#merged-file-toc)
+      - [HTML and Word Output](#html-and-word-output)
+      - [PDF Output](#pdf-output)
+    - [Special Modes](#special-modes)
+      - [QA Mode](#qa-mode)
+      - [nolinkcheck Mode](#nolinkcheck-mode)
+      - [Debug Mode](#debug-mode)
+  - [Manifest Examples](#manifest-examples)
+    - [YAML used as input](#yaml-used-as-input)
+    - [JSON used as input](#json-used-as-input)
+    - [Replace keys within a single file](#replace-keys-within-a-single-file)
+    - [Options applied to all files](#options-applied-to-all-files)
+    - [Apply output options](#apply-output-options)
+  - [Using Docker](#using-docker)
+    - [Full CLI](#full-cli)
+      - [Exclude certain files from copying into Docker](#exclude-certain-files-from-copying-into-docker)
+    - [Configurable Build](#configurable-build)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -68,7 +70,7 @@ To install the command line tool globally, run:
   merge-markdown -h
 ```
 
-## Command Line Tool
+## Basic Use
 
 Create a new merge-markdown project with existing markdown files:
 
