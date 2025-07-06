@@ -95,7 +95,7 @@ async function test(hideconsole) {
 
 function deleteFoldersAndFiles(directoryPath) {
   const foldersToDelete = ["merged", "target"];
-  const filesToDelete = ["docker-compose.yml", "Dockerfile"];
+  const filesToDelete = [];
 
   // Function to recursively delete folders and files
   function deleteRecursively(dir) {

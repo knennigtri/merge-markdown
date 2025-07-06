@@ -4,17 +4,18 @@ const path = require("path");
 const nodePandoc = require("node-pandoc");
 const wkhtmltopdf = require("wkhtmltopdf");
 const debug = require("debug")("presentation");
-const debugPandoc = require("debug")("html");
-const debugPandocOptions = require("debug")("html:options");
+const debugPandoc = require("debug")("pandoc");
+const debugPandocOptions = require("debug")("pandoc:options");
 const debugWkhtmltopdf = require("debug")("pdf");
 const debugWkhtmltopdfOptions = require("debug")("pdf:options");
 const debugDefaults = require("debug")("defaults");
-const MODE = {
+const OUTPUT_FORMAT = {
   "pdf": "pdf",
-  "html": "html"
+  "html": "html",
+  "word": "docx" //TODO implement word output
 };
 
-exports.MODE = MODE;
+exports.OUTPUT_FORMAT = OUTPUT_FORMAT;
 exports.debbugOptions = {
   "presentation": "",
   "html": "pandoc messages for html",
@@ -23,10 +24,10 @@ exports.debbugOptions = {
   "pdf:options": "wkhtmltopdf options messages"
 };
 
-var build = async function (inputFile, mode, manifestFile) {
-  if((mode != MODE.pdf) && (mode != MODE.html)) return inputFile;
+var build = async function (inputFile, outputFormat, manifestFile) {
+  if(!outputFormat) return inputFile;
 
-  console.log(mode.toUpperCase() + " mode selected for " + path.parse(inputFile).base);
+  console.log(outputFormat + " format selected for " + path.parse(inputFile).base);
   console.log("+++++++++++++");
   
   let manifestObj = manifestUtil.getManifestObj(manifestFile);
@@ -34,9 +35,9 @@ var build = async function (inputFile, mode, manifestFile) {
 
   const fileNames = {};
   var parsed = path.parse(inputFile);
-  for (const key in MODE) {
-    if (key in MODE) {
-      const ext = MODE[key];
+  for (const key in OUTPUT_FORMAT) {
+    if (key in OUTPUT_FORMAT) {
+      const ext = OUTPUT_FORMAT[key];
       const fileName = path.join(parsed.dir,parsed.name + "." + ext);
       fileNames[key] = fileName;
     }
@@ -44,19 +45,25 @@ var build = async function (inputFile, mode, manifestFile) {
   deleteGeneratedFiles(fileNames);
 
   return new Promise((resolve, reject) => {
-    pandocWriteToFile(inputFile, manifestObj.output.pandoc, manifestPath)
-      .then(resultHtmlFile => {
-        if (mode == MODE.pdf) {
-          wkhtmltopdfWriteToFile(resultHtmlFile, manifestObj.output.wkhtmltopdf, fileNames.pdf)
+
+    let pandocOutputFormat = OUTPUT_FORMAT.html; //required for html and pdf output
+    if(outputFormat == OUTPUT_FORMAT.word) {
+      pandocOutputFormat = outputFormat;
+    }
+
+    pandocWriteToFile(inputFile, manifestObj.output.pandoc, manifestPath, pandocOutputFormat)
+      .then(resultPandocFile => {
+        if (outputFormat == OUTPUT_FORMAT.pdf) {
+          wkhtmltopdfWriteToFile(resultPandocFile, manifestObj.output.wkhtmltopdf, fileNames.pdf)
             .then(resultPdfFile => {
               resolve(resultPdfFile);
             });
         } else {
-          var outputNewName = path.parse(manifestObj.output.name).name + ".html";
-          var outputPath = path.parse(resultHtmlFile).dir;
+          var outputNewName = path.parse(manifestObj.output.name).name + "." + pandocOutputFormat;
+          var outputPath = path.parse(resultPandocFile).dir;
           var outputFile = path.join(outputPath, outputNewName);
-          debug("temp.html >> " + outputNewName);
-          fs.rename(resultHtmlFile, outputFile, () => {
+          debug(`temp.${pandocOutputFormat} >>  ${outputNewName}`);
+          fs.rename(resultPandocFile, outputFile, () => {
             resolve(outputFile);
           });
         }
@@ -65,9 +72,9 @@ var build = async function (inputFile, mode, manifestFile) {
 };
 
 // Input and Output files are expected to be ABS
-function pandocWriteToFile(inputFile, pandocParams, manifestPath) {
+function pandocWriteToFile(inputFile, pandocParams, manifestPath, outputFormat) {
   debug("Creating HTML using Pandoc...");
-  var outputFile = path.join(path.parse(inputFile).dir, "temp.html");
+  var outputFile = path.join(path.parse(inputFile).dir, `temp.${outputFormat}`);
   var pandocArgs = buildPandocArgs(pandocParams, outputFile, manifestPath);
   debugPandoc("input: " + inputFile);
   debugPandoc("Args: '" + pandocArgs + "'");
@@ -110,11 +117,16 @@ function buildPandocArgs(params, fileName, inputPath) {
   debugDefaults(cliArgs);
   if (params) {
     for (var key in params) {
-      if (params[key].includes("--template")) {
+      if (params[key].includes("--template") && fileName.includes("html")) { //ability to include a template for html output
         var templatePath = params[key].substring(params[key].indexOf(" ") + 1);
         templatePath = path.join(inputPath, templatePath);
         debugPandocOptions("template added: " + templatePath);
         cliArgs += " --template " + templatePath;
+      } else if (params[key].includes("--reference-doc") && fileName.includes("docx")) { //ability to include a reference doc for docx output
+        var referenceDocPath = params[key].substring(params[key].indexOf(" ") + 1);
+        referenceDocPath = path.join(inputPath, referenceDocPath);
+        debugPandocOptions("reference doc added: " + referenceDocPath);
+        cliArgs += " --reference-doc " + referenceDocPath;
       } else if (params[key].includes("-c ")) {
         var ccsPath = params[key].substring(params[key].indexOf(" ") + 1);
         ccsPath = path.join(inputPath, ccsPath);

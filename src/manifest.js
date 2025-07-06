@@ -3,6 +3,7 @@ var fs = require("fs");
 var path = require("path");
 var yaml = require("js-yaml");
 const debug = require("debug");
+const { spawn } = require("child_process");
 var debugManifest = debug("manifest");
 var debugDeprication = debug("manifest:deprecation");
 var debugmanifestJson = debug("manifest:json");
@@ -15,6 +16,8 @@ exports.debbugOptions = {
 
 const DEF_MANIFEST_NAME = "manifest";
 const DEF_MANIFEST_EXTS = [".yml", ".yaml", ".json"];
+
+const manifestWriteDir = process.cwd();
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
@@ -173,8 +176,9 @@ exports.getFile = function (inputArg) {
 /**
 * Autocreates a starter manifest file 
 * @param {*} dir location of input files
+* @param {*} fullProject boolean to add 'full project on create' paths
 */
-exports.createManifestFile = function (dir) {
+exports.createManifestFile = function (dir, fullProject) {
   const jsonObject = {
     input: {},
     noYAML: true,
@@ -183,15 +187,17 @@ exports.createManifestFile = function (dir) {
       "<!--{timestamp}-->": "01/01/2024",
       "<!--{title}-->": "My Title",
       "<!--{author}-->": "Chuck Grant",
+      "<!--{documentType}-->": "Instruction Manual",
       "### My h3 title": "#### My h4 title",
       "({#(.*?)})": ""
     },
     output: {
-      "name": path.join(dir, "target/mergedFile.md"),
+      "name": "target/mergedFile.md",
       "doctoc": true,
       "pandoc": {
         "css": "-c path/to/theme.css",
-        "latexTemplate": "--template path/to/latex/template.html"
+        "latexTemplate": "--template path/to/latex/template.html",
+        "referenceDoc": "--reference-doc path/to/reference.docx"
       },
       "wkhtmltopdf": {
         "marginBottom": ".7in",
@@ -211,13 +217,22 @@ exports.createManifestFile = function (dir) {
     },  
     docker: {
       excludePaths: [
-        "/.*\\/node-modules\\/.*/",
+        "/.*\\/node_modules\\/.*/",
         "/.*\\/merged\\/.*/",
         "/.*\\/target\\/.*/"
       ]
     },
     qa: { exclude: "(frontmatter|preamble)" }
   };
+
+  // TODO - Test
+  if (fullProject){
+    jsonObject.input["theme/frontmatter.md"] = {noYAML: false, doctoc: false};
+    jsonObject.output.pandoc.css = "-c theme/theme.css";
+    jsonObject.output.pandoc.latexTemplate = "--template theme/template.html";
+    jsonObject.output.pandoc.referenceDoc = "--reference-doc theme/reference.docx";
+  }
+
   var inputArr = findMarkdownFiles(dir);
   var counter = 0;
   inputArr.forEach(file => {
@@ -232,12 +247,17 @@ exports.createManifestFile = function (dir) {
 
   //Write YAML File
   const yamlString = yaml.dump(jsonObject);
-  const manifestPath = path.join(process.cwd(), "manifest.yml");
+  const manifestPath = path.join(manifestWriteDir, "manifest.yml");
   try {
     fs.writeFileSync(manifestPath, yamlString);
     console.log("YAML file successfully created: " + manifestPath);
   } catch (error) {
     console.error("Error writing: " + manifestPath, error);
+  }
+
+  // Write the package.json file if the fullProject flag is set
+  if(fullProject) {
+    writeNPMFile();
   }
 };
 
@@ -265,6 +285,84 @@ function findMarkdownFiles(directoryPath) {
     }
   }
   return markdownFiles;
+}
+
+function writeNPMFile() {
+  const packageJsonPath = path.join(process.cwd(), "package.json");
+  
+  // Check if package.json already exists
+  if (fs.existsSync(packageJsonPath)) {
+    console.log("package.json already exists, skipping npm init");
+    return;
+  }
+
+  return new Promise((resolve, reject) => {
+    console.log("Running npm init - please fill out your project details...");
+    
+    // Run npm init interactively
+    const npmInit = spawn("npm", ["init"], {
+      stdio: "inherit",
+      shell: true
+    });
+
+    npmInit.on("close", (code) => {
+      if (code === 0) {
+        debugManifest("package.json created successfully");
+        
+        // Now read and modify the package.json
+        try {
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+          
+          // Add your custom fields to package.json
+          packageJson.scripts = {
+            ...packageJson.scripts,
+            "pre": "rimraf merged || rimraf target || true",
+            "merge-markdown": "npm run pre && npm run mm:docker && npm run cleanup", 
+            "cleanup": "",
+            "mm:docker": "merge-markdown -m manifest.yml --pdf --docker",
+            "mm:html": "merge-markdown -m manifest.yml --html",
+            "mm:word": "merge-markdown -m manifest.yml --word",
+            "install:docker:mac": "brew install caskroom/cask/brew-cask; brew cask install docker",
+            "install:docker:win": "powershell -Command \"Start-Process -Wait -FilePath 'winget' -ArgumentList 'install -e --id Docker.DockerDesktop'\"",
+          };
+          
+          packageJson.dependencies = {
+            ...packageJson.dependencies,
+            "@knennigtri/merge-markdown": "*",
+            "rimraf": "^5.0.0"
+          };
+          
+          packageJson.devDependencies = {
+            ...packageJson.devDependencies
+          };
+
+          packageJson.bugs = {
+            "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
+          };
+          
+          // Write the modified package.json back
+          fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+          console.log("package.json updated with merge-markdown configurations.");
+          console.log("Run `npm install` to install the project dependencies to use the npm scripts.");
+          console.log("It's highly recommended to install docker for optimal use: https://docs.docker.com/engine/install");
+          console.log("Run `npm run merge-markdown` to build your project. (Requires docker)");
+          
+          resolve(packageJsonPath);
+        } catch (error) {
+          console.error("Error modifying package.json:", error);
+          reject(error);
+        }
+      } else {
+        console.error("npm init failed with code:", code);
+        reject(new Error(`npm init failed with code: ${code}`));
+      }
+    });
+
+    npmInit.on("error", (error) => {
+      console.error("Error running npm init:", error);
+      reject(error);
+    });
+  });
 }
 
 exports.DEF_MANIFEST_NAME = DEF_MANIFEST_NAME;

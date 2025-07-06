@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="creator" content='$creator$' />
+    <meta name="subject" content='$subject$' />
+
+    $for(author-meta)$
+    <meta name="author" content="$author-meta$" />
+  $endfor$
+  $if(date-meta)$
+    <meta name="dcterms.date" content="$date-meta$" />
+  $endif$
+  $if(keywords)$
+    <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$" />
+  $endif$
+  $if(description-meta)$
+    <meta name="description" content="$description-meta$" />
+  $endif$
+
+    <title>$title$</title>
+    $for(css)$
+      <link rel="stylesheet" href="$css$" />
+    $endfor$
+  </head>
+  <body>
+    $body$
+  </body>
+</html>

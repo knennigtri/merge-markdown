@@ -26,16 +26,20 @@ const debbugOptions = {
 };
 
 function run() {
-  var argsHelp = args.h || args.help;
-  var argsVersion = args.v || args.version;
-  var argsDebug = args.d || args.debug;
-  var argsManifest = args.m || args.manifest;
-  var argsQA = args.qa;
-  var argsSkipLinkcheck = args.skipLinkcheck;
-  var argsCreate = args.c || args.create;
-  var argsMaintainAssetPaths = args.maintainAssetPaths;
-  var getDockerFiles = args.getDockerFiles;
-  var useDocker = args.docker || args.Docker;
+  const argsHelp = args.h || args.help;
+  const argsVersion = args.v || args.version;
+  const argsDebug = args.d || args.debug;
+  const argsManifest = args.m || args.manifest;
+  const argsQA = args.qa;
+  const argsSkipLinkcheck = args.skipLinkcheck;
+  const argsCreate = args.c || args.create;
+  const argsMaintainAssetPaths = args.maintainAssetPaths;
+  const argsGetDockerFiles = args.getDockerFiles;
+  const argsUseDocker = args.docker || args.Docker;
+  const argsFullProject = args.fullProject || args.fullproject || args.FullProject;
+  const argsPDF = args.pdf || args.PDF;
+  const argsHTML = args.html || args.HTML;
+  const argsWORD = args.word || args.WORD;
 
   debugArgs(JSON.stringify(args, null, 2));
 
@@ -61,17 +65,26 @@ function run() {
   if (argsMaintainAssetPaths) console.log("maintainAssetPaths mode");
 
   if (argsCreate) {
-    if(useDocker) console.log("Docker cannot be used with --Create mode");
+    if(argsUseDocker) console.log("Docker cannot be used with --Create mode");
     var inputFilesPath = ".";
     if (typeof argsCreate === "string") {
       inputFilesPath = argsCreate;
     }
-    console.log(inputFilesPath);
-    manifestUtil.createManifestFile(inputFilesPath);
+    manifestUtil.createManifestFile(inputFilesPath, argsFullProject);
+    if(argsFullProject){
+      const themeSourcePath = path.join(__dirname, "theme");
+      debugCLI("Theme folder source: " + themeSourcePath);
+      const themeDestPath = path.join(process.cwd(), "theme");
+      fs.cpSync(themeSourcePath, themeDestPath, {recursive: true});
+      debugCLI("Theme folder copied to: " + themeDestPath);
+      const quickstartPath = path.join(__dirname, "quickstart.md");
+      fs.cpSync(quickstartPath, path.join(process.cwd(), "quickstart.md"));
+      debugCLI("Quickstart file copied to: " + path.join(process.cwd(), "quickstart.md"));  
+    }
     return;
   }
 
-  if(getDockerFiles) {
+  if(argsGetDockerFiles) {
     downloadDockerFiles();
     return;
   }
@@ -96,10 +109,9 @@ function run() {
     return;
   }
 
-  if (useDocker) {
+  if (argsUseDocker) {
     console.log("[Docker Mode] Building merge-markdown in a container.");
     var manifestDir = path.parse(manifestFilePath).dir;
-    downloadDockerFiles(manifestDir);
     dockerMerger.runMergeMarkdownInDocker(manifestFilePath, process.argv.slice(2).join(" "));
     return;
   }
@@ -110,10 +122,11 @@ function run() {
     merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths)
       .then(resultMarkdownFile => {
         //Add presentation
-        var outputMode = "";
-        if (args.html) outputMode = presentation.MODE.html;
-        if (args.pdf) outputMode = presentation.MODE.pdf;
-        return presentation.build(resultMarkdownFile, outputMode, manifestFilePath);
+        var outputFormat = "";
+        if (argsWORD) outputFormat = presentation.OUTPUT_FORMAT.word;
+        if (argsHTML) outputFormat = presentation.OUTPUT_FORMAT.html;
+        if (argsPDF) outputFormat = presentation.OUTPUT_FORMAT.pdf;
+        return presentation.build(resultMarkdownFile, outputFormat, manifestFilePath);
       })
       .then(resultFile => {
         console.log(resultFile + " created.");
@@ -143,75 +156,75 @@ function downloadDockerFiles(manifestPath){
 const cliName = packageInfo.name.replace("@knennigtri/", "");
 const HELP = {
   default:
-        `Usage: merge-markdown [ARGS]
+`Usage: merge-markdown [ARGS]
 Arguments:
   -m, --manifest <manifestFile>            Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
   -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
+  --fullProject                            Add to -c to include a basic theme, frontmatter, and npm scripts
   --docker                                 Run merge-markdown commands in docker
   --getDockerFiles                         Downloads the Docker files to your local project
   --qa                                     QA mode.
   --skipLinkcheck                          Skips linkchecking
   --maintainAssetPaths                     Retains original asset paths
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
-  --html                                   Output to HTML. Must have Pandoc installed!
+  --html --word                            Output to HTML or Word. Must have Pandoc installed!
   -h, --help                               Displays this screen
   -h manifest | options |
     outputOptions | qa | docker            See examples
   -d, --debug                              See debug Options
 Default is ${manifestUtil.DEF_MANIFEST_NAME}[${manifestUtil.DEF_MANIFEST_EXTS.join("|")}] unless specified in -m.
 
-Download Pandoc: https://pandoc.org/installing.html
-Download wkhtmltopdf: https://wkhtmltopdf.org/downloads.html
 Download Docker: https://docs.docker.com/get-docker/
 `,
   manifest:
-        `Example yaml in a manifest file:
----
-    input:
-      global-frontmatter.md: ""
-      module1Folder/file1.md: {options}
-      module2Folder/file2.md: {noYAML: true, doctoc: true, replace: {key:value}}
-    output: 
-      name: merged/myOutput.md
-      {outputOptions}
-    qa: {exclude: regex}
-    {options}
----
+`Example yaml in a manifest file:
+  input:
+    global-frontmatter.md: {noYAML: false, doctoc: false}
+    module1Folder/file1.md: {fileOptions}
+    module2Folder/file2.md: {replace: {key:value}}
+  noYAML: true
+  doctoc: true
+  output: 
+    name: merged/myOutput.md
+    {outputOptions}
+  qa: {exclude: regex}
+  {projectOptions}
+
 Also, consider auto creating a manifest for your project:
 
-> merge-markdown --create /path/to/project
+$ merge-markdown --create /path/to/project --fullProject
 `
   ,
   options:
-        `Supported key/value pairs for {options}:
-noYAML: true|false                 Optionlly removes YAML. Default=false
-doctoc: true|false|"TOC title"     doctoc arguments. See https://www.npmjs.com/package/doctoc
-    option: <value>
-replace:                           Searches for key and replaces with value
-    key: value
-    <!--{key}-->: value              Example key for a useful identifier
-    *: "stringVal"                   Regular expressions are allowed
+`fileOptions are applied first and then projectOptions second.
+Supported key/value pairs for {options}:
+  noYAML: true|false                 Optionlly removes YAML. Default=false
+  doctoc: true|false|"TOC title"     doctoc arguments. See https://www.npmjs.com/package/doctoc
+      option: <value>
+  replace:                           Searches for key and replaces with value
+      key: value
+      <!--{key}-->: value              Example key for a useful identifier
+      *: "stringVal"                   Regular expressions are allowed
 `,
-  outputoptions:
-        `Supported key/value pairs for {outputOptions}:
-doctoc: true|false|"TOC title"            doctoc arguments. See https://www.npmjs.com/package/doctoc
-    option: <value>
-pandoc:                                   pandoc arguments added to <value>. See https://pandoc.org/MANUAL.html#options
-    key1: "-c mystyle.css"
-    key2: "--template mytemplate.html"
-wkhtmltopdf:                              wkhtmltopdf options. See https://www.npmjs.com/package/wkhtmltopdf#options
-    pageSize: Letter
-    footerLine: true
+  outputOptions:
+`Supported key/value pairs for {outputOptions}:
+  doctoc: true|false|"TOC title"            doctoc arguments. See https://www.npmjs.com/package/doctoc
+      option: <value>
+  pandoc:                                   pandoc arguments added to <value>. See https://pandoc.org/MANUAL.html#options
+      key1: "-c mystyle.css"
+      key2: "--template mytemplate.html"
+  wkhtmltopdf:                              wkhtmltopdf options. See https://www.npmjs.com/package/wkhtmltopdf#options
+      pageSize: Letter
+      footerLine: true
 `,
   qa:
-        `QA mode can optionally exclude files from the output.
+`QA mode can optionally exclude files from the output.
 Example: exclude all filenames with "frontmatter" by default
----
-    qa: {exclude: "(frontmatter|preamble)"}
----`,
+  qa: {exclude: "(frontmatter|preamble)"}
+  `,
   docker:
-        `REQUIRED: Download Docker: https://docs.docker.com/get-docker/
+`REQUIRED: Download Docker: https://docs.docker.com/get-docker/
 
   1. Start Docker
   2. Run:

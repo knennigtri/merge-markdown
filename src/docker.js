@@ -17,7 +17,7 @@ const CONTAINER_NAME = "mergemarkdown";
 const WORKING_DIR = "/home/runner/workspace/cli";
 const TAR_NAME = "archive.tar.gz";
 const EXCLUDE_PATHS = [
-  /.*\/node-modules\/.*/,
+  /.*\/node_modules\/.*/,
   /.*\/merged\/.*/,
   /.*\/target\/.*/,
 ];
@@ -46,7 +46,8 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
     if (!imageExists) {
       console.log("Docker Image DNE. Creating...");
 
-      var command = "docker compose -f docker-compose.yml up -d --build";
+
+      var command = `docker compose -f ${__dirname}/docker/docker-compose.yml up -d --build`;
       console.log(command);
       await runExecCommands(command, manifestPath)
         .then(output => {
@@ -73,6 +74,7 @@ async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
       })
       .then(resultContainer => {
         console.log("Copying this project to the docker container.");
+        console.log("excludePaths: ", JSON.stringify(excludePaths));
         return createTarArchive(manifestPath, TAR_NAME, excludePaths)
           .then(() => {
             console.log("Tar archive created successfully");

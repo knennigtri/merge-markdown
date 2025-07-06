@@ -6,7 +6,12 @@ require("dotenv").config();
 // Default to production unless NODE_ENV is explicitly set to dev
 const isProduction = process.env.NODE_ENV !== "dev";
 
-// Conditionally require the appropriate module
-const cliModule = isProduction ? require("../dist/cli.js") : require("../src/cli.js");
+// Get the directory where this script is located
+const scriptDir = __dirname;
+
+// Conditionally require the appropriate module using absolute paths
+const cliModule = isProduction 
+  ? require(`${scriptDir}/../dist/cli.js`) 
+  : require(`${scriptDir}/../src/cli.js`);
 
 cliModule.run();
