@@ -32,7 +32,8 @@ exports.debbugOptions = {
 
 function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
   var onlyQA = qaMode || false;
-  var manifestJSON = manifestUtil.getManifestObj(manifestFile, onlyQA);
+  var manifestJSON = manifestUtil.getManifestObj(manifestFile, onlyQA); //TODO implement getJSON_withABSPaths()
+  const manifest2 = manifestUtil.getJSON_withABSPaths(manifestFile, onlyQA);
   var relManifestPath = path.relative(process.cwd(), path.dirname(manifestFile));
   var outputFileStr = path.join(relManifestPath, manifestJSON.output.name);
   var skipLinkcheck = skip_linkcheck || false;

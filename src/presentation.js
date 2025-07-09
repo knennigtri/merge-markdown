@@ -30,7 +30,7 @@ var build = async function (inputFile, outputFormat, manifestFile) {
   console.log(outputFormat + " format selected for " + path.parse(inputFile).base);
   console.log("+++++++++++++");
   
-  let manifestObj = manifestUtil.getManifestObj(manifestFile);
+  let manifestObj = manifestUtil.getManifestObj(manifestFile); //TODO implement getJSON_withABSPaths()
   let manifestPath = path.dirname(path.resolve(manifestFile));
 
   const fileNames = {};

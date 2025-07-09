@@ -24,7 +24,7 @@ const EXCLUDE_PATHS = [
 
 async function runMergeMarkdownInDocker(manifestFilePath, mergeMarkdownArgs) {
   debugDocker(`manifestFilePath: ${manifestFilePath}`);
-  const manifest = manifestUtil.getManifestObj(manifestFilePath, false);
+  const manifest = manifestUtil.getManifestObj(manifestFilePath, false); //TODO implement getJSON_withABSPaths()
   const outputPath = path.parse(manifest.output.name).dir;
   debugDocker(`outputPath: ${outputPath}`);
   const manifestPath = path.parse(manifestFilePath).dir || "./";
