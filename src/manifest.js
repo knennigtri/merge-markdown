@@ -76,7 +76,7 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
  * @returns 
  */
 exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
-  const manifestObj = exports.getManifestObj(inputManifestFile, qaMode);
+  const manifestObj = exports.getManifestObj(inputManifestFile, qaMode); 
   const baseDir = path.dirname(inputManifestFile);
 
   // Update input paths to absolute paths
@@ -136,7 +136,7 @@ exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
 
 /**
  * Method to organize the manifest for merge and presentation to 
- * allow for non-destructive updates to mege-markdown.
+ * allow for non-destructive updates to merge-markdown.
  * Important if users are coming from earlier versions of merge-markdown
  */
 function fixDeprecatedEntry(manifestFix) {
@@ -294,7 +294,6 @@ exports.createManifestFile = function (dir, fullProject) {
     qa: { exclude: "(frontmatter|preamble)" }
   };
 
-  // TODO - Test
   if (fullProject) {
     jsonObject.input["theme/frontmatter.md"] = { noYAML: false, doctoc: false };
     jsonObject.output.pandoc.css = "-c theme/theme.css";
