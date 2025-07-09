@@ -14,19 +14,24 @@ exports.debbugOptions = {
   "manifest:json": "",
 };
 
-const DEF_MANIFEST_NAME = "manifest";
-const DEF_MANIFEST_EXTS = [".yml", ".yaml", ".json"];
+const DEFAULT_MANIFEST = {
+  NAME: "manifest",
+  EXT_TYPES: ["yml", "yaml", "json"],
+  get EXTS() { return this.EXT_TYPES.map(ext => `.${ext}`); },
+  get FILE() { return `${this.NAME}${this.EXTS[0]}`; },
+  get FILE_TYPES() { return `${this.NAME}[${this.EXTS.join("|")}]`; }
+}
 
 const manifestWriteDir = process.cwd();
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
- * DEBUG=index:manifest:json
+ * DEBUG=manifest:json
  */
 exports.getManifestObj = function (inputManifestFile, qaMode) {
   var fileType = path.extname(inputManifestFile).toLowerCase();
-  if (!DEF_MANIFEST_EXTS.includes(fileType)) {
-    console.log("Manifest extension must be: [" + DEF_MANIFEST_EXTS.join("|") + "]");
+  if (!DEFAULT_MANIFEST.EXTS.includes(fileType)) {
+    console.log("Manifest extension must be: [" + DEFAULT_MANIFEST.EXTS.join("|") + "]");
     return;
   }
   debugManifest("Found manifest to use: " + inputManifestFile);
@@ -136,7 +141,7 @@ function fixDeprecatedEntry(manifestFix) {
 }
 
 /**
- * Gets a valid file of manifest.[yaml|yml|json]
+ * Gets a valid DEFAULT_MANIFEST file
  * @param {} inputArg file/directory given in -m param
  * @returns file
  */
@@ -144,32 +149,31 @@ exports.getFile = function (inputArg) {
   var fsStat = fs.lstatSync(inputArg);
   if (fsStat.isFile()) { //Set if file is given
     const e = path.extname(inputArg).toLowerCase();
-    debugManifest(e);
-    if (DEF_MANIFEST_EXTS.includes(e)) {
-      debugManifest("Using given manifest: " + inputArg);
+    if (DEFAULT_MANIFEST.EXTS.includes(e)) {
+      debugManifest(`Found Manifest: ${inputArg}`);
       return inputArg;
     } else {
-      console.log("Manifest file can only be yml|yaml|json");
+      console.log(`Manifest file can only be [${DEFAULT_MANIFEST.EXTS.join("|")}]`);
       return;
     }
   } else if (fsStat.isDirectory()) { //Search for default manifest if directory
-    debugManifest("Searching for manifest.yaml|yml|json in " + inputArg);
+    debugManifest(`Searching for ${DEFAULT_MANIFEST.FILE_TYPES} in ${inputArg}`);
     const directory = inputArg;
-    const possibleFileNames = DEF_MANIFEST_EXTS.map(ext => `manifest${ext}`);
+    const possibleFileNames = DEFAULT_MANIFEST.EXTS.map(ext => `${DEFAULT_MANIFEST.NAME}${ext}`);
     //Look for a manifest file in the given directory
     for (const fileName of possibleFileNames) {
       const filePath = path.join(directory, fileName);
       try {
         var fileStat = fs.lstatSync(filePath);
         if (fileStat.isFile()) {
-          debugManifest(`Using default manifest[${DEF_MANIFEST_EXTS.join("|")}]: ${filePath}`);
+          debugManifest(`Found Default Manifest: ${filePath}`);
           return filePath;
         }
       } catch (err) {
         debugManifest(filePath + " DNE.");
       }
     }
-    console.log(`No default manifest[${DEF_MANIFEST_EXTS.join("|")}] file found in ${directory}`);
+    console.log(`No default ${DEFAULT_MANIFEST.FILE_TYPES} file found in ${directory}`);
   }
 };
 
@@ -247,7 +251,7 @@ exports.createManifestFile = function (dir, fullProject) {
 
   //Write YAML File
   const yamlString = yaml.dump(jsonObject);
-  const manifestPath = path.join(manifestWriteDir, "manifest.yml");
+  const manifestPath = path.join(manifestWriteDir, `${DEFAULT_MANIFEST.FILE}`);
   try {
     fs.writeFileSync(manifestPath, yamlString);
     console.log("YAML file successfully created: " + manifestPath);
@@ -365,5 +369,4 @@ function writeNPMFile() {
   });
 }
 
-exports.DEF_MANIFEST_NAME = DEF_MANIFEST_NAME;
-exports.DEF_MANIFEST_EXTS = DEF_MANIFEST_EXTS;
+exports.DEFAULT_MANIFEST = DEFAULT_MANIFEST;

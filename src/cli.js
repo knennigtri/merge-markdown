@@ -108,6 +108,7 @@ function run() {
     console.log(HELP.default);
     return;
   }
+  return;
 
   if (argsUseDocker) {
     console.log("[Docker Mode] Building merge-markdown in a container.");
@@ -173,7 +174,7 @@ Arguments:
   -h manifest | options |
     outputOptions | qa | docker            See examples
   -d, --debug                              See debug Options
-Default is ${manifestUtil.DEF_MANIFEST_NAME}[${manifestUtil.DEF_MANIFEST_EXTS.join("|")}] unless specified in -m.
+Default is ${manifestUtil.DEFAULT_MANIFEST.FILE_TYPES} unless specified in -m.
 
 Download Docker: https://docs.docker.com/get-docker/
 `,
