@@ -92,23 +92,21 @@ function run() {
   //Require -m
   //If file, expect a manifest file, otherwise look for default file in given directory
   var manifestFilePath;
-  // if (argsManifest && argsManifest[0] != undefined && argsManifest[0] != "") {
   try {
     if (argsManifest && typeof argsManifest === "string") {
-      manifestFilePath = manifestUtil.getFile(argsManifest);
+      manifestFilePath = manifestUtil.exists(argsManifest);
     } else { //if there is no -m check for a default manifest file
-      manifestFilePath = manifestUtil.getFile("./");
+      manifestFilePath = manifestUtil.exists("./");
     }
   } catch (err) {
     console.error(err);
     console.log(HELP);
   }
-  if (manifestFilePath == undefined || manifestFilePath == "") {
-    console.log("No manifest found. Consider auto-creating with -c or specify a manifest with -m");
+  if (!manifestFilePath) {
+    console.log("No manifest found. Consider auto-creating with -c or specify a manifest with -m \n");
     console.log(HELP.default);
     return;
   }
-  return;
 
   if (argsUseDocker) {
     console.log("[Docker Mode] Building merge-markdown in a container.");
