@@ -206,13 +206,14 @@ Supported key/value pairs for {options}:
       <!--{key}-->: value              Example key for a useful identifier
       *: "stringVal"                   Regular expressions are allowed
 `,
-  outputOptions:
+  outputOptions: // TODO: Easier help options for understanding PDF, HTML, Word branding settings
 `Supported key/value pairs for {outputOptions}:
   doctoc: true|false|"TOC title"            doctoc arguments. See https://www.npmjs.com/package/doctoc
       option: <value>
   pandoc:                                   pandoc arguments added to <value>. See https://pandoc.org/MANUAL.html#options
       key1: "-c mystyle.css"
       key2: "--template mytemplate.html"
+      key3: "--reference-doc path/to/reference.docx"
   wkhtmltopdf:                              wkhtmltopdf options. See https://www.npmjs.com/package/wkhtmltopdf#options
       pageSize: Letter
       footerLine: true
