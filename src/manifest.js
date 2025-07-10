@@ -21,13 +21,20 @@ const DEFAULT_MANIFEST = {
   get FILE_TYPES() { return `${this.NAME}[${this.EXTS.join("|")}]`; }
 };
 
+// TODO A super simple manifest should not error out. Example:
+// input:
+//   course-website-agenda.md
+//   course-website-topics.md
+// output:
+//   name: merged/website.md
+
 const manifestWriteDir = process.cwd(); // When using -c relative/path/to/markdown/files, the manifest will where the command is run
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
  * DEBUG=manifest:json
  */
-exports.getManifestObj = function (inputManifestFile, qaMode) {
+function getManifestObj(inputManifestFile, qaMode) {
   var fileType = path.extname(inputManifestFile).toLowerCase();
   if (!DEFAULT_MANIFEST.EXTS.includes(fileType)) {
     console.log("Manifest extension must be: [" + DEFAULT_MANIFEST.EXTS.join("|") + "]");
@@ -86,7 +93,7 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
  * !m.qa.exclude - create default
  */
 exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
-  const manifestObj = exports.getManifestObj(inputManifestFile, qaMode); 
+  const manifestObj = getManifestObj(inputManifestFile, qaMode); 
   const baseDir = path.dirname(inputManifestFile);
 
   // Update input paths to absolute paths
@@ -113,36 +120,33 @@ exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
         debugJson(`manifestObj.output.name (ABS): ${manifestObj.output.name}`);
       }
 
-      // manifest.output.pandoc.css
-      // manifest.output.pandoc.latexTemplate
-      // manifest.output.pandoc.referenceDoc
+      // manifest.output.pandoc[key]: "-c relPath/to/theme.css"
+      // manifest.output.pandoc[key]: "--template relPath/to/latex/template.html"
+      // manifest.output.pandoc[key]: "--reference-doc relPath/to/reference.docx">"
       if (keyPath === "pandoc") {
-        let p = manifestObj.output.pandoc;
-        if (p.css) p.css = resolveCommandPath(baseDir, p.css);
-        if (p.latexTemplate) p.latexTemplate = resolveCommandPath(baseDir, p.latexTemplate);
-        if (p.referenceDoc) p.referenceDoc = resolveCommandPath(baseDir, p.referenceDoc);
-        manifestObj.output.pandoc = p;
-        debugJson(`manifest.output.pandoc (ABS): ${JSON.stringify(p, null, 2)}`);
+        // let p = manifestObj.output.pandoc;
+        
+        // Iterate through all pandoc keys and resolve paths for specific options
+        for (const [key, value] of Object.entries(manifestObj.output.pandoc)) {
+          debugJson(`Key: ${key}, Value: ${value}`);
+          if (typeof value === 'string') {
+            if (value.startsWith('-c ')
+                  || value.startsWith('--template')
+                  || value.startsWith('--reference-doc')) {
+              const splitPath = value.split(" ");
+              const command = splitPath[0]; // Get the command part
+              const relativePath = splitPath.slice(1).join(" "); // Join the rest as the path
+              const newValue = `${command} ${path.resolve(baseDir, relativePath)}`;
+              manifestObj.output.pandoc[key] = newValue;
+              debugJson(`manifest.output.pandoc (ABS): ${manifestObj.output.pandoc[key]}`);
+            }
+          }
+        }
       }
     }
   }
   return manifestObj;
 };
-
-// Function to parse command parameter and resolve file path
-function resolveCommandPath(baseDir, commandString) {
-  if (!commandString || typeof commandString !== "string") return commandString;
-
-  // Split on spaces to separate flag from path
-  const parts = commandString.trim().split(/\s+/);
-  if (parts.length < 2) return commandString;
-
-  // First part is the flag (e.g., '-c', '--template', '--reference-doc')
-  const flag = parts[0];
-  const fileRelPath = parts.slice(1).join(" ");
-  const absPath = path.resolve(baseDir, fileRelPath); // Resolve the file path to absolute
-  return `${flag} ${absPath}`;
-}
 
 /**
  * Method to organize the manifest for merge and presentation to 
@@ -153,6 +157,7 @@ function fixDeprecatedEntry(manifestFix) {
   var updatesNeeded = "";
   //Fix output to allow for keys under the output
   if (typeof manifestFix.output === "string") {
+    debugDeprecation("Found: manifest.output");
     var name = manifestFix.output;
     delete manifestFix.output;
     manifestFix.output = {};
@@ -162,16 +167,19 @@ function fixDeprecatedEntry(manifestFix) {
 
   //Move all outputOptions under the output
   if (Object.prototype.hasOwnProperty.call(manifestFix, "mergedTOC")) {
+    debugDeprecation("Found: manifest.mergedTOC");
     manifestFix.output.doctoc = manifestFix.mergedTOC;
     delete manifestFix.mergedTOC;
     updatesNeeded += "   manifest.mergedTOC >> manifest.output.doctoc.\n";
   }
   if (Object.prototype.hasOwnProperty.call(manifestFix, "pandoc")) {
+    debugDeprecation("Found: manifest.pandoc");
     manifestFix.output.pandoc = manifestFix.pandoc;
     delete manifestFix.pandoc;
     updatesNeeded += "   manifest.pandoc >> manifest.output.pandoc.\n";
   }
   if (Object.prototype.hasOwnProperty.call(manifestFix, "wkhtmltopdf")) {
+    debugDeprecation("Found: manifest.wkhtmltopdf");
     manifestFix.output.wkhtmltopdf = manifestFix.wkhtmltopdf;
     delete manifestFix.wkhtmltopdf;
     updatesNeeded += "   manifest.wkhtmltopdf >> manifest.output.wkhtmltopdf.\n";
@@ -179,16 +187,19 @@ function fixDeprecatedEntry(manifestFix) {
 
   //Update all TOC and mergedTOC keys to doctoc
   if (Object.prototype.hasOwnProperty.call(manifestFix.output, "TOC")) {
+    debugDeprecation("Found: manifest.output.TOC");
     manifestFix.output.doctoc = manifestFix.output.TOC;
     delete manifestFix.output.TOC;
     updatesNeeded += "   manifest.output.TOC >> manifest.output.doctoc.\n";
   }
   if (Object.prototype.hasOwnProperty.call(manifestFix.output, "mergedTOC")) {
+    debugDeprecation("Found: manifest.output.mergedTOC");
     manifestFix.output.doctoc = manifestFix.output.mergedTOC;
     delete manifestFix.output.mergedTOC;
     updatesNeeded += "   manifest.output.mergedTOC >> manifest.output.doctoc.\n";
   }
   if (Object.prototype.hasOwnProperty.call(manifestFix, "TOC")) {
+    debugDeprecation("Found: manifest.TOC");
     manifestFix.doctoc = manifestFix.TOC;
     delete manifestFix.TOC;
     updatesNeeded += "   manifest.TOC >> manifest.doctoc.\n";
@@ -197,6 +208,7 @@ function fixDeprecatedEntry(manifestFix) {
     var update = false;
     for (var i in manifestFix.input) {
       if (Object.prototype.hasOwnProperty.call(manifestFix.input[i], "TOC")) {
+        debugDeprecation(`Found: manifest.input[${i}].TOC`);
         manifestFix.input[i].doctoc = manifestFix.input[i].TOC;
         delete manifestFix.input[i].TOC;
         update = true;
@@ -210,7 +222,6 @@ function fixDeprecatedEntry(manifestFix) {
     console.log("[WARNING] Below entries are old. Consider updating your manifest:");
     console.log(updatesNeeded);
   }
-  debugDeprecation(JSON.stringify(manifestFix, null, 2));
   return manifestFix;
 }
 
