@@ -92,19 +92,18 @@ function run() {
   //Require -m
   //If file, expect a manifest file, otherwise look for default file in given directory
   var manifestFilePath;
-  // if (argsManifest && argsManifest[0] != undefined && argsManifest[0] != "") {
   try {
     if (argsManifest && typeof argsManifest === "string") {
-      manifestFilePath = manifestUtil.getFile(argsManifest);
+      manifestFilePath = manifestUtil.exists(argsManifest);
     } else { //if there is no -m check for a default manifest file
-      manifestFilePath = manifestUtil.getFile("./");
+      manifestFilePath = manifestUtil.exists("./");
     }
   } catch (err) {
     console.error(err);
     console.log(HELP);
   }
-  if (manifestFilePath == undefined || manifestFilePath == "") {
-    console.log("No manifest found. Consider auto-creating with -c or specify a manifest with -m");
+  if (!manifestFilePath) {
+    console.log("No manifest found. Consider auto-creating with -c or specify a manifest with -m \n");
     console.log(HELP.default);
     return;
   }
@@ -123,9 +122,9 @@ function run() {
       .then(resultMarkdownFile => {
         //Add presentation
         var outputFormat = "";
-        if (argsWORD) outputFormat = presentation.OUTPUT_FORMAT.word;
-        if (argsHTML) outputFormat = presentation.OUTPUT_FORMAT.html;
-        if (argsPDF) outputFormat = presentation.OUTPUT_FORMAT.pdf;
+        if (argsWORD) outputFormat = presentation.EXTS.docx;
+        if (argsHTML) outputFormat = presentation.EXTS.html;
+        if (argsPDF) outputFormat = presentation.EXTS.pdf;
         return presentation.build(resultMarkdownFile, outputFormat, manifestFilePath);
       })
       .then(resultFile => {
@@ -173,7 +172,7 @@ Arguments:
   -h manifest | options |
     outputOptions | qa | docker            See examples
   -d, --debug                              See debug Options
-Default is ${manifestUtil.DEF_MANIFEST_NAME}[${manifestUtil.DEF_MANIFEST_EXTS.join("|")}] unless specified in -m.
+Default is ${manifestUtil.DEFAULT_MANIFEST.FILE_TYPES} unless specified in -m.
 
 Download Docker: https://docs.docker.com/get-docker/
 `,

@@ -15,7 +15,15 @@ notes.txt
 TODO.md
 manifest.yml
 dist/*
-test/theme/*
+
+archive.tar.gz
+Dockerfile
+docker-compose.yml
+test/**/package.json
+test/**/package-lock.json
+test/**/node_modules
+test/**/quickstart.md
+test/**/theme/*
 
 # Logs
 logs
@@ -93,9 +101,3 @@ typings/
 
 # FuseBox cache
 .fusebox/
-
-
-archive.tar.gz
-Dockerfile
-docker-compose.yml
-test/package.json

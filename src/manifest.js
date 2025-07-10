@@ -2,11 +2,10 @@
 var fs = require("fs");
 var path = require("path");
 var yaml = require("js-yaml");
-const debug = require("debug");
 const { spawn } = require("child_process");
-var debugManifest = debug("manifest");
-var debugDeprication = debug("manifest:deprecation");
-var debugmanifestJson = debug("manifest:json");
+var debug = require("debug")("manifest");
+var debugDeprecation = require("debug")("manifest:deprecation");
+var debugJson = require("debug")("manifest:json");
 
 exports.debbugOptions = {
   "manifest": "",
@@ -14,22 +13,27 @@ exports.debbugOptions = {
   "manifest:json": "",
 };
 
-const DEF_MANIFEST_NAME = "manifest";
-const DEF_MANIFEST_EXTS = [".yml", ".yaml", ".json"];
+const DEFAULT_MANIFEST = {
+  NAME: "manifest",
+  EXT_TYPES: ["yml", "yaml", "json"],
+  get EXTS() { return this.EXT_TYPES.map(ext => `.${ext}`); },
+  get FILE() { return `${this.NAME}${this.EXTS[0]}`; },
+  get FILE_TYPES() { return `${this.NAME}[${this.EXTS.join("|")}]`; }
+};
 
-const manifestWriteDir = process.cwd();
+const manifestWriteDir = process.cwd(); // When using -c relative/path/to/markdown/files, the manifest will where the command is run
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
- * DEBUG=index:manifest:json
+ * DEBUG=manifest:json
  */
 exports.getManifestObj = function (inputManifestFile, qaMode) {
   var fileType = path.extname(inputManifestFile).toLowerCase();
-  if (!DEF_MANIFEST_EXTS.includes(fileType)) {
-    console.log("Manifest extension must be: [" + DEF_MANIFEST_EXTS.join("|") + "]");
+  if (!DEFAULT_MANIFEST.EXTS.includes(fileType)) {
+    console.log("Manifest extension must be: [" + DEFAULT_MANIFEST.EXTS.join("|") + "]");
     return;
   }
-  debugManifest("Found manifest to use: " + inputManifestFile);
+  debug("Found manifest to use: " + inputManifestFile);
   var fileContents = fs.readFileSync(inputManifestFile, "utf8");
   var jsonObj = "";
   try {
@@ -38,7 +42,7 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
     var yamlContents = JSON.stringify(data[0], null, 2);
     jsonObj = JSON.parse(yamlContents);
   } catch {
-    debugmanifestJson("Could not read YAML, attemping JSON");
+    debugJson("Could not read YAML, attemping JSON");
     try {
       //Attempt to read JSON
       jsonObj = JSON.parse(fileContents);
@@ -66,8 +70,83 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
 };
 
 /**
+ * 
+ * @param {*} inputManifestFile 
+ * @param {*} qaMode 
+ * @returns 
+ */
+
+/** TODO implement this method to guarantee minimum fields are set or FAIL
+ * !m.input - fail
+ * At least one m.input[key] - fail
+ * !m.output - create default
+ * !m.output.name - create default
+ * !m.output.pandoc - create default
+ * !m.output.wkhtmltopdf - create default
+ * !m.qa.exclude - create default
+ */
+exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
+  const manifestObj = exports.getManifestObj(inputManifestFile, qaMode); 
+  const baseDir = path.dirname(inputManifestFile);
+
+  // Update input paths to absolute paths
+  if (manifestObj.input) {
+    // manifest.input[key]
+    let inputObjABS = {};
+    for (const keyPath in manifestObj.input) {
+      let absPath = path.resolve(baseDir, keyPath);
+      inputObjABS = {
+        ...inputObjABS,
+        [absPath]: { ...manifestObj.input[keyPath] }
+      };
+    }
+    debugJson(`manifest.input (ABS): ${JSON.stringify(inputObjABS, null, 2)}`);
+    manifestObj.input = inputObjABS;
+  }
+
+  // Update output paths to absolute paths
+  if (manifestObj.output) {
+    for (const keyPath in manifestObj.output) {
+      // manifest.output.name
+      if (keyPath === "name") {
+        manifestObj.output.name = path.resolve(baseDir, manifestObj.output.name);
+        debugJson(`manifestObj.output.name (ABS): ${manifestObj.output.name}`);
+      }
+
+      // manifest.output.pandoc.css
+      // manifest.output.pandoc.latexTemplate
+      // manifest.output.pandoc.referenceDoc
+      if (keyPath === "pandoc") {
+        let p = manifestObj.output.pandoc;
+        if (p.css) p.css = resolveCommandPath(baseDir, p.css);
+        if (p.latexTemplate) p.latexTemplate = resolveCommandPath(baseDir, p.latexTemplate);
+        if (p.referenceDoc) p.referenceDoc = resolveCommandPath(baseDir, p.referenceDoc);
+        manifestObj.output.pandoc = p;
+        debugJson(`manifest.output.pandoc (ABS): ${JSON.stringify(p, null, 2)}`);
+      }
+    }
+  }
+  return manifestObj;
+};
+
+// Function to parse command parameter and resolve file path
+function resolveCommandPath(baseDir, commandString) {
+  if (!commandString || typeof commandString !== "string") return commandString;
+
+  // Split on spaces to separate flag from path
+  const parts = commandString.trim().split(/\s+/);
+  if (parts.length < 2) return commandString;
+
+  // First part is the flag (e.g., '-c', '--template', '--reference-doc')
+  const flag = parts[0];
+  const fileRelPath = parts.slice(1).join(" ");
+  const absPath = path.resolve(baseDir, fileRelPath); // Resolve the file path to absolute
+  return `${flag} ${absPath}`;
+}
+
+/**
  * Method to organize the manifest for merge and presentation to 
- * allow for non-destructive updates to mege-markdown.
+ * allow for non-destructive updates to merge-markdown.
  * Important if users are coming from earlier versions of merge-markdown
  */
 function fixDeprecatedEntry(manifestFix) {
@@ -131,45 +210,45 @@ function fixDeprecatedEntry(manifestFix) {
     console.log("[WARNING] Below entries are old. Consider updating your manifest:");
     console.log(updatesNeeded);
   }
-  debugDeprication(JSON.stringify(manifestFix, null, 2));
+  debugDeprecation(JSON.stringify(manifestFix, null, 2));
   return manifestFix;
 }
 
 /**
- * Gets a valid file of manifest.[yaml|yml|json]
- * @param {} inputArg file/directory given in -m param
- * @returns file
+ * Checks if a manifest file exists
+ * @param {*} inputArg file/directory given in -m param
+ * @returns valid manifest file or false
  */
-exports.getFile = function (inputArg) {
-  var fsStat = fs.lstatSync(inputArg);
-  if (fsStat.isFile()) { //Set if file is given
-    const e = path.extname(inputArg).toLowerCase();
-    debugManifest(e);
-    if (DEF_MANIFEST_EXTS.includes(e)) {
-      debugManifest("Using given manifest: " + inputArg);
-      return inputArg;
-    } else {
-      console.log("Manifest file can only be yml|yaml|json");
-      return;
-    }
-  } else if (fsStat.isDirectory()) { //Search for default manifest if directory
-    debugManifest("Searching for manifest.yaml|yml|json in " + inputArg);
-    const directory = inputArg;
-    const possibleFileNames = DEF_MANIFEST_EXTS.map(ext => `manifest${ext}`);
-    //Look for a manifest file in the given directory
-    for (const fileName of possibleFileNames) {
-      const filePath = path.join(directory, fileName);
-      try {
+exports.exists = function (inputArg) {
+  try {
+    var fsStat = fs.lstatSync(inputArg);
+    if (fsStat.isFile()) { //Set if file is given
+      const e = path.extname(inputArg).toLowerCase();
+      if (DEFAULT_MANIFEST.EXTS.includes(e)) {
+        debug(`Found Manifest: ${inputArg}`);
+        return inputArg;
+      } else {
+        console.log(`Manifest file can only be [${DEFAULT_MANIFEST.EXTS.join("|")}]`);
+        return false;
+      }
+    } else if (fsStat.isDirectory()) { //Search for default manifest if directory
+      debug(`Searching for ${DEFAULT_MANIFEST.FILE_TYPES} in ${inputArg}`);
+      const directory = inputArg;
+      const possibleFileNames = DEFAULT_MANIFEST.EXTS.map(ext => `${DEFAULT_MANIFEST.NAME}${ext}`);
+      //Look for a manifest file in the given directory
+      for (const fileName of possibleFileNames) {
+        const filePath = path.join(directory, fileName);
         var fileStat = fs.lstatSync(filePath);
         if (fileStat.isFile()) {
-          debugManifest(`Using default manifest[${DEF_MANIFEST_EXTS.join("|")}]: ${filePath}`);
+          debug(`Found Default Manifest: ${filePath}`);
           return filePath;
         }
-      } catch (err) {
-        debugManifest(filePath + " DNE.");
       }
+      console.log(`No default ${DEFAULT_MANIFEST.FILE_TYPES} file found in ${directory}`);
     }
-    console.log(`No default manifest[${DEF_MANIFEST_EXTS.join("|")}] file found in ${directory}`);
+  } catch (err) {
+    console.log(`${inputArg} is not a valid file or directory`);
+    return false;
   }
 };
 
@@ -214,20 +293,18 @@ exports.createManifestFile = function (dir, fullProject) {
         "footerCenter": "",
         "footerRight": "[page]",
       }
-    },  
+    },
     docker: {
       excludePaths: [
-        "/.*\\/node_modules\\/.*/",
-        "/.*\\/merged\\/.*/",
-        "/.*\\/target\\/.*/"
+        "/target/",
+        "/dist/"
       ]
     },
     qa: { exclude: "(frontmatter|preamble)" }
   };
 
-  // TODO - Test
-  if (fullProject){
-    jsonObject.input["theme/frontmatter.md"] = {noYAML: false, doctoc: false};
+  if (fullProject) {
+    jsonObject.input["theme/frontmatter.md"] = { noYAML: false, doctoc: false };
     jsonObject.output.pandoc.css = "-c theme/theme.css";
     jsonObject.output.pandoc.latexTemplate = "--template theme/template.html";
     jsonObject.output.pandoc.referenceDoc = "--reference-doc theme/reference.docx";
@@ -247,7 +324,7 @@ exports.createManifestFile = function (dir, fullProject) {
 
   //Write YAML File
   const yamlString = yaml.dump(jsonObject);
-  const manifestPath = path.join(manifestWriteDir, "manifest.yml");
+  const manifestPath = path.join(manifestWriteDir, `${DEFAULT_MANIFEST.FILE}`);
   try {
     fs.writeFileSync(manifestPath, yamlString);
     console.log("YAML file successfully created: " + manifestPath);
@@ -256,7 +333,7 @@ exports.createManifestFile = function (dir, fullProject) {
   }
 
   // Write the package.json file if the fullProject flag is set
-  if(fullProject) {
+  if (fullProject) {
     writeNPMFile();
   }
 };
@@ -289,7 +366,7 @@ function findMarkdownFiles(directoryPath) {
 
 function writeNPMFile() {
   const packageJsonPath = path.join(process.cwd(), "package.json");
-  
+
   // Check if package.json already exists
   if (fs.existsSync(packageJsonPath)) {
     console.log("package.json already exists, skipping npm init");
@@ -298,7 +375,7 @@ function writeNPMFile() {
 
   return new Promise((resolve, reject) => {
     console.log("Running npm init - please fill out your project details...");
-    
+
     // Run npm init interactively
     const npmInit = spawn("npm", ["init"], {
       stdio: "inherit",
@@ -307,17 +384,17 @@ function writeNPMFile() {
 
     npmInit.on("close", (code) => {
       if (code === 0) {
-        debugManifest("package.json created successfully");
-        
+        debug("package.json created successfully");
+
         // Now read and modify the package.json
         try {
           const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
-          
+
           // Add your custom fields to package.json
           packageJson.scripts = {
             ...packageJson.scripts,
             "pre": "rimraf merged || rimraf target || true",
-            "merge-markdown": "npm run pre && npm run mm:docker && npm run cleanup", 
+            "merge-markdown": "npm run pre && npm run mm:docker && npm run cleanup",
             "cleanup": "",
             "mm:docker": "merge-markdown -m manifest.yml --pdf --docker",
             "mm:html": "merge-markdown -m manifest.yml --html",
@@ -325,13 +402,13 @@ function writeNPMFile() {
             "install:docker:mac": "brew install caskroom/cask/brew-cask; brew cask install docker",
             "install:docker:win": "powershell -Command \"Start-Process -Wait -FilePath 'winget' -ArgumentList 'install -e --id Docker.DockerDesktop'\"",
           };
-          
+
           packageJson.dependencies = {
             ...packageJson.dependencies,
             "@knennigtri/merge-markdown": "*",
             "rimraf": "^5.0.0"
           };
-          
+
           packageJson.devDependencies = {
             ...packageJson.devDependencies
           };
@@ -339,14 +416,14 @@ function writeNPMFile() {
           packageJson.bugs = {
             "url": "https://github.com/knennigtri/merge-markdown/issues/new/choose"
           };
-          
+
           // Write the modified package.json back
           fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
           console.log("package.json updated with merge-markdown configurations.");
           console.log("Run `npm install` to install the project dependencies to use the npm scripts.");
           console.log("It's highly recommended to install docker for optimal use: https://docs.docker.com/engine/install");
           console.log("Run `npm run merge-markdown` to build your project. (Requires docker)");
-          
+
           resolve(packageJsonPath);
         } catch (error) {
           console.error("Error modifying package.json:", error);
@@ -365,5 +442,4 @@ function writeNPMFile() {
   });
 }
 
-exports.DEF_MANIFEST_NAME = DEF_MANIFEST_NAME;
-exports.DEF_MANIFEST_EXTS = DEF_MANIFEST_EXTS;
+exports.DEFAULT_MANIFEST = DEFAULT_MANIFEST;
