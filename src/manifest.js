@@ -75,6 +75,16 @@ exports.getManifestObj = function (inputManifestFile, qaMode) {
  * @param {*} qaMode 
  * @returns 
  */
+
+/** TODO implement this method to guarantee minimum fields are set or FAIL
+ * !m.input - fail
+ * At least one m.input[key] - fail
+ * !m.output - create default
+ * !m.output.name - create default
+ * !m.output.pandoc - create default
+ * !m.output.wkhtmltopdf - create default
+ * !m.qa.exclude - create default
+ */
 exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
   const manifestObj = exports.getManifestObj(inputManifestFile, qaMode); 
   const baseDir = path.dirname(inputManifestFile);
@@ -286,9 +296,8 @@ exports.createManifestFile = function (dir, fullProject) {
     },
     docker: {
       excludePaths: [
-        "/.*\\/node_modules\\/.*/",
-        "/.*\\/merged\\/.*/",
-        "/.*\\/target\\/.*/"
+        "/target/",
+        "/dist/"
       ]
     },
     qa: { exclude: "(frontmatter|preamble)" }
