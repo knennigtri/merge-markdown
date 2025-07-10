@@ -19,7 +19,7 @@ const DEFAULT_MANIFEST = {
   get EXTS() { return this.EXT_TYPES.map(ext => `.${ext}`); },
   get FILE() { return `${this.NAME}${this.EXTS[0]}`; },
   get FILE_TYPES() { return `${this.NAME}[${this.EXTS.join("|")}]`; }
-}
+};
 
 const manifestWriteDir = process.cwd(); // When using -c relative/path/to/markdown/files, the manifest will where the command is run
 
@@ -98,7 +98,7 @@ exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
       inputObjABS = {
         ...inputObjABS,
         [absPath]: { ...manifestObj.input[keyPath] }
-      }
+      };
     }
     debugJson(`manifest.input (ABS): ${JSON.stringify(inputObjABS, null, 2)}`);
     manifestObj.input = inputObjABS;
@@ -117,31 +117,31 @@ exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
       // manifest.output.pandoc.latexTemplate
       // manifest.output.pandoc.referenceDoc
       if (keyPath === "pandoc") {
-        // Function to parse command parameter and resolve file path
-        function resolveCommandPath(commandString) {
-          if (!commandString || typeof commandString !== 'string') return commandString;
-
-          // Split on spaces to separate flag from path
-          const parts = commandString.trim().split(/\s+/);
-          if (parts.length < 2) return commandString;
-
-          // First part is the flag (e.g., '-c', '--template', '--reference-doc')
-          const flag = parts[0];
-          const fileRelPath = parts.slice(1).join(' ');
-          const absPath = path.resolve(baseDir, fileRelPath); // Resolve the file path to absolute
-          return `${flag} ${absPath}`;
-        }
-
         let p = manifestObj.output.pandoc;
-        if (p.css) p.css = resolveCommandPath(p.css)
-        if (p.latexTemplate) p.latexTemplate = resolveCommandPath(p.latexTemplate)
-        if (p.referenceDoc) p.referenceDoc = resolveCommandPath(p.referenceDoc);
+        if (p.css) p.css = resolveCommandPath(baseDir, p.css);
+        if (p.latexTemplate) p.latexTemplate = resolveCommandPath(baseDir, p.latexTemplate);
+        if (p.referenceDoc) p.referenceDoc = resolveCommandPath(baseDir, p.referenceDoc);
         manifestObj.output.pandoc = p;
         debugJson(`manifest.output.pandoc (ABS): ${JSON.stringify(p, null, 2)}`);
       }
     }
   }
   return manifestObj;
+};
+
+// Function to parse command parameter and resolve file path
+function resolveCommandPath(baseDir, commandString) {
+  if (!commandString || typeof commandString !== "string") return commandString;
+
+  // Split on spaces to separate flag from path
+  const parts = commandString.trim().split(/\s+/);
+  if (parts.length < 2) return commandString;
+
+  // First part is the flag (e.g., '-c', '--template', '--reference-doc')
+  const flag = parts[0];
+  const fileRelPath = parts.slice(1).join(" ");
+  const absPath = path.resolve(baseDir, fileRelPath); // Resolve the file path to absolute
+  return `${flag} ${absPath}`;
 }
 
 /**

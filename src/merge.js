@@ -428,7 +428,7 @@ function linkcheck(inputFileStr, fileToWrite) {
 function replaceExtension(filePath, newExt) {
   const dir = path.dirname(filePath);
   const name = path.basename(filePath, path.extname(filePath));
-  const ext = newExt.startsWith('.') ? newExt : '.' + newExt;
+  const ext = newExt.startsWith(".") ? newExt : "." + newExt;
   return path.join(dir, name + ext);
 }
 

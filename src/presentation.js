@@ -47,24 +47,25 @@ var build = async function (inputFile, outputFormat, manifestFileStr) {
 
   return new Promise((resolve, reject) => {
 
-    let pandocOutputFormat = EXTS.html; //required for html and pdf output
+    let pandocOutputExt = EXTS.html; //required for html and pdf output
     if(outputFormat.includes(EXTS.docx)) {
-      pandocOutputFormat = EXTS.docx;
+      pandocOutputExt = EXTS.docx;
     }
 
-    pandocWriteToFile(inputFile, manifestOutputPandoc, pandocOutputFormat)
+    pandocWriteToFile(inputFile, manifestOutputPandoc, pandocOutputExt)
       .then(resultPandocFile => {
         if (outputFormat.includes(EXTS.pdf)) {
-          const pdfFileName = path.join(parsed.dir, `${parsed.name}${EXTS.pdf}`);
+          const inputFileParsed = path.parse(inputFile);
+          const pdfFileName = path.join(inputFileParsed.dir, `${inputFileParsed.name}${EXTS.pdf}`);
           wkhtmltopdfWriteToFile(resultPandocFile, manifestOutputWkhtmltopdf, pdfFileName)
             .then(resultPdfFile => {
               resolve(resultPdfFile);
             });
         } else {
-          var outputNewName = path.parse(manifestOutputName).name + "." + pandocOutputFormat;
+          var outputNewName = `${path.parse(manifestOutputName).name}${pandocOutputExt}`;
           var outputPath = path.parse(resultPandocFile).dir;
           var outputFile = path.join(outputPath, outputNewName);
-          debug(`temp.${pandocOutputFormat} >>  ${outputNewName}`);
+          debug(`${path.parse(resultPandocFile).base} >>  ${outputNewName}`);
           fs.rename(resultPandocFile, outputFile, () => {
             resolve(outputFile);
           });
@@ -74,14 +75,14 @@ var build = async function (inputFile, outputFormat, manifestFileStr) {
 };
 
 // Input and Output files are expected to be ABS
-function pandocWriteToFile(inputFile, pandocParams, outputFormat) {
-  debug("Creating HTML using Pandoc...");
-  var outputFile = path.join(path.parse(inputFile).dir, `temp.${outputFormat}`);
+function pandocWriteToFile(inputFile, pandocParams, outputExt) {
+  debug(`Creating ${outputExt} using Pandoc...`);
+  var outputFile = path.join(path.parse(inputFile).dir, `temp${outputExt}`);
   var pandocArgs = buildPandocArgs(pandocParams, outputFile);
   debugPandoc("input: " + inputFile);
   debugPandoc("Args: '" + pandocArgs + "'");
   return new Promise((resolve, reject) => {
-    nodePandoc(inputFile, pandocArgs, (err) => {
+    nodePandoc(inputFile, pandocArgs, (err) => { // TODO: This fails with .docx when there are broken image links in the markdown
       if (err) {
         console.error("Verify the pandoc arguments according to pandoc documentation");
         console.error("Make sure pandoc is installed! https://pandoc.org/installing.html");

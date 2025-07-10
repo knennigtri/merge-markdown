@@ -35,7 +35,7 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
     ...EXCLUDE_PATHS,
     ...(Array.isArray(manifest.docker?.excludePaths) ? manifest.docker.excludePaths : [])
   ];
-  debugDocker(`excludePaths:\n${excludePaths.map(regex => `  ${regex.toString()}`).join('\n')}`);
+  debugDocker(`excludePaths:\n${excludePaths.map(regex => `  ${regex.toString()}`).join("\n")}`);
 
   // relDir given in -m dir/manifest.yml to help build docker upload/download paths
   const manifestRelDir = path.parse(manifestFileStr).dir || "./";
@@ -79,7 +79,7 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
       })
       .then(resultContainer => {
         console.log("Copying this project to the docker container.");
-        console.log(`Exclude Copying These Paths:\n${excludePaths.map(regex => `  ${regex.toString()}`).join('\n')}`);
+        console.log(`Exclude Copying These Paths:\n${excludePaths.map(regex => `  ${regex.toString()}`).join("\n")}`);
         return createTarArchive(manifestRelDir, TAR_NAME, excludePaths)
           .then(() => {
             console.log("Tar archive created successfully");
@@ -124,23 +124,23 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
           dockerManifestOutputName,
           ...Object.values(presentationUtil.EXTS).map(ext => path.join(dockerDir, `${baseFileName}${ext}`)),
           ...Object.values(mergeUtil.EXTS).map(ext => path.join(dockerDir, `${baseFileName}${ext}`)),
-          path.join(dockerDir, `temp.html`)
+          path.join(dockerDir, "temp.html")
         ];
-        debugDockerPaths(`Downloading files if they exist:\n${outputPaths.map(p => `  ${p}`).join('\n')}`);
+        debugDockerPaths(`Downloading files if they exist:\n${outputPaths.map(p => `  ${p}`).join("\n")}`);
 
-                 const relPathManifestOutputName = path.relative(manifestRelDir, path.parse(manifestOutputName).dir)
-         const destPath = path.join(process.cwd(), relPathManifestOutputName);
-         debugDockerPaths(`Downloading to ${destPath}`);
+        const relPathManifestOutputName = path.relative(manifestRelDir, path.parse(manifestOutputName).dir);
+        const destPath = path.join(process.cwd(), relPathManifestOutputName);
+        debugDockerPaths(`Downloading to ${destPath}`);
          
-         // Ensure clean destination directory - delete and recreate
-         if (fs.existsSync(destPath)) {
-           fs.rmSync(destPath, { recursive: true, force: true });
-           debugDockerPaths(`Deleted existing directory: ${destPath}`);
-         }
-         fs.mkdirSync(destPath, { recursive: true });
-         debugDockerPaths(`Created clean directory: ${destPath}`);
+        // Ensure clean destination directory - delete and recreate
+        if (fs.existsSync(destPath)) {
+          fs.rmSync(destPath, { recursive: true, force: true });
+          debugDockerPaths(`Deleted existing directory: ${destPath}`);
+        }
+        fs.mkdirSync(destPath, { recursive: true });
+        debugDockerPaths(`Created clean directory: ${destPath}`);
          
-         return downloadFromContainer(resultContainer, outputPaths, destPath);
+        return downloadFromContainer(resultContainer, outputPaths, destPath);
       })
       .then(() => {
         if (debug.enabled("docker")) {
@@ -343,7 +343,7 @@ function createTarArchive(sourceDir, tarFilePath, excludedPaths = []) {
           // Check if this path is inside an excluded directory
           const pathParts = relativePath.split(path.sep);
           for (let i = 0; i < pathParts.length; i++) {
-            const partialPath = pathParts.slice(0, i + 1).join('/');
+            const partialPath = pathParts.slice(0, i + 1).join("/");
             if (regex.test(partialPath)) return true;
           }
 
