@@ -122,9 +122,9 @@ function run() {
       .then(resultMarkdownFile => {
         //Add presentation
         var outputFormat = "";
-        if (argsWORD) outputFormat = presentation.OUTPUT_FORMAT.word;
-        if (argsHTML) outputFormat = presentation.OUTPUT_FORMAT.html;
-        if (argsPDF) outputFormat = presentation.OUTPUT_FORMAT.pdf;
+        if (argsWORD) outputFormat = presentation.EXTS.docx;
+        if (argsHTML) outputFormat = presentation.EXTS.html;
+        if (argsPDF) outputFormat = presentation.EXTS.pdf;
         return presentation.build(resultMarkdownFile, outputFormat, manifestFilePath);
       })
       .then(resultFile => {
