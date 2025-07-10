@@ -13,11 +13,12 @@ const debugDoctoc = require("debug")("o:doctoc");
 const debugReplace = require("debug")("o:replace");
 const debugLinkcheck = require("debug")("linkcheck");
 const debugLinkcheckDeep = require("debug")("linkcheck:deep");
-const EXT = {
+const EXTS = {
   "linkcheck": ".linkcheck.md",
   "qa": ".qa.md"
 };
-// RM exports.EXT = EXT;
+exports.EXTS = EXTS;
+
 exports.debbugOptions = {
   "merge": "messages for merge process",
   "rellinks": "relative links",
@@ -28,13 +29,13 @@ exports.debbugOptions = {
   "linkcheck:deep": "deep linkcheck validation",
 };
 
-function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
+function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths) {
   var onlyQA = qaMode || false;
   var skipLinkcheck = skip_linkcheck || false;
   var keepAssetPaths = maintainAssetPaths || false;
 
   //Set manifest variables
-  const manifest = manifestUtil.getJSON_withABSPaths(manifestFile, onlyQA);
+  const manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr, onlyQA);
   var manifestOutputName = manifest.output.name;
   var manifestInput = manifest.input;
   var manifestQARegEx;
@@ -47,8 +48,8 @@ function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
   //removes old .md files
   deleteGeneratedFiles([
     manifestOutputName,
-    replaceExtension(manifestOutputName, EXT.linkcheck),
-    replaceExtension(manifestOutputName, EXT.qa)
+    replaceExtension(manifestOutputName, EXTS.linkcheck),
+    replaceExtension(manifestOutputName, EXTS.qa)
   ]);
 
   //Iterate through all of the input files in manifest apply options
@@ -84,7 +85,7 @@ function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
     if (!skipLinkcheck) {
       //checks for broken links within the content
       debug("--Create/Update linkcheck file--");
-      linkcheck(tempFile, replaceExtension(manifestOutputName, EXT.linkcheck));
+      linkcheck(tempFile, replaceExtension(manifestOutputName, EXTS.linkcheck));
     }
 
     //add the  temp file to the list to merge together
@@ -100,7 +101,7 @@ function start(manifestFile, qaMode, skip_linkcheck, maintainAssetPaths) {
   console.log("Creating Merged Markdown:\n " + mergedFileArr.join("\n "));
   var fileToWrite = manifestOutputName;
   if (onlyQA) {
-    fileToWrite = replaceExtension(fileToWrite, EXT.qa);
+    fileToWrite = replaceExtension(fileToWrite, EXTS.qa);
   }
   return createSingleFile(mergedFileArr, fileToWrite, manifest);
 }
