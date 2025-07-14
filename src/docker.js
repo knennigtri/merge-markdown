@@ -327,28 +327,46 @@ function createTarArchive(sourceDir, tarFilePath, excludedPaths = []) {
   debugDocker(`${sourceDir} to tarball ${tarFilePath}`);
 
   return new Promise((resolve, reject) => {
+    let includedCount = 0;
+    
     const tarStream = tar.c({
       gzip: true,
       cwd: sourceDir,
       filter: (filePath) => {
         const relativePath = path.relative(sourceDir, filePath);
+        
+        // Normalize path separators to forward slashes for consistent regex matching
+        const normalizedPath = relativePath.replace(/\\/g, '/');
 
         // Check if this path or any parent path should be excluded
-        return !excludedPaths.some(excludedPath => {
+        const shouldExclude = excludedPaths.some(excludedPath => {
           const regex = typeof excludedPath === "string" ? new RegExp(excludedPath) : excludedPath;
 
           // Check if the current path matches
-          if (regex.test(relativePath)) return true;
+          if (regex.test(normalizedPath)) {
+            debugDockerPaths(`Excluding: ${normalizedPath} (matched: ${regex.toString()})`);
+            return true;
+          }
 
           // Check if this path is inside an excluded directory
-          const pathParts = relativePath.split(path.sep);
+          const pathParts = normalizedPath.split('/');
           for (let i = 0; i < pathParts.length; i++) {
-            const partialPath = pathParts.slice(0, i + 1).join("/");
-            if (regex.test(partialPath)) return true;
+            const partialPath = pathParts.slice(0, i + 1).join('/');
+            if (regex.test(partialPath)) {
+              debugDockerPaths(`Excluding: ${normalizedPath} (parent matched: ${regex.toString()})`);
+              return true;
+            }
           }
 
           return false;
         });
+
+        if (!shouldExclude) {
+          includedCount++;
+          debugDockerPaths(`Including: ${normalizedPath}`);
+        }
+        
+        return !shouldExclude;
       }
     }, ["."]);
 
@@ -357,14 +375,20 @@ function createTarArchive(sourceDir, tarFilePath, excludedPaths = []) {
     tarStream.pipe(fileStream);
 
     tarStream.on("end", () => {
+      debugDocker(`Archive created with ${includedCount} files`);
+      if (includedCount === 0) {
+        console.warn("Warning: No files were included in the archive. Check exclude patterns.");
+      }
       resolve();
     });
 
     tarStream.on("error", (err) => {
+      console.error("Error creating tar archive:", err);
       reject(err);
     });
 
     fileStream.on("error", (err) => {
+      console.error("Error writing tar file:", err);
       reject(err);
     });
   });
