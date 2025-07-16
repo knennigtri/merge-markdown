@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Prepare input files to merge together and optionally output html/pdf/word presentation",
   "repository": {
     "type": "git",
