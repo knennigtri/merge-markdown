@@ -74,7 +74,7 @@ function getManifestObj(inputManifestFile, qaMode) {
     }
   }
   return jsonObj;
-};
+}
 
 /**
  * 
@@ -129,10 +129,10 @@ exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
         // Iterate through all pandoc keys and resolve paths for specific options
         for (const [key, value] of Object.entries(manifestObj.output.pandoc)) {
           debugJson(`Key: ${key}, Value: ${value}`);
-          if (typeof value === 'string') {
-            if (value.startsWith('-c ')
-                  || value.startsWith('--template')
-                  || value.startsWith('--reference-doc')) {
+          if (typeof value === "string") {
+            if (value.startsWith("-c ")
+                  || value.startsWith("--template")
+                  || value.startsWith("--reference-doc")) {
               const splitPath = value.split(" ");
               const command = splitPath[0]; // Get the command part
               const relativePath = splitPath.slice(1).join(" "); // Join the rest as the path

@@ -336,7 +336,7 @@ function createTarArchive(sourceDir, tarFilePath, excludedPaths = []) {
         const relativePath = path.relative(sourceDir, filePath);
         
         // Normalize path separators to forward slashes for consistent regex matching
-        const normalizedPath = relativePath.replace(/\\/g, '/');
+        const normalizedPath = relativePath.replace(/\\/g, "/");
 
         // Check if this path or any parent path should be excluded
         const shouldExclude = excludedPaths.some(excludedPath => {
@@ -349,9 +349,9 @@ function createTarArchive(sourceDir, tarFilePath, excludedPaths = []) {
           }
 
           // Check if this path is inside an excluded directory
-          const pathParts = normalizedPath.split('/');
+          const pathParts = normalizedPath.split("/");
           for (let i = 0; i < pathParts.length; i++) {
-            const partialPath = pathParts.slice(0, i + 1).join('/');
+            const partialPath = pathParts.slice(0, i + 1).join("/");
             if (regex.test(partialPath)) {
               debugDockerPaths(`Excluding: ${normalizedPath} (parent matched: ${regex.toString()})`);
               return true;
