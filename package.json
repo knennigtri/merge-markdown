@@ -14,7 +14,7 @@
     "clean": "rimraf **/merged && rimraf test/theme && rimraf test/manifest.yml && rimraf test/target",
     "lint": "eslint '**/*.js?(x)'",
     "lint:fix": "npm run lint -- --fix",
-    "test": "node test/test.js",
+    "test": "merge-markdown -m test/manifest.yml --pdf --docker",
     "test:noLogs": "node test/test.js -- --hideconsole",
     "build": "npm run readmeTOC && babel src --out-dir dist && cpy 'src/theme/**/*' dist/theme --parents && cpy 'quickstart.md' dist/ && npm ci && npm i --package-lock-only && depcheck ./",
     "readmeTOC": "doctoc README.md --github --title='# Contents' --maxlevel 3",
