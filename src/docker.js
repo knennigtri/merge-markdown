@@ -115,24 +115,20 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
         debugDockerPaths(`WORKING_DIR: ${WORKING_DIR}`);
         debugDockerPaths(`manifestOutputName: ${manifestOutputName}`);
         debugDockerPaths(`manifestRelDir: ${manifestRelDir}`);
-        debugDockerPaths(`process.cwd(): ${process.cwd()}`);
-        // ABS path where the npm command was executed joined with the relative path of the -m <dir/manifest.yml> parameter
-        const absLocalWorkingDir = path.join(process.cwd(), manifestRelDir);
-        // Relative path of where merge-markdown was executed
-        const relativePath = path.relative(absLocalWorkingDir, manifestOutputName);
-        // docker working directory joined with the manifest.output.name
-        const dockerManifestOutputName = path.join(WORKING_DIR, relativePath);
+        debugDockerPaths(`process.cwd(): ${process.cwd()}`); //ABS path where the npm command was executed
 
-        // Get the base filename without extension
-        const baseFileName = path.parse(dockerManifestOutputName).name;
-        const dockerDir = path.dirname(dockerManifestOutputName);
-        debugDockerPaths(`Downloading merged Files from: ${dockerDir}`);
+        const relManifestOutputName = path.relative(process.cwd(), manifestOutputName);
+        const absManifestOutputName_inDocker = path.join(WORKING_DIR , relManifestOutputName);
+        const absManifestOutputName_parsed = path.parse(absManifestOutputName_inDocker);
+        const absManifestOutputName_name = absManifestOutputName_parsed.name; // Get the base filename without extension
+        const absManifestOutputName_dir = absManifestOutputName_parsed.dir; // Get the docker directory of output
+        debugDockerPaths(`Downloading merged Files from: ${absManifestOutputName_dir}`);
 
         const outputPaths = [
-          dockerManifestOutputName,
-          ...Object.values(presentationUtil.EXTS).map(ext => path.join(dockerDir, `${baseFileName}${ext}`)),
-          ...Object.values(mergeUtil.EXTS).map(ext => path.join(dockerDir, `${baseFileName}${ext}`)),
-          path.join(dockerDir, "temp.html")
+          absManifestOutputName_inDocker,
+          ...Object.values(presentationUtil.EXTS).map(ext => path.join(absManifestOutputName_dir, `${absManifestOutputName_name}${ext}`)),
+          ...Object.values(mergeUtil.EXTS).map(ext => path.join(absManifestOutputName_dir, `${absManifestOutputName_name}${ext}`)),
+          path.join(absManifestOutputName_dir, "temp.html")
         ];
         debugDockerPaths(`Downloading files if they exist:\n${outputPaths.map(p => `  ${p}`).join("\n")}`);
 
