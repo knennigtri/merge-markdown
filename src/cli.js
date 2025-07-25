@@ -1,4 +1,5 @@
 const packageInfo = require("../package.json");
+const npmModuleName = packageInfo.name.replace(/@[^/]+\//, "");
 const manifestUtil = require("./manifest.js");
 const merge = require("./merge.js");
 const presentation = require("./presentation.js");
@@ -55,9 +56,9 @@ function run() {
     return;
   }
   if (argsDebug) {
-    console.log("[Mac] $ DEBUG=<option> " + cliName + " -m <file>");
-    console.log("[Win] $ set DEBUG=<option> & " + cliName + " -m <file>");
-    console.log("Options: " + JSON.stringify(debbugOptions, null, 2));
+    console.log(`[Mac] $ DEBUG=<option> ${npmModuleName} -m <file>`);
+    console.log(`[Win] $ set DEBUG=<option> & ${npmModuleName} -m <file>`);
+    console.log(`Options: ${JSON.stringify(debbugOptions, null, 2)}`);
     return;
   }
   if (argsQA) console.log("QA mode");
@@ -109,8 +110,7 @@ function run() {
   }
 
   if (argsUseDocker) {
-    console.log("[Docker Mode] Building merge-markdown in a container.");
-    var manifestDir = path.parse(manifestFilePath).dir;
+    console.log(`[Docker Mode] Building ${npmModuleName} in a container.`);
     dockerMerger.runMergeMarkdownInDocker(manifestFilePath, process.argv.slice(2).join(" "));
     return;
   }
@@ -152,16 +152,16 @@ function downloadDockerFiles(manifestPath){
   });
 }
 
-const cliName = packageInfo.name.replace("@knennigtri/", "");
+
 const HELP = {
   default:
-`Usage: merge-markdown [ARGS]
+`Usage: ${npmModuleName} [ARGS]
 Arguments:
   -m, --manifest <manifestFile>            Path to input folder, yaml, or json manifest
   -v, --version                            Displays version of this package
   -c, --create <path>                      auto-creates ./manifest.yml with input files from <path>
   --fullProject                            Add to -c to include a basic theme, frontmatter, and npm scripts
-  --docker                                 Run merge-markdown commands in docker
+  --docker                                 Run ${npmModuleName} commands in docker
   --getDockerFiles                         Downloads the Docker files to your local project
   --qa                                     QA mode.
   --skipLinkcheck                          Skips linkchecking
@@ -192,7 +192,7 @@ Download Docker: https://docs.docker.com/get-docker/
 
 Also, consider auto creating a manifest for your project:
 
-$ merge-markdown --create /path/to/project --fullProject
+$ ${npmModuleName} --create /path/to/project --fullProject
 `
   ,
   options:
@@ -228,10 +228,10 @@ Example: exclude all filenames with "frontmatter" by default
 
   1. Start Docker
   2. Run:
-    merge-markdown -m manifest.yml --docker
+    ${npmModuleName} -m manifest.yml --docker
 
   Alternatively you can download the docker files directly:
-    merge-markdown --getDockerFiles
+    ${npmModuleName} --getDockerFiles
     `
 };
 

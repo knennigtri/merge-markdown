@@ -1,3 +1,4 @@
+const packageInfo = require("../package.json");
 const dockerode = require("dockerode");
 const fs = require("fs");
 const path = require("path");
@@ -25,10 +26,13 @@ const EXCLUDE_PATHS = [
   /quickstart.md/,
   /merged/,          // Matches any path containing 'merged'
   /target/,          // Matches any path containing 'target'
+  ".git/",
+  ".vscode/",
+  "archive.tar.gz",
 
 ];
 
-async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
+async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
   const manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr);
   const manifestOutputName = manifest.output.name;
   const excludePaths = [
@@ -80,7 +84,7 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
       .then(resultContainer => {
         console.log("Copying this project to the docker container.");
         console.log(`Exclude Copying These Paths:\n${excludePaths.map(regex => `  ${regex.toString()}`).join("\n")}`);
-        return createTarArchive(manifestRelDir, TAR_NAME, excludePaths)
+        return createTarArchive("./", TAR_NAME, excludePaths)
           .then(() => {
             console.log("Tar archive created successfully");
             return copyIntoContainer(resultContainer, TAR_NAME, WORKING_DIR);
@@ -94,12 +98,16 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
       })
       .then(resultContainer => {
         debugDocker(`Running container is ${resultContainer.id}`);
-        var mergeMarkdown = buildMergeMarkdownCommand(mergeMarkdownArgs);
-        const commands = [`cd ${WORKING_DIR}`, mergeMarkdown].join(" && ");
-        const cmd = ["/bin/sh", "-c", commands];
-        debugDocker(cmd);
+
+        const npmModuleName = packageInfo.name.replace(/@[^/]+\//, "");
+        let requestedCMD = `${npmModuleName} ${cmdArgs}`;
+        requestedCMD = requestedCMD.replace("--docker", "");
+
+        const commands = [`cd ${WORKING_DIR}`, requestedCMD].join(" && ");
+        const dockerCMD = ["/bin/sh", "-c", commands];
+        debugDocker(dockerCMD);
         debugDocker("Merging in Docker");
-        return execContainer(resultContainer, cmd, true);
+        return execContainer(resultContainer, dockerCMD, true);
 
       })
       .then(resultContainer => {
@@ -107,29 +115,24 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
         debugDockerPaths(`WORKING_DIR: ${WORKING_DIR}`);
         debugDockerPaths(`manifestOutputName: ${manifestOutputName}`);
         debugDockerPaths(`manifestRelDir: ${manifestRelDir}`);
-        debugDockerPaths(`process.cwd(): ${process.cwd()}`);
-        // ABS path where the npm command was executed joined with the relative path of the -m <dir/manifest.yml> parameter
-        const absLocalWorkingDir = path.join(process.cwd(), manifestRelDir);
-        // Relative path of where merge-markdown was executed
-        const relativePath = path.relative(absLocalWorkingDir, manifestOutputName);
-        // docker working directory joined with the manifest.output.name
-        const dockerManifestOutputName = path.join(WORKING_DIR, relativePath);
+        debugDockerPaths(`process.cwd(): ${process.cwd()}`); //ABS path where the npm command was executed
 
-        // Get the base filename without extension
-        const baseFileName = path.parse(dockerManifestOutputName).name;
-        const dockerDir = path.dirname(dockerManifestOutputName);
-        debugDockerPaths(`Downloading merged Files from: ${dockerDir}`);
+        const relManifestOutputName = path.relative(process.cwd(), manifestOutputName);
+        const absManifestOutputName_inDocker = path.join(WORKING_DIR , relManifestOutputName);
+        const absManifestOutputName_parsed = path.parse(absManifestOutputName_inDocker);
+        const absManifestOutputName_name = absManifestOutputName_parsed.name; // Get the base filename without extension
+        const absManifestOutputName_dir = absManifestOutputName_parsed.dir; // Get the docker directory of output
+        debugDockerPaths(`Downloading merged Files from: ${absManifestOutputName_dir}`);
 
         const outputPaths = [
-          dockerManifestOutputName,
-          ...Object.values(presentationUtil.EXTS).map(ext => path.join(dockerDir, `${baseFileName}${ext}`)),
-          ...Object.values(mergeUtil.EXTS).map(ext => path.join(dockerDir, `${baseFileName}${ext}`)),
-          path.join(dockerDir, "temp.html")
+          absManifestOutputName_inDocker,
+          ...Object.values(presentationUtil.EXTS).map(ext => path.join(absManifestOutputName_dir, `${absManifestOutputName_name}${ext}`)),
+          ...Object.values(mergeUtil.EXTS).map(ext => path.join(absManifestOutputName_dir, `${absManifestOutputName_name}${ext}`)),
+          path.join(absManifestOutputName_dir, "temp.html")
         ];
         debugDockerPaths(`Downloading files if they exist:\n${outputPaths.map(p => `  ${p}`).join("\n")}`);
 
-        const relPathManifestOutputName = path.relative(manifestRelDir, path.parse(manifestOutputName).dir);
-        const destPath = path.join(process.cwd(), relPathManifestOutputName);
+        const destPath = path.parse(manifestOutputName).dir;
         debugDockerPaths(`Downloading to ${destPath}`);
          
         // Ensure clean destination directory - delete and recreate
@@ -430,23 +433,6 @@ async function downloadFromContainer(container, srcPaths, destPath) {
 
   await Promise.all(downloadPromises);
   return container;
-}
-
-function buildMergeMarkdownCommand(origArgs) {
-  let argsArray = origArgs.split(" ");
-  const mIndex = argsArray.indexOf("-m");
-
-  if (mIndex !== -1 && mIndex + 1 < argsArray.length) {
-    let mValue = argsArray[mIndex + 1];
-    let fileName = path.basename(mValue); // Extract only the filename
-
-    argsArray[mIndex + 1] = fileName; // Replace the original path with filename
-  }
-
-  let mmCommand = `merge-markdown ${argsArray.join(" ")}`;
-  mmCommand = mmCommand.replace("--docker", "");
-
-  return mmCommand;
 }
 
 exports.runMergeMarkdownInDocker = runMergeMarkdownInDocker;
