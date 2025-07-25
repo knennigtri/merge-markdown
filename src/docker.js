@@ -1,3 +1,4 @@
+const packageInfo = require("../package.json");
 const dockerode = require("dockerode");
 const fs = require("fs");
 const path = require("path");
@@ -25,10 +26,13 @@ const EXCLUDE_PATHS = [
   /quickstart.md/,
   /merged/,          // Matches any path containing 'merged'
   /target/,          // Matches any path containing 'target'
+  ".git/",
+  ".vscode/",
+  "archive.tar.gz",
 
 ];
 
-async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
+async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
   const manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr);
   const manifestOutputName = manifest.output.name;
   const excludePaths = [
@@ -80,7 +84,7 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
       .then(resultContainer => {
         console.log("Copying this project to the docker container.");
         console.log(`Exclude Copying These Paths:\n${excludePaths.map(regex => `  ${regex.toString()}`).join("\n")}`);
-        return createTarArchive(manifestRelDir, TAR_NAME, excludePaths)
+        return createTarArchive("./", TAR_NAME, excludePaths)
           .then(() => {
             console.log("Tar archive created successfully");
             return copyIntoContainer(resultContainer, TAR_NAME, WORKING_DIR);
@@ -94,12 +98,16 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
       })
       .then(resultContainer => {
         debugDocker(`Running container is ${resultContainer.id}`);
-        var mergeMarkdown = buildMergeMarkdownCommand(mergeMarkdownArgs);
-        const commands = [`cd ${WORKING_DIR}`, mergeMarkdown].join(" && ");
-        const cmd = ["/bin/sh", "-c", commands];
-        debugDocker(cmd);
+
+        const npmModuleName = packageInfo.name.replace(/@[^/]+\//, "");
+        let requestedCMD = `${npmModuleName} ${cmdArgs}`;
+        requestedCMD = requestedCMD.replace("--docker", "");
+
+        const commands = [`cd ${WORKING_DIR}`, requestedCMD].join(" && ");
+        const dockerCMD = ["/bin/sh", "-c", commands];
+        debugDocker(dockerCMD);
         debugDocker("Merging in Docker");
-        return execContainer(resultContainer, cmd, true);
+        return execContainer(resultContainer, dockerCMD, true);
 
       })
       .then(resultContainer => {
@@ -128,8 +136,7 @@ async function runMergeMarkdownInDocker(manifestFileStr, mergeMarkdownArgs) {
         ];
         debugDockerPaths(`Downloading files if they exist:\n${outputPaths.map(p => `  ${p}`).join("\n")}`);
 
-        const relPathManifestOutputName = path.relative(manifestRelDir, path.parse(manifestOutputName).dir);
-        const destPath = path.join(process.cwd(), relPathManifestOutputName);
+        const destPath = path.parse(manifestOutputName).dir;
         debugDockerPaths(`Downloading to ${destPath}`);
          
         // Ensure clean destination directory - delete and recreate
@@ -430,23 +437,6 @@ async function downloadFromContainer(container, srcPaths, destPath) {
 
   await Promise.all(downloadPromises);
   return container;
-}
-
-function buildMergeMarkdownCommand(origArgs) {
-  let argsArray = origArgs.split(" ");
-  const mIndex = argsArray.indexOf("-m");
-
-  if (mIndex !== -1 && mIndex + 1 < argsArray.length) {
-    let mValue = argsArray[mIndex + 1];
-    let fileName = path.basename(mValue); // Extract only the filename
-
-    argsArray[mIndex + 1] = fileName; // Replace the original path with filename
-  }
-
-  let mmCommand = `merge-markdown ${argsArray.join(" ")}`;
-  mmCommand = mmCommand.replace("--docker", "");
-
-  return mmCommand;
 }
 
 exports.runMergeMarkdownInDocker = runMergeMarkdownInDocker;
