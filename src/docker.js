@@ -69,7 +69,7 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
     }
 
     if (needsRebuild) {
-      var command = `docker compose -f ${path.join(__dirname, '../docker/docker-compose.yml')} up -d --build`;
+      var command = `docker compose -f ${path.join(__dirname, "../docker/docker-compose.yml")} up -d --build`;
       console.log(command);
       await runExecCommands(command, manifestRelDir)
         .then(output => {
@@ -302,7 +302,7 @@ async function checkDockerImageNodeVersion(imageName) {
     // Create a temporary container to check Node.js version
     const container = await docker.createContainer({
       Image: img,
-      Cmd: ['node', '--version'],
+      Cmd: ["node", "--version"],
       AttachStdout: true,
       AttachStderr: true
     });
@@ -313,8 +313,8 @@ async function checkDockerImageNodeVersion(imageName) {
       stderr: true
     });
 
-    let output = '';
-    stream.on('data', (chunk) => {
+    let output = "";
+    stream.on("data", (chunk) => {
       output += chunk.toString();
     });
 
