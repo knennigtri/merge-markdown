@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:19.0.0-bullseye
+FROM node:20-bullseye
 
 # Image environments
 ENV NODE_ENV=production

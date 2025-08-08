@@ -52,11 +52,24 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
       return;
     }
     const imageExists = await dockerImageExists(`${IMAGE_NAME}:${IMAGE_TAG}`);
+    let needsRebuild = false;
+    
     if (!imageExists) {
       console.log("Docker Image DNE. Creating...");
+      needsRebuild = true;
+    } else {
+      // Check if existing image has compatible Node.js version
+      const hasCompatibleNodeVersion = await checkDockerImageNodeVersion(`${IMAGE_NAME}:${IMAGE_TAG}`);
+      if (!hasCompatibleNodeVersion) {
+        console.log("Docker Image exists but has incompatible Node.js version. Rebuilding with Node.js 20+...");
+        needsRebuild = true;
+      } else {
+        debugDocker("Docker Image exists and has compatible Node.js version");
+      }
+    }
 
-
-      var command = `docker compose -f ${__dirname}/docker/docker-compose.yml up -d --build`;
+    if (needsRebuild) {
+      var command = `docker compose -f ${path.join(__dirname, "../docker/docker-compose.yml")} up -d --build`;
       console.log(command);
       await runExecCommands(command, manifestRelDir)
         .then(output => {
@@ -278,6 +291,54 @@ function dockerImageExists(imageName) {
       }
     });
   });
+}
+
+/* Check if the Docker image has a compatible Node.js version */
+async function checkDockerImageNodeVersion(imageName) {
+  var img = imageName || `${IMAGE_NAME}:${IMAGE_TAG}`;
+  debugDocker(`Checking Node.js version in image: ${img}`);
+  
+  try {
+    // Create a temporary container to check Node.js version
+    const container = await docker.createContainer({
+      Image: img,
+      Cmd: ["node", "--version"],
+      AttachStdout: true,
+      AttachStderr: true
+    });
+
+    const stream = await container.attach({
+      stream: true,
+      stdout: true,
+      stderr: true
+    });
+
+    let output = "";
+    stream.on("data", (chunk) => {
+      output += chunk.toString();
+    });
+
+    await container.start();
+    await container.wait();
+    await container.remove();
+
+    // Extract version number (e.g., "v20.1.0" -> 20)
+    const versionMatch = output.match(/v(\d+)\./);
+    if (versionMatch) {
+      const majorVersion = parseInt(versionMatch[1]);
+      debugDocker(`Found Node.js version: ${majorVersion}`);
+      
+      // Require Node.js 20 or higher for proper Web API support
+      return majorVersion >= 20;
+    }
+    
+    debugDocker(`Could not parse Node.js version from: ${output}`);
+    return false;
+  } catch (error) {
+    debugDocker(`Error checking Node.js version: ${error.message}`);
+    // If we can't check the version, assume it's outdated and needs rebuild
+    return false;
+  }
 }
 
 function isDockerRunning() {
