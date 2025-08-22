@@ -148,13 +148,13 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
         const destPath = path.parse(manifestOutputName).dir;
         debugDockerPaths(`Downloading to ${destPath}`);
          
-        // Ensure clean destination directory - delete and recreate
-        if (fs.existsSync(destPath)) {
-          fs.rmSync(destPath, { recursive: true, force: true });
-          debugDockerPaths(`Deleted existing directory: ${destPath}`);
+        // Ensure destination directory exists (non-destructive)
+        if (!fs.existsSync(destPath)) {
+          fs.mkdirSync(destPath, { recursive: true });
+          debugDockerPaths(`Created directory: ${destPath}`);
+        } else {
+          debugDockerPaths(`Directory already exists: ${destPath}`);
         }
-        fs.mkdirSync(destPath, { recursive: true });
-        debugDockerPaths(`Created clean directory: ${destPath}`);
          
         return downloadFromContainer(resultContainer, outputPaths, destPath);
       })
