@@ -82,6 +82,27 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
     if (needsRebuild) {
       debugDocker(`Rebuilding Docker image. Reason: ${rebuildReason}`);
       
+      // Clean up existing container first to avoid conflicts
+      console.log("Cleaning up existing container...");
+      
+      // Try docker compose down first
+      const cleanupCommand = `docker compose -f ${path.join(__dirname, "../docker/docker-compose.yml")} down`;
+      try {
+        await runExecCommands(cleanupCommand, manifestRelDir);
+        debugDocker("Docker compose cleanup completed");
+      } catch (cleanupError) {
+        debugDocker(`Docker compose cleanup warning: ${cleanupError.message}`);
+      }
+      
+      // Force remove the specific container if it still exists
+      const forceRemoveCommand = `docker rm -f ${CONTAINER_NAME}`;
+      try {
+        await runExecCommands(forceRemoveCommand, manifestRelDir);
+        debugDocker(`Force removed container: ${CONTAINER_NAME}`);
+      } catch (removeError) {
+        debugDocker(`Force remove warning (container may not exist): ${removeError.message}`);
+      }
+      
       // Set environment variable for docker-compose to use the correct version
       const versionToUse = await getValidMergeMarkdownVersion(packageInfo.version);
       process.env.MERGE_MARKDOWN_VERSION = versionToUse;
