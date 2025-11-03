@@ -518,12 +518,12 @@ function runExecCommands(command, cwd) {
       }
       // Docker Compose writes status messages to stderr, but these aren't errors
       // Only reject if stderr contains actual error indicators
-      if (stderr && (stderr.includes('ERROR') || stderr.includes('FAILED') || stderr.includes('Error'))) {
+      if (stderr && (stderr.includes("ERROR") || stderr.includes("FAILED") || stderr.includes("Error"))) {
         reject(stderr);
         return;
       }
       // Return both stdout and stderr as Docker Compose uses both for status
-      resolve(stdout + (stderr ? '\n' + stderr : ''));
+      resolve(stdout + (stderr ? "\n" + stderr : ""));
     });
   });
 }
