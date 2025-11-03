@@ -1,6 +1,9 @@
 services:
   node:
-    build: .
+    build:
+      context: .
+      args:
+        MERGE_MARKDOWN_VERSION: ${MERGE_MARKDOWN_VERSION:-latest}
     image: node:mergemarkdown
     container_name: mergemarkdown
     tty: true

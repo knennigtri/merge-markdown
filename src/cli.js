@@ -41,6 +41,7 @@ function run() {
   const argsPDF = args.pdf || args.PDF;
   const argsHTML = args.html || args.HTML;
   const argsWORD = args.word || args.WORD;
+  const argsLang = args.lang;
 
   debugArgs(JSON.stringify(args, null, 2));
 
@@ -64,6 +65,7 @@ function run() {
   if (argsQA) console.log("QA mode");
   if (argsSkipLinkcheck) console.log("noLinkcheck mode");
   if (argsMaintainAssetPaths) console.log("maintainAssetPaths mode");
+  if (argsLang) console.log("Language mode: " + argsLang);
 
   if (argsCreate) {
     if(argsUseDocker) console.log("Docker cannot be used with --Create mode");
@@ -118,7 +120,7 @@ function run() {
   debugCLI("manifest found at: " + manifestFilePath);
   console.log("Using: " + manifestFilePath);
   try {
-    merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths)
+    merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths, argsLang)
       .then(resultMarkdownFile => {
         //Add presentation
         var outputFormat = "";
@@ -166,6 +168,7 @@ Arguments:
   --qa                                     QA mode.
   --skipLinkcheck                          Skips linkchecking
   --maintainAssetPaths                     Retains original asset paths
+  --lang <language>                        Language code for multilingual support (e.g., --lang=es)
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
   --html --word                            Output to HTML or Word. Must have Pandoc installed!
   -h, --help                               Displays this screen

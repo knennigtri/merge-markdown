@@ -53,31 +53,68 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
     }
     const imageExists = await dockerImageExists(`${IMAGE_NAME}:${IMAGE_TAG}`);
     let needsRebuild = false;
+    let rebuildReason = "";
     
     if (!imageExists) {
       console.log("Docker Image DNE. Creating...");
       needsRebuild = true;
+      rebuildReason = "Image does not exist";
     } else {
       // Check if existing image has compatible Node.js version
       const hasCompatibleNodeVersion = await checkDockerImageNodeVersion(`${IMAGE_NAME}:${IMAGE_TAG}`);
       if (!hasCompatibleNodeVersion) {
         console.log("Docker Image exists but has incompatible Node.js version. Rebuilding with Node.js 20+...");
         needsRebuild = true;
+        rebuildReason = "Incompatible Node.js version";
       } else {
-        debugDocker("Docker Image exists and has compatible Node.js version");
+        // Check if existing image has matching merge-markdown version
+        const hasMatchingVersion = await checkDockerImageMergeMarkdownVersion(`${IMAGE_NAME}:${IMAGE_TAG}`);
+        if (!hasMatchingVersion) {
+          console.log(`Docker Image exists but merge-markdown version doesn't match local version (${packageInfo.version}). Rebuilding...`);
+          needsRebuild = true;
+          rebuildReason = "Version mismatch";
+        } else {
+          debugDocker("Docker Image exists with compatible Node.js version and matching merge-markdown version");
+        }
       }
     }
 
     if (needsRebuild) {
+      debugDocker(`Rebuilding Docker image. Reason: ${rebuildReason}`);
+      
+      // Set environment variable for docker-compose to use the correct version
+      const versionToUse = await getValidMergeMarkdownVersion(packageInfo.version);
+      process.env.MERGE_MARKDOWN_VERSION = versionToUse;
+      
+      if (versionToUse !== packageInfo.version) {
+        console.log(`Warning: Local version ${packageInfo.version} not available on npm registry. Using ${versionToUse} instead.`);
+      }
+      
       var command = `docker compose -f ${path.join(__dirname, "../docker/docker-compose.yml")} up -d --build`;
       console.log(command);
-      await runExecCommands(command, manifestRelDir)
-        .then(output => {
-          console.log("Success.", output);
-        })
-        .catch(error => {
-          console.error("Error executing:", error);
-        });
+      
+      try {
+        const output = await runExecCommands(command, manifestRelDir);
+        console.log("Docker build completed successfully.");
+        debugDocker(output);
+      } catch (error) {
+        console.error("Error executing:", error);
+        // If build fails, try with latest as fallback
+        if (versionToUse !== "latest") {
+          console.log("Build failed, attempting fallback to latest version...");
+          process.env.MERGE_MARKDOWN_VERSION = "latest";
+          try {
+            const fallbackOutput = await runExecCommands(command, manifestRelDir);
+            console.log("Fallback build completed successfully.");
+            debugDocker(fallbackOutput);
+          } catch (fallbackError) {
+            console.error("Fallback build also failed:", fallbackError);
+            throw fallbackError;
+          }
+        } else {
+          throw error;
+        }
+      }
     }
     console.log("--------Docker Container START--------");
     getContainer()
@@ -108,6 +145,40 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
         var extractCommand = `tar xzf ${WORKING_DIR}/${TAR_NAME} -C ${WORKING_DIR}`;
         debugDocker(extractCommand);
         return execContainer(resultContainer, extractCommand);
+      })
+      .then(resultContainer => {
+        debugDocker(`Running container is ${resultContainer.id}`);
+        
+        // Check if merge-markdown is installed, install if missing
+        console.log("Verifying merge-markdown installation in container...");
+        const checkCommand = "npm list -g @knennigtri/merge-markdown";
+        debugDocker(`Checking installation: ${checkCommand}`);
+        return execContainer(resultContainer, checkCommand, false)
+          .then(() => {
+            debugDocker("merge-markdown is already installed");
+            return resultContainer;
+          })
+          .catch(async () => {
+            console.log("merge-markdown not found in container, installing...");
+            const versionToInstall = await getValidMergeMarkdownVersion(packageInfo.version);
+            
+            if (versionToInstall !== packageInfo.version) {
+              console.log(`Warning: Local version ${packageInfo.version} not available on npm registry. Installing ${versionToInstall} instead.`);
+            }
+            
+            const installCommand = `npm install -g @knennigtri/merge-markdown@${versionToInstall}`;
+            console.log(`Installing: ${installCommand}`);
+            return execContainer(resultContainer, installCommand, true)
+              .catch((installError) => {
+                // If specific version fails, try latest as final fallback
+                if (versionToInstall !== "latest") {
+                  console.log("Installation failed, trying latest version as fallback...");
+                  const fallbackCommand = "npm install -g @knennigtri/merge-markdown@latest";
+                  return execContainer(resultContainer, fallbackCommand, true);
+                }
+                throw installError;
+              });
+          });
       })
       .then(resultContainer => {
         debugDocker(`Running container is ${resultContainer.id}`);
@@ -293,6 +364,90 @@ function dockerImageExists(imageName) {
   });
 }
 
+/* Validate that a specific version exists on npm registry, fallback to latest if not */
+async function getValidMergeMarkdownVersion(requestedVersion) {
+  debugDocker(`Validating merge-markdown version: ${requestedVersion}`);
+  
+  try {
+    // Check if the requested version exists on npm registry
+    const { exec } = require("child_process");
+    const checkCommand = `npm view @knennigtri/merge-markdown@${requestedVersion} version`;
+    
+    return new Promise((resolve) => {
+      exec(checkCommand, { timeout: 10000 }, (error, stdout, stderr) => {
+        if (error || stderr) {
+          debugDocker(`Version ${requestedVersion} not found on npm registry: ${error?.message || stderr}`);
+          debugDocker("Falling back to latest version");
+          resolve("latest");
+        } else {
+          const foundVersion = stdout.trim();
+          if (foundVersion === requestedVersion) {
+            debugDocker(`Version ${requestedVersion} confirmed on npm registry`);
+            resolve(requestedVersion);
+          } else {
+            debugDocker(`Version mismatch. Requested: ${requestedVersion}, Found: ${foundVersion}. Using latest.`);
+            resolve("latest");
+          }
+        }
+      });
+    });
+  } catch (error) {
+    debugDocker(`Error validating version: ${error.message}. Using latest.`);
+    return "latest";
+  }
+}
+
+/* Check if the Docker image has the correct merge-markdown version */
+async function checkDockerImageMergeMarkdownVersion(imageName) {
+  var img = imageName || `${IMAGE_NAME}:${IMAGE_TAG}`;
+  const localVersion = packageInfo.version;
+  debugDocker(`Checking merge-markdown version in image: ${img}, local version: ${localVersion}`);
+  
+  try {
+    // Create a temporary container to check merge-markdown version
+    const container = await docker.createContainer({
+      Image: img,
+      Cmd: ["npm", "list", "-g", "--depth=0", "@knennigtri/merge-markdown"],
+      AttachStdout: true,
+      AttachStderr: true
+    });
+
+    const stream = await container.attach({
+      stream: true,
+      stdout: true,
+      stderr: true
+    });
+
+    let output = "";
+    stream.on("data", (chunk) => {
+      output += chunk.toString();
+    });
+
+    await container.start();
+    await container.wait();
+    await container.remove();
+
+    // Extract version number from npm list output
+    const versionMatch = output.match(/@knennigtri\/merge-markdown@(\d+\.\d+\.\d+)/);
+    if (versionMatch) {
+      const dockerVersion = versionMatch[1];
+      debugDocker(`Found Docker merge-markdown version: ${dockerVersion}`);
+      
+      // Check if versions match
+      const versionsMatch = dockerVersion === localVersion;
+      debugDocker(`Version match: ${versionsMatch} (Docker: ${dockerVersion}, Local: ${localVersion})`);
+      return versionsMatch;
+    }
+    
+    debugDocker(`Could not parse merge-markdown version from: ${output}`);
+    return false;
+  } catch (error) {
+    debugDocker(`Error checking merge-markdown version: ${error.message}`);
+    // If we can't check the version, assume it needs rebuild
+    return false;
+  }
+}
+
 /* Check if the Docker image has a compatible Node.js version */
 async function checkDockerImageNodeVersion(imageName) {
   var img = imageName || `${IMAGE_NAME}:${IMAGE_TAG}`;
@@ -361,11 +516,14 @@ function runExecCommands(command, cwd) {
         reject(error);
         return;
       }
-      if (stderr) {
+      // Docker Compose writes status messages to stderr, but these aren't errors
+      // Only reject if stderr contains actual error indicators
+      if (stderr && (stderr.includes("ERROR") || stderr.includes("FAILED") || stderr.includes("Error"))) {
         reject(stderr);
         return;
       }
-      resolve(stdout);
+      // Return both stdout and stderr as Docker Compose uses both for status
+      resolve(stdout + (stderr ? "\n" + stderr : ""));
     });
   });
 }
