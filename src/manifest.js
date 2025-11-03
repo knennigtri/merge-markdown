@@ -6,11 +6,13 @@ const { spawn } = require("child_process");
 var debug = require("debug")("manifest");
 var debugDeprecation = require("debug")("manifest:deprecation");
 var debugJson = require("debug")("manifest:json");
+var debugMultilang = require("debug")("manifest:multilang");
 
 exports.debbugOptions = {
   "manifest": "",
   "manifest:deprecation": "",
   "manifest:json": "",
+  "manifest:multilang": "multilingual file resolution",
 };
 
 const DEFAULT_MANIFEST = {
@@ -29,6 +31,41 @@ const DEFAULT_MANIFEST = {
 //   name: merged/website.md
 
 const manifestWriteDir = process.cwd(); // When using -c relative/path/to/markdown/files, the manifest will where the command is run
+
+/**
+ * Resolves multilingual file paths by checking for translated versions first, then fallback
+ * @param {string} originalPath - The original file path from manifest
+ * @param {string} baseDir - The base directory for resolving relative paths
+ * @param {string} lang - The language code (e.g., 'es', 'fr')
+ * @returns {object} - Object with resolvedPath and isTranslated flag
+ */
+function resolveMultilingualPath(originalPath, baseDir, lang) {
+  if (!lang) {
+    // No language specified, return original path
+    const absPath = path.resolve(baseDir, originalPath);
+    return { resolvedPath: absPath, isTranslated: false };
+  }
+
+  const absOriginalPath = path.resolve(baseDir, originalPath);
+  
+  // Parse the original path
+  const dir = path.dirname(absOriginalPath);
+  const ext = path.extname(absOriginalPath);
+  const baseName = path.basename(absOriginalPath, ext);
+  
+  // Create translated file path: filename -> lang_filename.md
+  const translatedFileName = `${lang}_${baseName}${ext}`;
+  const translatedPath = path.join(dir, translatedFileName);
+  
+  // Check if translated file exists
+  if (fs.existsSync(translatedPath)) {
+    debugMultilang(`Found translated file: ${translatedPath}`);
+    return { resolvedPath: translatedPath, isTranslated: true };
+  } else {
+    debugMultilang(`Translated file not found: ${translatedPath}, using fallback: ${absOriginalPath}`);
+    return { resolvedPath: absOriginalPath, isTranslated: false };
+  }
+}
 
 /**
  * Creates a valid manifest JSON based on input (or no input)
@@ -92,22 +129,40 @@ function getManifestObj(inputManifestFile, qaMode) {
  * !m.output.wkhtmltopdf - create default
  * !m.qa.exclude - create default
  */
-exports.getJSON_withABSPaths = function (inputManifestFile, qaMode) {
+exports.getJSON_withABSPaths = function (inputManifestFile, qaMode, lang) {
   const manifestObj = getManifestObj(inputManifestFile, qaMode); 
   const baseDir = path.dirname(inputManifestFile);
 
-  // Update input paths to absolute paths
+  // Update input paths to absolute paths with multilingual support
   if (manifestObj.input) {
     // manifest.input[key]
     let inputObjABS = {};
+    let translationStats = { translated: 0, fallback: 0 };
+    
     for (const keyPath in manifestObj.input) {
-      let absPath = path.resolve(baseDir, keyPath);
+      const { resolvedPath, isTranslated } = resolveMultilingualPath(keyPath, baseDir, lang);
+      
+      // Track translation statistics
+      if (isTranslated) {
+        translationStats.translated++;
+      } else {
+        translationStats.fallback++;
+      }
+      
       inputObjABS = {
         ...inputObjABS,
-        [absPath]: { ...manifestObj.input[keyPath] }
+        [resolvedPath]: { ...manifestObj.input[keyPath] }
       };
     }
+    
     debugJson(`manifest.input (ABS): ${JSON.stringify(inputObjABS, null, 2)}`);
+    
+    // Log translation statistics if language is specified
+    if (lang) {
+      console.log(`[Multilingual] Language: ${lang}`);
+      console.log(`[Multilingual] Files translated: ${translationStats.translated}, fallback: ${translationStats.fallback}`);
+    }
+    
     manifestObj.input = inputObjABS;
   }
 

@@ -29,13 +29,13 @@ exports.debbugOptions = {
   "linkcheck:deep": "deep linkcheck validation",
 };
 
-function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths) {
+function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang) {
   var onlyQA = qaMode || false;
   var skipLinkcheck = skip_linkcheck || false;
   var keepAssetPaths = maintainAssetPaths || false;
 
   //Set manifest variables
-  const manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr, onlyQA);
+  const manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr, onlyQA, lang);
   var manifestOutputName = manifest.output.name;
   var manifestInput = manifest.input;
   var manifestQARegEx;
