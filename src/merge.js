@@ -75,7 +75,13 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
       return;
     }
     if (!fs.existsSync(inputKey)) {
-      console.log("   ⚠ " + inputFileName + " (file not found)");
+      const isAbsolutePath = path.isAbsolute(inputKey);
+      if (isAbsolutePath) {
+        console.log(inputKey + " (file not found)");
+        console.log("WARN: Absolute file paths in the manifest are not supported in Docker mode. Consider using relative paths instead.");
+      } else {
+        console.log("⚠ " + inputKey + " (file not found)");
+      }
       skippedCount++;
       return;
     }
