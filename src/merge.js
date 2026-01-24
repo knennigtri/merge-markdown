@@ -7,6 +7,7 @@ const markdownLinkCheck = require("markdown-link-check");
 const doctoc = require("doctoc/lib/transform");
 const validUrl = require("valid-url");
 const { pathToFileURL } = require("url");
+const assetCleaner = require("./asset-cleaner.js");
 const debug = require("debug")("merge");
 const debugRelLinks = require("debug")("rellinks");
 const debugYaml = require("debug")("o:yaml");
@@ -14,6 +15,7 @@ const debugDoctoc = require("debug")("o:doctoc");
 const debugReplace = require("debug")("o:replace");
 const debugLinkcheck = require("debug")("linkcheck");
 const debugLinkcheckDeep = require("debug")("linkcheck:deep");
+const debugAssetPreview = require("debug")("asset-preview");
 const EXTS = {
   "linkcheck": ".linkcheck.md",
   "qa": ".qa.md"
@@ -28,12 +30,14 @@ exports.debbugOptions = {
   "o:replace": "regex replace messages",
   "linkcheck": "linkcheck validation",
   "linkcheck:deep": "deep linkcheck validation",
+  "asset-preview": "asset preview scanning during merge"
 };
 
-function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang) {
+function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang, disableAssetPreview) {
   var onlyQA = qaMode || false;
   var skipLinkcheck = skip_linkcheck || false;
   var keepAssetPaths = maintainAssetPaths || false;
+  var skipAssetPreview = disableAssetPreview || false;
 
   //Set manifest variables
   const manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr, onlyQA, lang);
@@ -104,10 +108,10 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
   if (onlyQA) {
     fileToWrite = replaceExtension(fileToWrite, EXTS.qa);
   }
-  return createSingleFile(mergedFileArr, fileToWrite, manifest);
+  return createSingleFile(mergedFileArr, fileToWrite, manifest, skipAssetPreview);
 }
 
-async function createSingleFile(list, fileToWrite, manifestJSON) {
+async function createSingleFile(list, fileToWrite, manifestJSON, skipAssetPreview) {
   debug("Creating single file");
   if (!list || list.length === 0) {
     console.log("List to merge is not valid. Aborting..");
@@ -123,6 +127,12 @@ async function createSingleFile(list, fileToWrite, manifestJSON) {
     }
   }).then((result) => {
     deleteGeneratedFiles(list); //cleanup
+    
+    // Run asset preview scan if not disabled
+    if (!skipAssetPreview && manifestJSON.input) {
+      runAssetPreviewScan(Object.keys(manifestJSON.input));
+    }
+    
     return result;
   });
 }
@@ -431,6 +441,30 @@ function replaceExtension(filePath, newExt) {
   const name = path.basename(filePath, path.extname(filePath));
   const ext = newExt.startsWith(".") ? newExt : "." + newExt;
   return path.join(dir, name + ext);
+}
+
+/**
+ * Runs a quick asset preview scan and displays summary to user
+ * @param {Array} inputFiles - Array of input file paths from manifest
+ */
+function runAssetPreviewScan(inputFiles) {
+  debugAssetPreview("Starting asset preview scan");
+  
+  try {
+    // Run quick scan for unused assets
+    const scanResult = assetCleaner.scanForUnusedAssets(inputFiles, 'assets');
+    
+    if (scanResult.hasUnusedAssets) {
+      console.log(`\n💡 Found ${scanResult.totalUnusedAssets} unused asset${scanResult.totalUnusedAssets === 1 ? '' : 's'} in your project directories.`);
+      console.log("   Run 'merge-markdown --clean-assets' to see details and clean up.");
+    } else if (scanResult.scannedDirectories > 0) {
+      debugAssetPreview(`No unused assets found in ${scanResult.scannedDirectories} directories`);
+    } else {
+      debugAssetPreview("No asset directories found to scan");
+    }
+  } catch (error) {
+    debugAssetPreview(`Error during asset preview scan: ${error.message}`);
+  }
 }
 
 function deleteGeneratedFiles(fileArr) {
