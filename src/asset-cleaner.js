@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const yaml = require('js-yaml');
-const debug = require('debug')('asset-cleaner');
+const fs = require("fs");
+const path = require("path");
+const yaml = require("js-yaml");
+const debug = require("debug")("asset-cleaner");
 
 // Asset detection regex - same as used in merge.js updateAssetRelPaths function
 const ASSET_REGEX = /(!\[(.*?)\][(](.*?)[)])|(src=[""](.*?)[""])/g;
@@ -17,18 +17,18 @@ function isAssetReferenced(content, assetFile, assetsFolderName) {
   // Reset regex for each search
   const regex = new RegExp(ASSET_REGEX.source, ASSET_REGEX.flags);
   
-  const lines = content.split('\n');
+  const lines = content.split("\n");
   
   for (const line of lines) {
     let match;
     while ((match = regex.exec(line)) !== null) {
-      let assetPath = '';
+      let assetPath = "";
       
       // Extract asset path from match - same logic as merge.js
-      if (match[0].startsWith('![')) {
+      if (match[0].startsWith("![")) {
         // Markdown image: ![alt](path)
         assetPath = match[3];
-      } else if (match[0].startsWith('src=')) {
+      } else if (match[0].startsWith("src=")) {
         // HTML img: src="path"
         assetPath = match[5];
       }
@@ -61,10 +61,10 @@ function isAssetReferenced(content, assetFile, assetsFolderName) {
  */
 function extractAssetsDirFromFrontmatter(mdFilePath) {
   try {
-    const content = fs.readFileSync(mdFilePath, 'utf8');
+    const content = fs.readFileSync(mdFilePath, "utf8");
     
     // Check if file starts with YAML frontmatter (---)
-    if (!content.startsWith('---')) {
+    if (!content.startsWith("---")) {
       return null;
     }
     
@@ -78,7 +78,7 @@ function extractAssetsDirFromFrontmatter(mdFilePath) {
     const frontmatter = yaml.load(frontmatterMatch[1]);
     
     // Return the copy-images-to value if it exists
-    return frontmatter && frontmatter['copy-images-to'] ? frontmatter['copy-images-to'] : null;
+    return frontmatter && frontmatter["copy-images-to"] ? frontmatter["copy-images-to"] : null;
   } catch (error) {
     debug(`Error reading frontmatter from ${mdFilePath}: ${error.message}`);
     return null;
@@ -130,18 +130,18 @@ function scanModuleAssets(mdFiles, assetsDir, moduleName, assetsFolderName, usin
   }
   
   // Read all markdown files
-  let allMdContent = '';
+  let allMdContent = "";
   mdFiles.forEach(mdFile => {
     try {
-      const content = fs.readFileSync(mdFile, 'utf8');
-      allMdContent += content + '\n';
+      const content = fs.readFileSync(mdFile, "utf8");
+      allMdContent += content + "\n";
     } catch (error) {
       debug(`Error reading ${mdFile}: ${error.message}`);
     }
   });
   
   // Get all image files
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.bmp'];
+  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".bmp"];
   let assetFiles = [];
   
   try {
@@ -180,7 +180,7 @@ function scanModuleAssets(mdFiles, assetsDir, moduleName, assetsFolderName, usin
   
   if (verbose) {
     console.log(`   ✅ Kept: ${result.keptAssets} assets`);
-    console.log(`   ${fixMode ? '❌ Deleted' : '🔍 Would delete'}: ${result.deletedAssets} assets\n`);
+    console.log(`   ${fixMode ? "❌ Deleted" : "🔍 Would delete"}: ${result.deletedAssets} assets\n`);
   }
   
   return result;
@@ -194,7 +194,7 @@ function scanModuleAssets(mdFiles, assetsDir, moduleName, assetsFolderName, usin
  * @param {boolean} verbose - Whether to show detailed output
  * @returns {Object} Summary results
  */
-function cleanAssets(targetDir, assetsFolderName = 'assets', fixMode = false, verbose = true) {
+function cleanAssets(targetDir, assetsFolderName = "assets", fixMode = false, verbose = true) {
   const summary = {
     targetDir,
     assetsFolderName,
@@ -206,14 +206,14 @@ function cleanAssets(targetDir, assetsFolderName = 'assets', fixMode = false, ve
   };
 
   if (verbose) {
-    console.log('==========================================');
-    console.log('  Cleaning Unreferenced Assets');
-    console.log('==========================================\n');
+    console.log("==========================================");
+    console.log("  Cleaning Unreferenced Assets");
+    console.log("==========================================\n");
     
     if (!fixMode) {
-      console.log('🔍 PREVIEW MODE - No files will be deleted (use --fix to delete)\n');
+      console.log("🔍 PREVIEW MODE - No files will be deleted (use --fix to delete)\n");
     } else {
-      console.log('⚠️  FIX MODE - Unreferenced assets will be deleted\n');
+      console.log("⚠️  FIX MODE - Unreferenced assets will be deleted\n");
     }
     
     console.log(`📁 Assets folder name (default): '${assetsFolderName}'`);
@@ -239,7 +239,7 @@ function cleanAssets(targetDir, assetsFolderName = 'assets', fixMode = false, ve
   }
 
   if (subdirs.length === 0) {
-    if (verbose) console.log('⚠️  No subdirectories found in target directory');
+    if (verbose) console.log("⚠️  No subdirectories found in target directory");
     return summary;
   }
 
@@ -253,7 +253,7 @@ function cleanAssets(targetDir, assetsFolderName = 'assets', fixMode = false, ve
     try {
       const files = fs.readdirSync(subdirPath);
       mdFiles = files
-        .filter(f => f.endsWith('.md'))
+        .filter(f => f.endsWith(".md"))
         .map(f => path.join(subdirPath, f));
     } catch (error) {
       if (verbose) console.log(`⚠️  Error reading directory: ${subdirPath}`);
@@ -285,12 +285,12 @@ function cleanAssets(targetDir, assetsFolderName = 'assets', fixMode = false, ve
   });
 
   if (verbose) {
-    console.log('==========================================');
-    console.log('✨ Cleanup Complete!');
-    console.log('==========================================\n');
+    console.log("==========================================");
+    console.log("✨ Cleanup Complete!");
+    console.log("==========================================\n");
     
     if (!fixMode) {
-      console.log('ℹ️  This was a preview. Run with --fix to actually delete unreferenced files.');
+      console.log("ℹ️  This was a preview. Run with --fix to actually delete unreferenced files.");
     }
   }
 
@@ -303,8 +303,8 @@ function cleanAssets(targetDir, assetsFolderName = 'assets', fixMode = false, ve
  * @param {string} assetsFolderName - Default assets folder name
  * @returns {Object} Quick scan results
  */
-function scanForUnusedAssets(inputFiles, assetsFolderName = 'assets') {
-  debug('Starting quick asset scan for merge workflow');
+function scanForUnusedAssets(inputFiles, assetsFolderName = "assets") {
+  debug("Starting quick asset scan for merge workflow");
   
   const result = {
     totalUnusedAssets: 0,
@@ -313,7 +313,7 @@ function scanForUnusedAssets(inputFiles, assetsFolderName = 'assets') {
   };
 
   if (!inputFiles || inputFiles.length === 0) {
-    debug('No input files provided for asset scan');
+    debug("No input files provided for asset scan");
     return result;
   }
 
@@ -332,7 +332,7 @@ function scanForUnusedAssets(inputFiles, assetsFolderName = 'assets') {
       try {
         const files = fs.readdirSync(dir);
         mdFiles = files
-          .filter(f => f.endsWith('.md'))
+          .filter(f => f.endsWith(".md"))
           .map(f => path.join(dir, f));
       } catch (error) {
         debug(`Error reading directory ${dir}: ${error.message}`);

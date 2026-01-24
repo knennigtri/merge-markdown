@@ -182,7 +182,7 @@ function runAssetCleaning(targetDir, assetsDir, fixMode) {
   }
   
   // Use provided assets directory name or default
-  const assetsFolderName = assetsDir || 'assets';
+  const assetsFolderName = assetsDir || "assets";
   const isFixMode = fixMode || false;
   
   debugCLI(`Target directory: ${cleanTargetDir}`);

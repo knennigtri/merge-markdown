@@ -452,10 +452,10 @@ function runAssetPreviewScan(inputFiles) {
   
   try {
     // Run quick scan for unused assets
-    const scanResult = assetCleaner.scanForUnusedAssets(inputFiles, 'assets');
+    const scanResult = assetCleaner.scanForUnusedAssets(inputFiles, "assets");
     
     if (scanResult.hasUnusedAssets) {
-      console.log(`\n💡 Found ${scanResult.totalUnusedAssets} unused asset${scanResult.totalUnusedAssets === 1 ? '' : 's'} in your project directories.`);
+      console.log(`\n💡 Found ${scanResult.totalUnusedAssets} unused asset${scanResult.totalUnusedAssets === 1 ? "" : "s"} in your project directories.`);
       console.log("   Run 'merge-markdown --clean-assets' to see details and clean up.");
     } else if (scanResult.scannedDirectories > 0) {
       debugAssetPreview(`No unused assets found in ${scanResult.scannedDirectories} directories`);
