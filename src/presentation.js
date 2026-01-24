@@ -2,6 +2,7 @@ const manifestUtil = require("./manifest.js");
 const fs = require("fs");
 const path = require("path");
 const nodePandoc = require("node-pandoc");
+const {execFile} = require("child_process");
 const wkhtmltopdf = require("wkhtmltopdf");
 const debug = require("debug")("presentation");
 const debugPandoc = require("debug")("pandoc");
@@ -28,8 +29,8 @@ exports.EXTS = EXTS;
 var build = async function (inputFile, outputFormat, manifestFileStr) {
   if(!outputFormat) return inputFile;
 
-  console.log(outputFormat + " format selected for " + path.parse(inputFile).base);
-  console.log("+++++++++++++");
+  const relativeInput = path.relative(process.cwd(), inputFile);
+  console.log("\n📄 Converting to " + outputFormat + "...");
   
   let manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr);
   const manifestOutputName = manifest.output.name;
@@ -57,19 +58,32 @@ var build = async function (inputFile, outputFormat, manifestFileStr) {
         if (outputFormat.includes(EXTS.pdf)) {
           const inputFileParsed = path.parse(inputFile);
           const pdfFileName = path.join(inputFileParsed.dir, `${inputFileParsed.name}${EXTS.pdf}`);
-          wkhtmltopdfWriteToFile(resultPandocFile, manifestOutputWkhtmltopdf, pdfFileName)
+          return wkhtmltopdfWriteToFile(resultPandocFile, manifestOutputWkhtmltopdf, pdfFileName)
             .then(resultPdfFile => {
               resolve(resultPdfFile);
+            })
+            .catch(err => {
+              reject(err);
             });
         } else {
           var outputNewName = `${path.parse(manifestOutputName).name}${pandocOutputExt}`;
           var outputPath = path.parse(resultPandocFile).dir;
           var outputFile = path.join(outputPath, outputNewName);
           debug(`${path.parse(resultPandocFile).base} >>  ${outputNewName}`);
-          fs.rename(resultPandocFile, outputFile, () => {
-            resolve(outputFile);
+          fs.rename(resultPandocFile, outputFile, (err) => {
+            if (err) {
+              console.error("\n❌ Error renaming output file:");
+              console.error("   " + err.message);
+              reject(err);
+            } else {
+              resolve(outputFile);
+            }
           });
         }
+      })
+      .catch(err => {
+        // Pandoc error already logged, just reject silently
+        reject(err);
       });
   });
 };
@@ -78,18 +92,48 @@ var build = async function (inputFile, outputFormat, manifestFileStr) {
 function pandocWriteToFile(inputFile, pandocParams, outputExt) {
   debug(`Creating ${outputExt} using Pandoc...`);
   var outputFile = path.join(path.parse(inputFile).dir, `temp${outputExt}`);
-  var pandocArgs = buildPandocArgs(pandocParams, outputFile);
+  var pandocArgs = buildPandocArgsArray(pandocParams, outputFile);
   debugPandoc("input: " + inputFile);
-  debugPandoc("Args: '" + pandocArgs + "'");
+  debugPandoc("Args: " + JSON.stringify(pandocArgs));
+  
   return new Promise((resolve, reject) => {
-    nodePandoc(inputFile, pandocArgs, (err) => { // TODO: This fails with .docx when there are broken image links in the markdown
+    // Use execFile instead of node-pandoc for better error handling
+    execFile('pandoc', [inputFile, ...pandocArgs], (err, stdout, stderr) => {
       if (err) {
-        console.error("Verify the pandoc arguments according to pandoc documentation");
-        console.error("Make sure pandoc is installed! https://pandoc.org/installing.html");
-        reject(err);
+        // Check if output file was created despite error/warning
+        if (fs.existsSync(outputFile)) {
+          // File created successfully, stderr was just a warning
+          if (stderr) {
+            const warningMsg = stderr.trim();
+            if (warningMsg) {
+              console.log("   ⚠ Pandoc warning: " + warningMsg.split('\n')[0]);
+              debugPandoc("Full warning: " + warningMsg);
+            }
+          }
+          console.log("   ✓ Generated " + path.parse(outputFile).base);
+          resolve(outputFile);
+        } else {
+          // Real error - file not created
+          console.error("\n❌ Pandoc error:");
+          if (err.code === 'ENOENT') {
+            console.error("   Pandoc not found. Make sure it's installed and in your PATH");
+            console.error("   Install: https://pandoc.org/installing.html");
+          } else {
+            console.error("   " + (stderr ? stderr.trim() : err.message));
+            console.error("   Docs: https://pandoc.org/MANUAL.html");
+          }
+          reject(err);
+        }
+      } else {
+        // Show any warnings even on success
+        if (stderr && stderr.trim()) {
+          const warningMsg = stderr.trim();
+          console.log("   ⚠ " + warningMsg.split('\n')[0]);
+          debugPandoc("Full output: " + warningMsg);
+        }
+        console.log("   ✓ Generated " + path.parse(outputFile).base);
+        resolve(outputFile);
       }
-      console.log(" pandoc: " + path.parse(inputFile).base + " >> " + path.parse(outputFile).base);
-      resolve(outputFile);
     });
   });
 }
@@ -103,35 +147,61 @@ function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams, outputFile) {
   return new Promise((resolve, reject) => {
     wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
       if (err) {
-        if (err.toString().includes("spawn wkhtmltopdf ENOENT")) console.error("Make sure wkhtmltopdf is installed! http://wkhtmltopdf.org/downloads.html");
-        else console.error("Verify the wkhtmltopdf options according to wkhtmltopdf documentation");
+        const errMsg = err.toString();
+        console.error("\n❌ wkhtmltopdf error:");
+        
+        if (errMsg.includes("spawn wkhtmltopdf ENOENT")) {
+          console.error("   wkhtmltopdf not found. Make sure it's installed and in your PATH");
+          console.error("   Install: http://wkhtmltopdf.org/downloads.html");
+        } else if (errMsg.includes("EACCES")) {
+          console.error("   Permission denied accessing file");
+          console.error("   " + errMsg);
+        } else if (errMsg.includes("Exit with code")) {
+          // wkhtmltopdf returned non-zero exit code
+          const lines = errMsg.split('\n').filter(l => l.trim());
+          console.error("   " + lines[0]);
+          if (lines.length > 1) {
+            lines.slice(1, 4).forEach(line => console.error("   " + line));
+          }
+          console.error("   Docs: http://wkhtmltopdf.org/usage/wkhtmltopdf.txt");
+        } else {
+          console.error("   " + errMsg.split('\n')[0]);
+          console.error("   Docs: http://wkhtmltopdf.org/usage/wkhtmltopdf.txt");
+        }
+        
         reject(err);
       } else {
-        console.log("wkhtmltopdf: " + path.parse(inputFile).base + " >> " + path.parse(outputFile).base);
+        console.log("   ✓ Generated " + path.parse(outputFile).base);
         resolve(outputFile);
       }
     });
   });
 }
 
-function buildPandocArgs(params, fileName) {
-  // Quote the fileName to handle paths with spaces
-  var cliArgs = `-o "${fileName}"`;
-  debugPandocDefaults(cliArgs);
+function buildPandocArgsArray(params, fileName) {
+  // Build args as array for execFile
+  // Don't use --quiet so we can see useful warnings
+  var argsArray = ['-o', fileName];
+  debugPandocDefaults("Base args: " + JSON.stringify(argsArray));
+  
   if (params) {
     for (var key in params) {
-      if (params[key].includes("-o")) {
+      const paramValue = params[key].trim();
+      if (paramValue.includes("-o")) {
         debugPandocOptions("Arg [ -o ] cannot be changed. Ignoring.");
       } else {
-        debugPandocOptions("Arg added: " + params[key]);
-        cliArgs += " " + params[key];
+        debugPandocOptions("Arg added: " + paramValue);
+        // Split args that have spaces (e.g., "-c mystyle.css" becomes ["-c", "mystyle.css"])
+        const splitArgs = paramValue.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+        argsArray.push(...splitArgs.map(arg => arg.replace(/^"(.*)"$/, '$1')));
       }
     }
   } else {
     debugPandoc("No pandoc Args given in manifest. Using defaults.");
   }
-  debugPandocOptions("Final Args: " + cliArgs);
-  return cliArgs;
+  
+  debugPandocOptions("Final Args: " + JSON.stringify(argsArray));
+  return argsArray;
 }
 
 function buildWkhtmltopdfOptions(params, fileName) {
