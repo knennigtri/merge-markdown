@@ -98,3 +98,7 @@ typings/
 
 # FuseBox cache
 .fusebox/
+# Environment variables
+.env
+.env.local
+.env.*.local
