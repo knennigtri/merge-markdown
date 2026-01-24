@@ -62,18 +62,24 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
   var fileArr = [];
   var refFileArr = [];
   var linkcheckPromises = [];
+  var processedCount = 0;
+  var skippedCount = 0;
+  
+  console.log("\n📝 Processing input files...");
   
   Object.keys(manifestInput).forEach(function (inputKey) {
     var inputFileName = path.basename(inputKey);
-    console.log("--" + inputFileName + "--");
     if (onlyQA && manifestQARegEx.test(inputFileName)) {
-      console.log("Skipping " + inputFileName + " for QA");
+      console.log("   ⊘ " + inputFileName + " (excluded for QA)");
+      skippedCount++;
       return;
     }
     if (!fs.existsSync(inputKey)) {
-      console.log(inputFileName + " does not exist. Skipping.");
+      console.log("   ⚠ " + inputFileName + " (file not found)");
+      skippedCount++;
       return;
     }
+    console.log("   ✓ " + inputFileName);
     var origContent = fs.readFileSync(inputKey, "utf-8");
 
     //Force a new line at the end of the file to help with file merging
@@ -98,8 +104,8 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
 
     //add the  temp file to the list to merge together
     fileArr.push(tempFile);
+    processedCount++;
     debug(path.basename(tempFile));
-    console.log("...added to merge list");
   });
   
   // Wait for all Phase 1 linkchecks to complete, then write results in order
@@ -124,14 +130,13 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
 }
 
 function continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck) {
-
-  console.log("+++++++++++++");
   //Merge lists and output single markdown file
   var mergedFileArr = fileArr.concat(refFileArr);
 
-  // Show relative paths from current working directory
-  const relativeFiles = mergedFileArr.map(f => path.relative(process.cwd(), f));
-  console.log("Creating Merged Markdown:\n " + relativeFiles.join("\n "));
+  if (mergedFileArr.length > 0) {
+    console.log("\n🔗 Merging " + mergedFileArr.length + " file(s)...");
+  }
+  
   var fileToWrite = manifestOutputName;
   if (onlyQA) {
     fileToWrite = replaceExtension(fileToWrite, EXTS.qa);
@@ -159,6 +164,7 @@ async function createSingleFile(list, fileToWrite, manifestJSON, skipAssetPrevie
     // Phase 2: Check internal anchors in merged file
     if (!skipLinkcheck) {
       debugLinkcheck("Phase 2: Checking internal anchors in merged file...");
+      console.log("🔍 Validating internal anchors...");
       checkAnchors(fileToWrite, replaceExtension(fileToWrite, EXTS.linkcheck));
     }
     

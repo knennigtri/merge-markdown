@@ -68,10 +68,17 @@ function run() {
     console.log(`Options: ${JSON.stringify(debbugOptions, null, 2)}`);
     return;
   }
-  if (argsQA) console.log("QA mode");
-  if (argsSkipLinkcheck) console.log("noLinkcheck mode");
-  if (argsMaintainAssetPaths) console.log("maintainAssetPaths mode");
-  if (argsLang) console.log("Language mode: " + argsLang);
+  // Show active modes
+  const activeModes = [];
+  if (argsQA) activeModes.push("QA");
+  if (argsSkipLinkcheck) activeModes.push("Skip Linkcheck");
+  if (argsMaintainAssetPaths) activeModes.push("Maintain Asset Paths");
+  if (argsLang) activeModes.push("Language: " + argsLang);
+  if (argsNoAssetPreview) activeModes.push("No Asset Preview");
+  
+  if (activeModes.length > 0) {
+    console.log("⚙️  Modes: " + activeModes.join(", "));
+  }
 
   if (argsCreate) {
     if(argsUseDocker) console.log("Docker cannot be used with --Create mode");
@@ -130,7 +137,8 @@ function run() {
   }
 
   debugCLI("manifest found at: " + manifestFilePath);
-  console.log("Using: " + manifestFilePath);
+  const relativeManifest = path.relative(process.cwd(), manifestFilePath);
+  console.log("📋 Manifest: " + relativeManifest);
   try {
     merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths, argsLang, argsNoAssetPreview)
       .then(resultMarkdownFile => {
@@ -142,10 +150,13 @@ function run() {
         return presentation.build(resultMarkdownFile, outputFormat, manifestFilePath);
       })
       .then(resultFile => {
-        console.log(resultFile + " created.");
+        const relativePath = path.relative(process.cwd(), resultFile);
+        console.log("\n✅ Output: " + relativePath);
       })
       .catch((error) => {
-        console.error(`Error creating file: ${error}`);
+        // Error details already logged by the respective functions
+        // Just exit with error code
+        process.exit(1);
       });
   } catch (err) {
     console.error(err);
