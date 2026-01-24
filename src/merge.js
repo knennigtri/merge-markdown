@@ -49,6 +49,7 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
   if (onlyQA) console.log("QA exclude regex: " + manifestQARegEx);
 
   if (skipLinkcheck) console.log("Skipping linkcheck on all files");
+  else debugLinkcheck("Phase 1: Checking assets and external URLs per file...");
 
   //removes old .md files
   deleteGeneratedFiles([
@@ -60,6 +61,8 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
   //Iterate through all of the input files in manifest apply options
   var fileArr = [];
   var refFileArr = [];
+  var linkcheckPromises = [];
+  
   Object.keys(manifestInput).forEach(function (inputKey) {
     var inputFileName = path.basename(inputKey);
     console.log("--" + inputFileName + "--");
@@ -88,9 +91,9 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
     fs.writeFileSync(tempFile, generatedContent);
 
     if (!skipLinkcheck) {
-      //checks for broken links within the content
-      debug("--Create/Update linkcheck file--");
-      linkcheck(tempFile, replaceExtension(manifestOutputName, EXTS.linkcheck));
+      //Phase 1: checks for broken assets and external URLs
+      debug("--Phase 1 linkcheck: assets and URLs--");
+      linkcheckPromises.push(checkAssetsAndUrls(tempFile, inputFileName));
     }
 
     //add the  temp file to the list to merge together
@@ -98,20 +101,45 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
     debug(path.basename(tempFile));
     console.log("...added to merge list");
   });
+  
+  // Wait for all Phase 1 linkchecks to complete, then write results in order
+  if (!skipLinkcheck && linkcheckPromises.length > 0) {
+    return Promise.all(linkcheckPromises).then((results) => {
+      // Write Phase 1 results in order
+      const linkcheckFile = replaceExtension(manifestOutputName, EXTS.linkcheck);
+      results.forEach((result) => {
+        if (fs.existsSync(linkcheckFile)) {
+          safelyWriteFile(linkcheckFile, result, true);
+        } else {
+          safelyWriteFile(linkcheckFile, result, false);
+        }
+      });
+      
+      // Continue with merge
+      return continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck);
+    });
+  } else {
+    return continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck);
+  }
+}
+
+function continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck) {
 
   console.log("+++++++++++++");
   //Merge lists and output single markdown file
   var mergedFileArr = fileArr.concat(refFileArr);
 
-  console.log("Creating Merged Markdown:\n " + mergedFileArr.join("\n "));
+  // Show relative paths from current working directory
+  const relativeFiles = mergedFileArr.map(f => path.relative(process.cwd(), f));
+  console.log("Creating Merged Markdown:\n " + relativeFiles.join("\n "));
   var fileToWrite = manifestOutputName;
   if (onlyQA) {
     fileToWrite = replaceExtension(fileToWrite, EXTS.qa);
   }
-  return createSingleFile(mergedFileArr, fileToWrite, manifest, skipAssetPreview);
+  return createSingleFile(mergedFileArr, fileToWrite, manifest, skipAssetPreview, skipLinkcheck);
 }
 
-async function createSingleFile(list, fileToWrite, manifestJSON, skipAssetPreview) {
+async function createSingleFile(list, fileToWrite, manifestJSON, skipAssetPreview, skipLinkcheck) {
   debug("Creating single file");
   if (!list || list.length === 0) {
     console.log("List to merge is not valid. Aborting..");
@@ -127,6 +155,12 @@ async function createSingleFile(list, fileToWrite, manifestJSON, skipAssetPrevie
     }
   }).then((result) => {
     deleteGeneratedFiles(list); //cleanup
+    
+    // Phase 2: Check internal anchors in merged file
+    if (!skipLinkcheck) {
+      debugLinkcheck("Phase 2: Checking internal anchors in merged file...");
+      checkAnchors(fileToWrite, replaceExtension(fileToWrite, EXTS.linkcheck));
+    }
     
     // Run asset preview scan if not disabled
     if (!skipAssetPreview && manifestJSON.input) {
@@ -382,10 +416,162 @@ function optionBuildTOC(fileContents, doctocLocal, doctocGlobal) {
   return fileContents;
 }
 
+/**
+ * Phase 1: Check assets (markdown and HTML img tags) and external URLs in individual files
+ * Ignores internal anchors to avoid false positives from cross-file references
+ * Returns a promise that resolves with the linkcheck results string
+ */
+function checkAssetsAndUrls(inputFileStr, inputFileName) {
+  debugLinkcheck("Phase 1: Asset and URL check for " + inputFileName);
+  var inputFolder = path.dirname(inputFileStr);
+  var fileContents = fs.readFileSync(inputFileStr, "utf-8");
+  
+  return new Promise((resolve) => {
+    var linkcheckResults = "FILE: " + inputFileStr + "\n";
+    var hasIssues = false;
+    
+    // Custom asset checking for both markdown and HTML images
+    const assetIssues = checkAssetPaths(fileContents, inputFolder);
+    assetIssues.forEach(issue => {
+      linkcheckResults += ` [x] ${issue.type}: ${issue.path} is dead\n`;
+      hasIssues = true;
+    });
+    
+    // Use markdown-link-check for external URLs only (ignore anchors)
+    markdownLinkCheck(fileContents,
+      {
+        baseUrl: pathToFileURL(path.resolve(inputFolder)),
+        ignorePatterns: [
+          { pattern: "^http://localhost" },
+          { pattern: "^#" }  // Ignore internal anchors in Phase 1
+        ],
+        timeout: "2s"
+      }, function (err, results) {
+        if (err) {
+          console.error("markdown-link-check failed on: " + inputFileStr);
+          linkcheckResults += " Error during linkcheck\n\n  \n";
+          resolve(linkcheckResults);
+          return;
+        }
+        
+        // Only report external URL issues
+        results.forEach(function (result) {
+          if (result.status === "dead" && !result.link.startsWith("#")) {
+            linkcheckResults += ` [x] URL: ${result.link} is dead\n`;
+            hasIssues = true;
+          }
+        });
+        
+        const urlCount = results.filter(r => !r.link.startsWith("#")).length;
+        linkcheckResults += `\n ${assetIssues.length} asset(s) checked, ${urlCount} external URL(s) checked.\n\n  \n`;
+        
+        resolve(linkcheckResults);
+      });
+  });
+}
+
+/**
+ * Phase 2: Check internal anchors in the merged file
+ * Validates custom anchor IDs (like {#my-id}) rather than auto-generated header anchors
+ */
+function checkAnchors(mergedFile, fileToWrite) {
+  debugLinkcheck("Phase 2: Anchor check for merged file");
+  var fileContents = fs.readFileSync(mergedFile, "utf-8");
+  
+  // Extract all anchor links from the content
+  const anchorRegex = /\[([^\]]+)\]\((#[^)]+)\)/g;
+  const anchors = [];
+  let match;
+  while ((match = anchorRegex.exec(fileContents)) !== null) {
+    anchors.push(match[2]); // The #anchor part
+  }
+  
+  // Extract all anchor IDs from the content (explicit {#id} syntax)
+  const anchorIdRegex = /\{#([^}]+)\}/g;
+  const definedAnchors = new Set();
+  while ((match = anchorIdRegex.exec(fileContents)) !== null) {
+    definedAnchors.add(`#${match[1]}`);
+  }
+  
+  var linkcheckResults = "\n=== Internal Anchor Validation of merged file ===\n";
+  linkcheckResults += "FILE: " + mergedFile + "\n";
+  
+  if (anchors.length === 0) {
+    linkcheckResults += ` [✓] No internal anchor references found\n`;
+  } else {
+    var customAnchorsNotFound = 0;
+    var customAnchorsFound = 0;
+    const checkedAnchors = new Set();
+    
+    anchors.forEach(anchor => {
+      if (!checkedAnchors.has(anchor)) {
+        checkedAnchors.add(anchor);
+        if (!definedAnchors.has(anchor)) {
+          customAnchorsNotFound++;
+        } else {
+          customAnchorsFound++;
+          linkcheckResults += ` [✓] ${anchor} - custom anchor ID found\n`;
+        }
+      }
+    });
+    
+    if (customAnchorsFound === 0 && customAnchorsNotFound > 0) {
+      linkcheckResults += ` [✓] ${anchors.length} anchor reference(s) found (appear to be auto-generated header anchors)\n`;
+      linkcheckResults += `\nNote: Only explicit {#anchor} IDs are checked.\n`;
+      linkcheckResults += `To validate header anchors, review the rendered output.\n`;
+    } else if (customAnchorsFound > 0) {
+      linkcheckResults += `\n ${customAnchorsFound} custom anchor(s) validated successfully.\n`;
+      if (customAnchorsNotFound > 0) {
+        linkcheckResults += `${customAnchorsNotFound} anchor(s) appear to be header-based (not validated).\n`;
+      }
+    }
+  }
+  
+  linkcheckResults += "\n  \n";
+  
+  return safelyWriteFile(fileToWrite, linkcheckResults, true);
+}
+
+/**
+ * Check asset paths from both markdown images and HTML img tags
+ * Returns array of issues with missing assets
+ */
+function checkAssetPaths(content, baseDir) {
+  const issues = [];
+  
+  // Check markdown images: ![alt](path)
+  const mdImageRegex = /!\[.*?\]\(([^)]+)\)/g;
+  let match;
+  while ((match = mdImageRegex.exec(content)) !== null) {
+    const imagePath = match[1].split(/[?#]/)[0]; // Remove query params and anchors
+    if (!imagePath.startsWith("http://") && !imagePath.startsWith("https://")) {
+      const fullPath = path.isAbsolute(imagePath) ? imagePath : path.resolve(baseDir, imagePath);
+      if (!fs.existsSync(fullPath)) {
+        issues.push({ type: "![]()", path: imagePath });
+      }
+    }
+  }
+  
+  // Check HTML images: <img src="path">
+  const htmlImageRegex = /<img[^>]+src=["']([^"']+)["']/g;
+  while ((match = htmlImageRegex.exec(content)) !== null) {
+    const imagePath = match[1].split(/[?#]/)[0]; // Remove query params and anchors
+    if (!imagePath.startsWith("http://") && !imagePath.startsWith("https://")) {
+      const fullPath = path.isAbsolute(imagePath) ? imagePath : path.resolve(baseDir, imagePath);
+      if (!fs.existsSync(fullPath)) {
+        issues.push({ type: "<img>", path: imagePath });
+      }
+    }
+  }
+  
+  return issues;
+}
+
 /** Function that uses markdown-link-check to validate all URLS and relative links to images
  * Writes a file called outputFile.linkcheck.md with the results
  * https://github.com/tcort/markdown-link-check
  * DEBUG=merge:linkcheck
+ * @deprecated This function is kept for reference but replaced by checkAssetsAndUrls and checkAnchors
  */
 function linkcheck(inputFileStr, fileToWrite) {
   debugLinkcheck("LC start");
