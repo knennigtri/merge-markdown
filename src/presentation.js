@@ -115,7 +115,8 @@ function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams, outputFile) {
 }
 
 function buildPandocArgs(params, fileName) {
-  var cliArgs = "-o " + fileName;
+  // Quote the fileName to handle paths with spaces
+  var cliArgs = `-o "${fileName}"`;
   debugPandocDefaults(cliArgs);
   if (params) {
     for (var key in params) {
