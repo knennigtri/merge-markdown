@@ -3,13 +3,16 @@ npm run build (updates /dist)
 npm run lint:fix
 
 
-Deploy to prod
+# Deploy to prod
 
-npm version [major | minor | patch]
+  npm version [major | minor | patch]
 
-push origin main
+THEN
+  
+    push origin main
 
-OR
+  OR
 
-push origin dev
-  PR to main
+    push origin <branch>
+    
+    PR to main
