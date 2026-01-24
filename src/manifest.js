@@ -68,6 +68,129 @@ function resolveMultilingualPath(originalPath, baseDir, lang) {
 }
 
 /**
+ * Expands a folder path to all immediate .md files (non-recursive)
+ * @param {string} folderPath - The folder path from manifest (ending with /)
+ * @param {string} baseDir - The base directory for resolving relative paths
+ * @returns {array} - Array of relative file paths
+ */
+function expandFolderInput(folderPath, baseDir) {
+  const absFolder = path.resolve(baseDir, folderPath);
+  const mdFiles = [];
+  
+  try {
+    if (!fs.existsSync(absFolder)) {
+      console.log(`Warning: Folder does not exist: ${folderPath}`);
+      return mdFiles;
+    }
+    
+    const stat = fs.statSync(absFolder);
+    if (!stat.isDirectory()) {
+      console.log(`Warning: Path is not a directory: ${folderPath}`);
+      return mdFiles;
+    }
+    
+    // Read immediate files only (non-recursive)
+    const files = fs.readdirSync(absFolder);
+    
+    for (const file of files) {
+      // Skip hidden files
+      if (file.startsWith('.')) continue;
+      
+      const filePath = path.join(absFolder, file);
+      const fileStat = fs.statSync(filePath);
+      
+      // Only include files, not directories
+      if (fileStat.isFile() && path.extname(file).toLowerCase() === '.md') {
+        // Return relative path from baseDir
+        const relativePath = path.relative(baseDir, filePath);
+        mdFiles.push(relativePath);
+      }
+    }
+    
+    // Sort alphabetically for consistent ordering
+    mdFiles.sort();
+    
+  } catch (error) {
+    console.log(`Error reading folder ${folderPath}: ${error.message}`);
+  }
+  
+  return mdFiles;
+}
+
+/**
+ * Recursively finds all .md files in a directory and returns relative paths
+ * @param {string} directory - The directory to search
+ * @param {string} baseDir - The base directory for relative path calculation
+ * @returns {array} - Array of relative file paths
+ */
+function findMarkdownFilesRecursive(directory, baseDir) {
+  let markdownFiles = [];
+  
+  try {
+    const files = fs.readdirSync(directory);
+    
+    for (const file of files) {
+      // Skip hidden files and directories
+      if (file.startsWith('.')) continue;
+      
+      const filePath = path.join(directory, file);
+      const stats = fs.statSync(filePath);
+      
+      if (stats.isDirectory()) {
+        // Recursively search subdirectories
+        markdownFiles = markdownFiles.concat(findMarkdownFilesRecursive(filePath, baseDir));
+      } else if (path.extname(file).toLowerCase() === '.md') {
+        // Return relative path from baseDir
+        const relativePath = path.relative(baseDir, filePath);
+        markdownFiles.push(relativePath);
+      }
+    }
+  } catch (error) {
+    // Silently skip directories that can't be read
+    debug(`Error reading directory ${directory}: ${error.message}`);
+  }
+  
+  return markdownFiles;
+}
+
+/**
+ * Expands a regex pattern to all matching .md files (recursive)
+ * @param {string} patternStr - The pattern string from manifest (starting with pattern:)
+ * @param {string} baseDir - The base directory for resolving relative paths
+ * @returns {array} - Array of relative file paths matching the pattern
+ */
+function expandPatternInput(patternStr, baseDir) {
+  const mdFiles = [];
+  
+  try {
+    // Remove 'pattern:' prefix
+    const regexStr = patternStr.substring('pattern:'.length);
+    
+    // Create RegExp from pattern string (similar to optionReplaceStrings in merge.js)
+    const regex = new RegExp(regexStr);
+    
+    // Find all .md files recursively
+    const allMdFiles = findMarkdownFilesRecursive(baseDir, baseDir);
+    
+    // Filter files that match the regex pattern
+    for (const file of allMdFiles) {
+      if (regex.test(file)) {
+        mdFiles.push(file);
+      }
+    }
+    
+    // Sort alphabetically for consistent ordering
+    mdFiles.sort();
+    
+  } catch (error) {
+    console.log(`Error processing pattern '${patternStr}': ${error.message}`);
+    console.log('Please ensure your pattern is a valid regex expression.');
+  }
+  
+  return mdFiles;
+}
+
+/**
  * Creates a valid manifest JSON based on input (or no input)
  * DEBUG=manifest:json
  */
@@ -140,19 +263,50 @@ exports.getJSON_withABSPaths = function (inputManifestFile, qaMode, lang) {
     let translationStats = { translated: 0, fallback: 0 };
     
     for (const keyPath in manifestObj.input) {
-      const { resolvedPath, isTranslated } = resolveMultilingualPath(keyPath, baseDir, lang);
+      let filesToProcess = [];
       
-      // Track translation statistics
-      if (isTranslated) {
-        translationStats.translated++;
+      // Detect input type: folder, pattern, or regular file
+      if (keyPath.endsWith('/')) {
+        // Folder input - expand to all immediate .md files
+        filesToProcess = expandFolderInput(keyPath, baseDir);
+        
+        if (filesToProcess.length === 0) {
+          console.log(`Warning: No .md files found in folder: ${keyPath}`);
+        } else {
+          console.log(`[Folder Expansion] Found ${filesToProcess.length} file(s) in ${keyPath}:`);
+          filesToProcess.forEach(file => console.log(`  - ${path.basename(file)}`));
+        }
+      } else if (keyPath.startsWith('pattern:')) {
+        // Pattern input - expand to all matching .md files (recursive)
+        filesToProcess = expandPatternInput(keyPath, baseDir);
+        
+        if (filesToProcess.length === 0) {
+          console.log(`Warning: No files matched pattern: ${keyPath}`);
+        } else {
+          console.log(`[Pattern Match] Found ${filesToProcess.length} file(s) matching '${keyPath}':`);
+          filesToProcess.forEach(file => console.log(`  - ${file}`));
+        }
       } else {
-        translationStats.fallback++;
+        // Regular file path
+        filesToProcess = [keyPath];
       }
       
-      inputObjABS = {
-        ...inputObjABS,
-        [resolvedPath]: { ...manifestObj.input[keyPath] }
-      };
+      // Process each file with multilingual support
+      for (const filePath of filesToProcess) {
+        const { resolvedPath, isTranslated } = resolveMultilingualPath(filePath, baseDir, lang);
+        
+        // Track translation statistics
+        if (isTranslated) {
+          translationStats.translated++;
+        } else {
+          translationStats.fallback++;
+        }
+        
+        inputObjABS = {
+          ...inputObjABS,
+          [resolvedPath]: { ...manifestObj.input[keyPath] }
+        };
+      }
     }
     
     debugJson(`manifest.input (ABS): ${JSON.stringify(inputObjABS, null, 2)}`);
