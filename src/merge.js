@@ -6,6 +6,7 @@ const concat = require("concat");
 const markdownLinkCheck = require("markdown-link-check");
 const doctoc = require("doctoc/lib/transform");
 const validUrl = require("valid-url");
+const { pathToFileURL } = require("url");
 const debug = require("debug")("merge");
 const debugRelLinks = require("debug")("rellinks");
 const debugYaml = require("debug")("o:yaml");
@@ -379,7 +380,7 @@ function optionBuildTOC(fileContents, doctocLocal, doctocGlobal) {
 function linkcheck(inputFileStr, fileToWrite) {
   debugLinkcheck("LC start");
   var inputFolder = path.dirname(inputFileStr);
-  var base = new URL(path.join("file:", path.resolve(inputFolder))); //TODO Might be failing on windows
+  var base = pathToFileURL(path.resolve(inputFolder));
 
   var fileContents = fs.readFileSync(inputFileStr, "utf-8");
   debugLinkcheck("Async linkcheck for " + inputFileStr + " added.");
