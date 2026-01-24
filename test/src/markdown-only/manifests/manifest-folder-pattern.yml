@@ -1,0 +1,10 @@
+---
+input:
+  assets/: {noYAML: true}
+  "pattern:.*headers.*\\.md": {doctoc: true}
+  ../markdown-examples.md: ""
+output:
+  name: ../target/folder-pattern-test.md
+  doctoc: true
+qa: {exclude: "(frontmatter)"}
+---

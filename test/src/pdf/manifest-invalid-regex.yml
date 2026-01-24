@@ -1,0 +1,8 @@
+---
+input:
+  "pattern:[invalid(regex": {noYAML: true}
+  m1/: {noYAML: true}
+output:
+  name: merged/invalid-regex-test.md
+  doctoc: true
+---

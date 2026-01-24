@@ -2,7 +2,7 @@
 title: Ipsum module Two
 description: Etiam a fermentum nibh. Fusce molestie vitae nulla a mollis. Quisque lectus neque, faucibus in interdum in, dignissim a enim. Nullam at ex at felis rhoncus sodales.
 editor: https://typora.io/
-typora-copy-images-to: ../../assets
+typora-copy-images-to: assets
 ---
 
 # [#]:  Ipsum module Two
@@ -41,9 +41,9 @@ Nullam varius bibendum elit, eu lobortis magna laoreet vitae. Donec nec vestibul
 
 1. Duis et justo ornare, scelerisque ligula eu, mattis lacus.
 2. Donec quis lectus ac ligula ultricies suscipit sed convallis nunc.
-   <img src="../../assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
+   <img src="assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
 3. Pellentesque ac est id lorem cursus fringilla a sit amet diam.
-4. In dapibus ligula blandit odio porta ornare.![sample-image](../../assets/sample-image.png)
+4. In dapibus ligula blandit odio porta ornare.![sample-image](assets/sample-image.png)
 
 #### Task or Step (H4): \n before next paragraph
 

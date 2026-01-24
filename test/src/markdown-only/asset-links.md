@@ -3,7 +3,7 @@ title: Lorem Ipsum One
 description: Etiam a fermentum nibh. Fusce molestie vitae nulla a mollis. Quisque lectus neque, faucibus in interdum in, dignissim a enim. Nullam at ex at felis rhoncus sodales
 subject: module subject
 editor: https://typora.io/
-typora-copy-images-to: ../../assets
+typora-copy-images-to: assets
 ---
 
 
@@ -23,62 +23,62 @@ Making sure Asset links are correctly translated into absolute paths
 
 With ![altText]
 
-![sample-image](../../assets/sample-image.png)
+![sample-image](assets/sample-image.png)
 
 Without ![]
 
-![](../../assets/sample-image.png)
+![](assets/sample-image.png)
 
 < img style="zoom:50%" / >
 
-<img src="../../assets/sample-image.png" style="zoom:50%;" />
+<img src="assets/sample-image.png" style="zoom:50%;" />
 
 #### Links Directly after each other
 
 ![markdown]
 
-![cover-image1](../../assets/cover_image.png)
-![cover-image2](../../assets/cover_image.png)
+![cover-image1](assets/cover_image.png)
+![cover-image2](assets/cover_image.png)
 
 < img / >
 
-<img src="../../assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
-<img src="../../assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
+<img src="assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
+<img src="assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
 
 #### < img / > Variants
 
 50% Zoom
 
-<img src="../../assets/sample-image.png" style="zoom:50%;" />
+<img src="assets/sample-image.png" style="zoom:50%;" />
 
 50% Zoom
 
-<img src="../../assets/sample-image.png"  style="zoom:10%;" />
+<img src="assets/sample-image.png"  style="zoom:10%;" />
 
 No Zoom
 
-<img src="../../assets/sample-image.png" />
+<img src="assets/sample-image.png" />
 
 ## [#]: Absolute Asset Links
 
 ![markdown]
 
-![sample-image](/Users/nennig/Documents/GitHub/knennigtri/merge-markdown/test/assets/sample-image.png)
+![sample-image](/Users/nennig/Documents/GitHub/knennigtri/merge-markdown/test/src/markdown-only/assets/sample-image.png)
 
 < img / >
 
-<img src="/Users/nennig/Documents/GitHub/knennigtri/merge-markdown/test/assets/sample-image.png" style="zoom:50%;" />
+<img src="/Users/nennig/Documents/GitHub/knennigtri/merge-markdown/test/src/markdown-only/assets/sample-image.png" style="zoom:50%;" />
 
 
 ## [#]: Broken Links
 
 Too Deep
 
-![sample-image](../../../assets/sample-image.png)
+![sample-image](../../assets/sample-image.png)
 
 Too Shallow
 
-![](../assets/sample-image.png)
+![](./sample-image.png)
 
 File only
 
@@ -91,10 +91,10 @@ File only
 
 1. Duis et justo ornare, scelerisque ligula eu, mattis lacus.
 2. Donec quis lectus ac ligula ultricies suscipit sed convallis nunc.
-   <img src="../../assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
+   <img src="assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
 3. Pellentesque ac est id lorem cursus fringilla a sit amet diam.
 4. ![markdown].
-  ![](../../assets/sample-image.png)
+  ![](assets/sample-image.png)
 5. Donec quis lectus ac ligula ultricies suscipit sed convallis nunc.
 
 #### Surrounded by \n
@@ -102,11 +102,11 @@ File only
 1. Duis et justo ornare, scelerisque ligula eu, mattis lacus.
 2. < img >.
   
-   <img src="../../assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
+   <img src="assets/sample-image.png" alt="sample-image" style="zoom:50%;" />
 
 3. Pellentesque ac est id lorem cursus fringilla a sit amet diam.
 4. ![markdown].
    
-  ![](../../assets/sample-image.png)
+  ![](assets/sample-image.png)
    
 5. Donec quis lectus ac ligula ultricies suscipit sed convallis nunc.
