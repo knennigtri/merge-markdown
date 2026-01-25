@@ -153,7 +153,7 @@ function run() {
         const relativePath = path.relative(process.cwd(), resultFile);
         console.log("\n✅ Output: " + relativePath);
       })
-      .catch((error) => {
+      .catch(() => {
         // Error details already logged by the respective functions
         // Just exit with error code
         process.exit(1);

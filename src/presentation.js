@@ -1,7 +1,6 @@
 const manifestUtil = require("./manifest.js");
 const fs = require("fs");
 const path = require("path");
-const nodePandoc = require("node-pandoc");
 const {execFile} = require("child_process");
 const wkhtmltopdf = require("wkhtmltopdf");
 const debug = require("debug")("presentation");
@@ -29,7 +28,6 @@ exports.EXTS = EXTS;
 var build = async function (inputFile, outputFormat, manifestFileStr) {
   if(!outputFormat) return inputFile;
 
-  const relativeInput = path.relative(process.cwd(), inputFile);
   console.log("\n📄 Converting to " + outputFormat + "...");
   
   let manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr);
@@ -98,7 +96,7 @@ function pandocWriteToFile(inputFile, pandocParams, outputExt) {
   
   return new Promise((resolve, reject) => {
     // Use execFile instead of node-pandoc for better error handling
-    execFile('pandoc', [inputFile, ...pandocArgs], (err, stdout, stderr) => {
+    execFile("pandoc", [inputFile, ...pandocArgs], (err, stdout, stderr) => {
       if (err) {
         // Check if output file was created despite error/warning
         if (fs.existsSync(outputFile)) {
@@ -106,7 +104,7 @@ function pandocWriteToFile(inputFile, pandocParams, outputExt) {
           if (stderr) {
             const warningMsg = stderr.trim();
             if (warningMsg) {
-              console.log("   ⚠ Pandoc warning: " + warningMsg.split('\n')[0]);
+              console.log("   ⚠ Pandoc warning: " + warningMsg.split("\n")[0]);
               debugPandoc("Full warning: " + warningMsg);
             }
           }
@@ -115,7 +113,7 @@ function pandocWriteToFile(inputFile, pandocParams, outputExt) {
         } else {
           // Real error - file not created
           console.error("\n❌ Pandoc error:");
-          if (err.code === 'ENOENT') {
+          if (err.code === "ENOENT") {
             console.error("   Pandoc not found. Make sure it's installed and in your PATH");
             console.error("   Install: https://pandoc.org/installing.html");
           } else {
@@ -128,7 +126,7 @@ function pandocWriteToFile(inputFile, pandocParams, outputExt) {
         // Show any warnings even on success
         if (stderr && stderr.trim()) {
           const warningMsg = stderr.trim();
-          console.log("   ⚠ " + warningMsg.split('\n')[0]);
+          console.log("   ⚠ " + warningMsg.split("\n")[0]);
           debugPandoc("Full output: " + warningMsg);
         }
         console.log("   ✓ Generated " + path.parse(outputFile).base);
@@ -145,7 +143,7 @@ function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams, outputFile) {
   debugWkhtmltopdf("input: " + inputFile);
   debugWkhtmltopdf("Args: " + JSON.stringify(options, null, 2));
   return new Promise((resolve, reject) => {
-    wkhtmltopdf(fs.createReadStream(inputFile), options, function (err, result) {
+    wkhtmltopdf(fs.createReadStream(inputFile), options, function (err) {
       if (err) {
         const errMsg = err.toString();
         console.error("\n❌ wkhtmltopdf error:");
@@ -158,14 +156,14 @@ function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams, outputFile) {
           console.error("   " + errMsg);
         } else if (errMsg.includes("Exit with code")) {
           // wkhtmltopdf returned non-zero exit code
-          const lines = errMsg.split('\n').filter(l => l.trim());
+          const lines = errMsg.split("\n").filter(l => l.trim());
           console.error("   " + lines[0]);
           if (lines.length > 1) {
             lines.slice(1, 4).forEach(line => console.error("   " + line));
           }
           console.error("   Docs: http://wkhtmltopdf.org/usage/wkhtmltopdf.txt");
         } else {
-          console.error("   " + errMsg.split('\n')[0]);
+          console.error("   " + errMsg.split("\n")[0]);
           console.error("   Docs: http://wkhtmltopdf.org/usage/wkhtmltopdf.txt");
         }
         
@@ -181,7 +179,7 @@ function wkhtmltopdfWriteToFile(inputFile, wkhtmltopdfParams, outputFile) {
 function buildPandocArgsArray(params, fileName) {
   // Build args as array for execFile
   // Don't use --quiet so we can see useful warnings
-  var argsArray = ['-o', fileName];
+  var argsArray = ["-o", fileName];
   debugPandocDefaults("Base args: " + JSON.stringify(argsArray));
   
   if (params) {
@@ -193,7 +191,7 @@ function buildPandocArgsArray(params, fileName) {
         debugPandocOptions("Arg added: " + paramValue);
         // Split args that have spaces (e.g., "-c mystyle.css" becomes ["-c", "mystyle.css"])
         const splitArgs = paramValue.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
-        argsArray.push(...splitArgs.map(arg => arg.replace(/^"(.*)"$/, '$1')));
+        argsArray.push(...splitArgs.map(arg => arg.replace(/^"(.*)"$/, "$1")));
       }
     }
   } else {

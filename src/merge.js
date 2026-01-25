@@ -62,8 +62,6 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
   var fileArr = [];
   var refFileArr = [];
   var linkcheckPromises = [];
-  var processedCount = 0;
-  var skippedCount = 0;
   
   console.log("\n📝 Processing input files...");
   
@@ -71,7 +69,6 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
     var inputFileName = path.basename(inputKey);
     if (onlyQA && manifestQARegEx.test(inputFileName)) {
       console.log("   ⊘ " + inputFileName + " (excluded for QA)");
-      skippedCount++;
       return;
     }
     if (!fs.existsSync(inputKey)) {
@@ -82,7 +79,6 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
       } else {
         console.log("⚠ " + inputKey + " (file not found)");
       }
-      skippedCount++;
       return;
     }
     console.log("   ✓ " + inputFileName);
@@ -110,7 +106,6 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
 
     //add the  temp file to the list to merge together
     fileArr.push(tempFile);
-    processedCount++;
     debug(path.basename(tempFile));
   });
   
@@ -440,13 +435,11 @@ function checkAssetsAndUrls(inputFileStr, inputFileName) {
   
   return new Promise((resolve) => {
     var linkcheckResults = "FILE: " + inputFileStr + "\n";
-    var hasIssues = false;
     
     // Custom asset checking for both markdown and HTML images
     const assetIssues = checkAssetPaths(fileContents, inputFolder);
     assetIssues.forEach(issue => {
       linkcheckResults += ` [x] ${issue.type}: ${issue.path} is dead\n`;
-      hasIssues = true;
     });
     
     // Use markdown-link-check for external URLs only (ignore anchors)
@@ -470,7 +463,6 @@ function checkAssetsAndUrls(inputFileStr, inputFileName) {
         results.forEach(function (result) {
           if (result.status === "dead" && !result.link.startsWith("#")) {
             linkcheckResults += ` [x] URL: ${result.link} is dead\n`;
-            hasIssues = true;
           }
         });
         
@@ -509,7 +501,7 @@ function checkAnchors(mergedFile, fileToWrite) {
   linkcheckResults += "FILE: " + mergedFile + "\n";
   
   if (anchors.length === 0) {
-    linkcheckResults += ` [✓] No internal anchor references found\n`;
+    linkcheckResults += " [✓] No internal anchor references found\n";
   } else {
     var customAnchorsNotFound = 0;
     var customAnchorsFound = 0;
@@ -529,8 +521,8 @@ function checkAnchors(mergedFile, fileToWrite) {
     
     if (customAnchorsFound === 0 && customAnchorsNotFound > 0) {
       linkcheckResults += ` [✓] ${anchors.length} anchor reference(s) found (appear to be auto-generated header anchors)\n`;
-      linkcheckResults += `\nNote: Only explicit {#anchor} IDs are checked.\n`;
-      linkcheckResults += `To validate header anchors, review the rendered output.\n`;
+      linkcheckResults += "\nNote: Only explicit {#anchor} IDs are checked.\n";
+      linkcheckResults += "To validate header anchors, review the rendered output.\n";
     } else if (customAnchorsFound > 0) {
       linkcheckResults += `\n ${customAnchorsFound} custom anchor(s) validated successfully.\n`;
       if (customAnchorsNotFound > 0) {
@@ -585,6 +577,7 @@ function checkAssetPaths(content, baseDir) {
  * DEBUG=merge:linkcheck
  * @deprecated This function is kept for reference but replaced by checkAssetsAndUrls and checkAnchors
  */
+// eslint-disable-next-line no-unused-vars
 function linkcheck(inputFileStr, fileToWrite) {
   debugLinkcheck("LC start");
   var inputFolder = path.dirname(inputFileStr);

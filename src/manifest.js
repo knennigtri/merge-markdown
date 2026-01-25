@@ -94,13 +94,13 @@ function expandFolderInput(folderPath, baseDir) {
     
     for (const file of files) {
       // Skip hidden files
-      if (file.startsWith('.')) continue;
+      if (file.startsWith(".")) continue;
       
       const filePath = path.join(absFolder, file);
       const fileStat = fs.statSync(filePath);
       
       // Only include files, not directories
-      if (fileStat.isFile() && path.extname(file).toLowerCase() === '.md') {
+      if (fileStat.isFile() && path.extname(file).toLowerCase() === ".md") {
         // Return relative path from baseDir
         const relativePath = path.relative(baseDir, filePath);
         mdFiles.push(relativePath);
@@ -131,7 +131,7 @@ function findMarkdownFilesRecursive(directory, baseDir) {
     
     for (const file of files) {
       // Skip hidden files and directories
-      if (file.startsWith('.')) continue;
+      if (file.startsWith(".")) continue;
       
       const filePath = path.join(directory, file);
       const stats = fs.statSync(filePath);
@@ -139,7 +139,7 @@ function findMarkdownFilesRecursive(directory, baseDir) {
       if (stats.isDirectory()) {
         // Recursively search subdirectories
         markdownFiles = markdownFiles.concat(findMarkdownFilesRecursive(filePath, baseDir));
-      } else if (path.extname(file).toLowerCase() === '.md') {
+      } else if (path.extname(file).toLowerCase() === ".md") {
         // Return relative path from baseDir
         const relativePath = path.relative(baseDir, filePath);
         markdownFiles.push(relativePath);
@@ -164,7 +164,7 @@ function expandPatternInput(patternStr, baseDir) {
   
   try {
     // Remove 'pattern:' prefix
-    const regexStr = patternStr.substring('pattern:'.length);
+    const regexStr = patternStr.substring("pattern:".length);
     
     // Create RegExp from pattern string (similar to optionReplaceStrings in merge.js)
     const regex = new RegExp(regexStr);
@@ -184,7 +184,7 @@ function expandPatternInput(patternStr, baseDir) {
     
   } catch (error) {
     console.log(`Error processing pattern '${patternStr}': ${error.message}`);
-    console.log('Please ensure your pattern is a valid regex expression.');
+    console.log("Please ensure your pattern is a valid regex expression.");
   }
   
   return mdFiles;
@@ -266,7 +266,7 @@ exports.getJSON_withABSPaths = function (inputManifestFile, qaMode, lang) {
       let filesToProcess = [];
       
       // Detect input type: folder, pattern, or regular file
-      if (keyPath.endsWith('/')) {
+      if (keyPath.endsWith("/")) {
         // Folder input - expand to all immediate .md files
         filesToProcess = expandFolderInput(keyPath, baseDir);
         
@@ -276,7 +276,7 @@ exports.getJSON_withABSPaths = function (inputManifestFile, qaMode, lang) {
           console.log(`[Folder Expansion] Found ${filesToProcess.length} file(s) in ${keyPath}:`);
           filesToProcess.forEach(file => console.log(`  - ${path.basename(file)}`));
         }
-      } else if (keyPath.startsWith('pattern:')) {
+      } else if (keyPath.startsWith("pattern:")) {
         // Pattern input - expand to all matching .md files (recursive)
         filesToProcess = expandPatternInput(keyPath, baseDir);
         

@@ -368,26 +368,28 @@ async function execContainer(container, command, attachStd) {
             });
             stream.on("end", function () {
               // Clean the complete output after all chunks received
+              /* eslint-disable no-control-regex */
               const cleanOutput = rawOutput
                 // Remove ALL ANSI escape sequences (most comprehensive approach)
-                .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')  // CSI sequences (including ? for private modes)
-                .replace(/\x1b\][0-9;]*\x07/g, '')        // OSC sequences ending with BEL
-                .replace(/\x1b\][0-9;]*\x1b\\/g, '')      // OSC sequences ending with ST
-                .replace(/\x1b[=>()]/g, '')               // Set modes and character sets
-                .replace(/\x1b[78]/g, '')                 // Save/restore cursor
-                .replace(/\x1b[HM]/g, '')                 // Home and reverse index
-                .replace(/\x1b[c]/g, '')                  // Reset
-                .replace(/\x1b\[[0-9;]*m/g, '')           // SGR (color/style) sequences
-                .replace(/\x1b[PX^_]/g, '')               // Various escape sequences
+                .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, "")  // CSI sequences (including ? for private modes)
+                .replace(/\x1b\][0-9;]*\x07/g, "")        // OSC sequences ending with BEL
+                .replace(/\x1b\][0-9;]*\x1b\\/g, "")      // OSC sequences ending with ST
+                .replace(/\x1b[=>()]/g, "")               // Set modes and character sets
+                .replace(/\x1b[78]/g, "")                 // Save/restore cursor
+                .replace(/\x1b[HM]/g, "")                 // Home and reverse index
+                .replace(/\x1b[c]/g, "")                  // Reset
+                .replace(/\x1b\[[0-9;]*m/g, "")           // SGR (color/style) sequences
+                .replace(/\x1b[PX^_]/g, "")               // Various escape sequences
                 // Remove ALL control characters except newline and tab
-                .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+                .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, "");
+              /* eslint-enable no-control-regex */
               
               // Split into lines and indent
-              const lines = cleanOutput.split('\n')
+              const lines = cleanOutput.split("\n")
                 .map(line => line.trim())
                 .filter(line => line.length > 0)
                 .map(line => dockerConsole + line)
-                .join('\n');
+                .join("\n");
               
               if (lines.trim()) {
                 console.log(lines);
@@ -403,7 +405,7 @@ async function execContainer(container, command, attachStd) {
 
 function dockerImageExists(imageName) {
   var img = imageName || `${IMAGE_NAME}:${IMAGE_TAG}`;
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     docker.listImages({ filters: { reference: [img] } }, (err, images) => {
       if (images.length > 0) {
         resolve(true);
@@ -547,7 +549,7 @@ async function checkDockerImageNodeVersion(imageName) {
 }
 
 function isDockerRunning() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     docker.ping((err) => {
       if (err) {
         resolve(false); // Docker is not running or not accessible
