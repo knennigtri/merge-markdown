@@ -82,27 +82,6 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
     if (needsRebuild) {
       debugDocker(`Rebuilding Docker image. Reason: ${rebuildReason}`);
       
-      // Clean up existing container first to avoid conflicts
-      console.log("Cleaning up existing container...");
-      
-      // Try docker compose down first
-      const cleanupCommand = `docker compose -f ${path.join(__dirname, "../docker/docker-compose.yml")} down`;
-      try {
-        await runExecCommands(cleanupCommand, manifestRelDir);
-        debugDocker("Docker compose cleanup completed");
-      } catch (cleanupError) {
-        debugDocker(`Docker compose cleanup warning: ${cleanupError.message}`);
-      }
-      
-      // Force remove the specific container if it still exists
-      const forceRemoveCommand = `docker rm -f ${CONTAINER_NAME}`;
-      try {
-        await runExecCommands(forceRemoveCommand, manifestRelDir);
-        debugDocker(`Force removed container: ${CONTAINER_NAME}`);
-      } catch (removeError) {
-        debugDocker(`Force remove warning (container may not exist): ${removeError.message}`);
-      }
-      
       // Set environment variable for docker-compose to use the correct version
       const versionToUse = await getValidMergeMarkdownVersion(packageInfo.version);
       process.env.MERGE_MARKDOWN_VERSION = versionToUse;
@@ -170,36 +149,54 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
       .then(resultContainer => {
         debugDocker(`Running container is ${resultContainer.id}`);
         
-        // Check if merge-markdown is installed, install if missing
-        console.log("Verifying merge-markdown installation in container...");
-        const checkCommand = "npm list -g @knennigtri/merge-markdown";
-        debugDocker(`Checking installation: ${checkCommand}`);
-        return execContainer(resultContainer, checkCommand, false)
-          .then(() => {
-            debugDocker("merge-markdown is already installed");
-            return resultContainer;
-          })
-          .catch(async () => {
-            console.log("merge-markdown not found in container, installing...");
-            const versionToInstall = await getValidMergeMarkdownVersion(packageInfo.version);
-            
-            if (versionToInstall !== packageInfo.version) {
-              console.log(`Warning: Local version ${packageInfo.version} not available on npm registry. Installing ${versionToInstall} instead.`);
-            }
-            
-            const installCommand = `npm install -g @knennigtri/merge-markdown@${versionToInstall}`;
-            console.log(`Installing: ${installCommand}`);
-            return execContainer(resultContainer, installCommand, true)
-              .catch((installError) => {
-                // If specific version fails, try latest as final fallback
-                if (versionToInstall !== "latest") {
-                  console.log("Installation failed, trying latest version as fallback...");
-                  const fallbackCommand = "npm install -g @knennigtri/merge-markdown@latest";
-                  return execContainer(resultContainer, fallbackCommand, true);
-                }
-                throw installError;
-              });
-          });
+        // Check for development mode from .env or environment
+        // Use NODE_ENV=dev to enable development mode (uses local src/ instead of npm registry)
+        const isDevelopment = process.env.NODE_ENV === "dev";
+        
+        if (isDevelopment) {
+          // Development mode: Install from local source
+          console.log("🔧 Development mode: Installing from local source...");
+          const commands = [
+            `cd ${WORKING_DIR}`,
+            "npm install --silent",  // Install dependencies (suppress warnings)
+            "npm link --silent"      // Link globally (suppress warnings)
+          ].join(" && ");
+          
+          debugDocker(`Dev install command: ${commands}`);
+          // Set NODE_ENV=dev in container so bin/global.js uses src/ instead of dist/
+          return execContainer(resultContainer, ["/bin/sh", "-c", `export NODE_ENV=dev && ${commands}`], true);
+        } else {
+          // Production mode: Install from npm registry (default behavior)
+          console.log("Verifying merge-markdown installation in container...");
+          const checkCommand = "npm list -g @knennigtri/merge-markdown";
+          debugDocker(`Checking installation: ${checkCommand}`);
+          return execContainer(resultContainer, checkCommand, false)
+            .then(() => {
+              debugDocker("merge-markdown is already installed");
+              return resultContainer;
+            })
+            .catch(async () => {
+              console.log("merge-markdown not found in container, installing...");
+              const versionToInstall = await getValidMergeMarkdownVersion(packageInfo.version);
+              
+              if (versionToInstall !== packageInfo.version) {
+                console.log(`Warning: Local version ${packageInfo.version} not available on npm registry. Installing ${versionToInstall} instead.`);
+              }
+              
+              const installCommand = `npm install -g @knennigtri/merge-markdown@${versionToInstall} --silent`;
+              console.log(`Installing: ${installCommand}`);
+              return execContainer(resultContainer, installCommand, true)
+                .catch((installError) => {
+                  // If specific version fails, try latest as final fallback
+                  if (versionToInstall !== "latest") {
+                    console.log("Installation failed, trying latest version as fallback...");
+                    const fallbackCommand = "npm install -g @knennigtri/merge-markdown@latest --silent";
+                    return execContainer(resultContainer, fallbackCommand, true);
+                  }
+                  throw installError;
+                });
+            });
+        }
       })
       .then(resultContainer => {
         debugDocker(`Running container is ${resultContainer.id}`);
@@ -208,7 +205,11 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
         let requestedCMD = `${npmModuleName} ${cmdArgs}`;
         requestedCMD = requestedCMD.replace("--docker", "");
 
-        const commands = [`cd ${WORKING_DIR}`, requestedCMD].join(" && ");
+        // In development mode, set NODE_ENV=dev so bin/global.js uses src/ instead of dist/
+        const isDevelopment = process.env.NODE_ENV === "dev";
+        const envPrefix = isDevelopment ? "export NODE_ENV=dev && " : "";
+        
+        const commands = [`cd ${WORKING_DIR}`, `${envPrefix}${requestedCMD}`].join(" && ");
         const dockerCMD = ["/bin/sh", "-c", commands];
         debugDocker(dockerCMD);
         debugDocker("Merging in Docker");
@@ -341,7 +342,7 @@ async function execContainer(container, command, attachStd) {
     container.exec(execOptions, function (err, exec) {
       console.log("Executing command: ", execOptions.Cmd.join(" "));
       const dockerConsole = "  ";
-      let finalOutput = "";
+      let rawOutput = ""; // Buffer all output first
       if (err) {
         console.error("Error creating exec instance:", err);
         reject(err);
@@ -352,17 +353,47 @@ async function execContainer(container, command, attachStd) {
             reject(err);
           } else {
             stream.on("data", function (chunk) {
-              finalOutput = finalOutput + dockerConsole + chunk;
-            });
-            exec.inspect(function (err, data) {
-              if (err) {
-                console.error("Error inspecting exec instance:", err);
-              } else {
-                console.log(dockerConsole + "Running: ", data.ProcessConfig.entrypoint);
+              // Docker streams include an 8-byte header, skip it if present
+              let data = chunk;
+              if (chunk.length > 8) {
+                // Header format: [stream_type, 0, 0, 0, size1, size2, size3, size4]
+                // Check if this looks like a Docker multiplexed stream header
+                const isHeader = (chunk[0] === 0 || chunk[0] === 1 || chunk[0] === 2) && 
+                                  chunk[1] === 0 && chunk[2] === 0 && chunk[3] === 0;
+                if (isHeader) {
+                  data = chunk.slice(8);
+                }
               }
+              rawOutput += data.toString();
             });
             stream.on("end", function () {
-              console.log(finalOutput);
+              // Clean the complete output after all chunks received
+              /* eslint-disable no-control-regex */
+              const cleanOutput = rawOutput
+                // Remove ALL ANSI escape sequences (most comprehensive approach)
+                .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, "")  // CSI sequences (including ? for private modes)
+                .replace(/\x1b\][0-9;]*\x07/g, "")        // OSC sequences ending with BEL
+                .replace(/\x1b\][0-9;]*\x1b\\/g, "")      // OSC sequences ending with ST
+                .replace(/\x1b[=>()]/g, "")               // Set modes and character sets
+                .replace(/\x1b[78]/g, "")                 // Save/restore cursor
+                .replace(/\x1b[HM]/g, "")                 // Home and reverse index
+                .replace(/\x1b[c]/g, "")                  // Reset
+                .replace(/\x1b\[[0-9;]*m/g, "")           // SGR (color/style) sequences
+                .replace(/\x1b[PX^_]/g, "")               // Various escape sequences
+                // Remove ALL control characters except newline and tab
+                .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, "");
+              /* eslint-enable no-control-regex */
+              
+              // Split into lines and indent
+              const lines = cleanOutput.split("\n")
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map(line => dockerConsole + line)
+                .join("\n");
+              
+              if (lines.trim()) {
+                console.log(lines);
+              }
               resolve(container);
             });
           }
@@ -374,7 +405,7 @@ async function execContainer(container, command, attachStd) {
 
 function dockerImageExists(imageName) {
   var img = imageName || `${IMAGE_NAME}:${IMAGE_TAG}`;
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     docker.listImages({ filters: { reference: [img] } }, (err, images) => {
       if (images.length > 0) {
         resolve(true);
@@ -518,7 +549,7 @@ async function checkDockerImageNodeVersion(imageName) {
 }
 
 function isDockerRunning() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     docker.ping((err) => {
       if (err) {
         resolve(false); // Docker is not running or not accessible

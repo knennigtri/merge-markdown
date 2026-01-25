@@ -4,6 +4,7 @@ const manifestUtil = require("./manifest.js");
 const merge = require("./merge.js");
 const presentation = require("./presentation.js");
 const dockerMerger = require("./docker.js");
+const assetCleaner = require("./asset-cleaner.js");
 const path = require("path");
 const fs = require("fs");
 const minimist = require("minimist");
@@ -23,7 +24,8 @@ const debbugOptions = {
   ...manifestUtil.debbugOptions,
   ...merge.debbugOptions,
   ...presentation.debbugOptions,
-  ...dockerMerger.debbugOptions
+  ...dockerMerger.debbugOptions,
+  "asset-cleaner": "Asset cleaning debug messages"
 };
 
 function run() {
@@ -42,6 +44,10 @@ function run() {
   const argsHTML = args.html || args.HTML;
   const argsWORD = args.word || args.WORD;
   const argsLang = args.lang;
+  const argsCleanAssets = args["clean-assets"];
+  const argsAssetsDir = args["assets-dir"];
+  const argsFix = args.fix;
+  const argsNoAssetPreview = args["no-asset-preview"];
 
   debugArgs(JSON.stringify(args, null, 2));
 
@@ -62,10 +68,17 @@ function run() {
     console.log(`Options: ${JSON.stringify(debbugOptions, null, 2)}`);
     return;
   }
-  if (argsQA) console.log("QA mode");
-  if (argsSkipLinkcheck) console.log("noLinkcheck mode");
-  if (argsMaintainAssetPaths) console.log("maintainAssetPaths mode");
-  if (argsLang) console.log("Language mode: " + argsLang);
+  // Show active modes
+  const activeModes = [];
+  if (argsQA) activeModes.push("QA");
+  if (argsSkipLinkcheck) activeModes.push("Skip Linkcheck");
+  if (argsMaintainAssetPaths) activeModes.push("Maintain Asset Paths");
+  if (argsLang) activeModes.push("Language: " + argsLang);
+  if (argsNoAssetPreview) activeModes.push("No Asset Preview");
+  
+  if (activeModes.length > 0) {
+    console.log("⚙️  Modes: " + activeModes.join(", "));
+  }
 
   if (argsCreate) {
     if(argsUseDocker) console.log("Docker cannot be used with --Create mode");
@@ -89,6 +102,12 @@ function run() {
 
   if(argsGetDockerFiles) {
     downloadDockerFiles();
+    return;
+  }
+
+  // Handle asset cleaning command
+  if (argsCleanAssets !== undefined) {
+    runAssetCleaning(argsCleanAssets, argsAssetsDir, argsFix);
     return;
   }
 
@@ -118,9 +137,10 @@ function run() {
   }
 
   debugCLI("manifest found at: " + manifestFilePath);
-  console.log("Using: " + manifestFilePath);
+  const relativeManifest = path.relative(process.cwd(), manifestFilePath);
+  console.log("📋 Manifest: " + relativeManifest);
   try {
-    merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths, argsLang)
+    merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths, argsLang, argsNoAssetPreview)
       .then(resultMarkdownFile => {
         //Add presentation
         var outputFormat = "";
@@ -130,10 +150,13 @@ function run() {
         return presentation.build(resultMarkdownFile, outputFormat, manifestFilePath);
       })
       .then(resultFile => {
-        console.log(resultFile + " created.");
+        const relativePath = path.relative(process.cwd(), resultFile);
+        console.log("\n✅ Output: " + relativePath);
       })
-      .catch((error) => {
-        console.error(`Error creating file: ${error}`);
+      .catch(() => {
+        // Error details already logged by the respective functions
+        // Just exit with error code
+        process.exit(1);
       });
   } catch (err) {
     console.error(err);
@@ -154,6 +177,38 @@ function downloadDockerFiles(manifestPath){
   });
 }
 
+function runAssetCleaning(targetDir, assetsDir, fixMode) {
+  debugCLI("Running asset cleaning");
+  
+  // Determine target directory
+  let cleanTargetDir;
+  if (typeof targetDir === "string") {
+    // User provided a specific directory
+    cleanTargetDir = path.isAbsolute(targetDir) 
+      ? targetDir 
+      : path.join(process.cwd(), targetDir);
+  } else {
+    // No directory specified, use current working directory
+    cleanTargetDir = process.cwd();
+  }
+  
+  // Use provided assets directory name or default
+  const assetsFolderName = assetsDir || "assets";
+  const isFixMode = fixMode || false;
+  
+  debugCLI(`Target directory: ${cleanTargetDir}`);
+  debugCLI(`Assets folder: ${assetsFolderName}`);
+  debugCLI(`Fix mode: ${isFixMode}`);
+  
+  // Run the asset cleaning
+  const result = assetCleaner.cleanAssets(cleanTargetDir, assetsFolderName, isFixMode, true);
+  
+  if (result.error) {
+    console.error(`❌ Error: ${result.error}`);
+    process.exit(1);
+  }
+}
+
 
 const HELP = {
   default:
@@ -169,11 +224,15 @@ Arguments:
   --skipLinkcheck                          Skips linkchecking
   --maintainAssetPaths                     Retains original asset paths
   --lang <language>                        Language code for multilingual support (e.g., --lang=es)
+  --clean-assets [directory]               Clean unused assets in specified directory (or current directory)
+  --assets-dir <name>                      Name of assets folder (default: 'assets')
+  --fix                                    Actually delete unused assets (default: preview mode)
+  --no-asset-preview                       Disable asset preview during normal merge workflow
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
   --html --word                            Output to HTML or Word. Must have Pandoc installed!
   -h, --help                               Displays this screen
   -h manifest | options |
-    outputOptions | qa | docker            See examples
+    outputOptions | qa | docker | assets   See examples
   -d, --debug                              See debug Options
 Default is ${manifestUtil.DEFAULT_MANIFEST.FILE_TYPES} unless specified in -m.
 
@@ -235,6 +294,21 @@ Example: exclude all filenames with "frontmatter" by default
 
   Alternatively you can download the docker files directly:
     ${npmModuleName} --getDockerFiles
+    `,
+  assets:
+`Asset cleaning helps remove unused image files from your project directories.
+
+Examples:
+  ${npmModuleName} --clean-assets                    # Preview unused assets in current directory
+  ${npmModuleName} --clean-assets ./modules --fix    # Delete unused assets in modules directory
+  ${npmModuleName} --clean-assets --assets-dir images # Use 'images' folder instead of 'assets'
+  
+Asset Preview (automatic during merge):
+  ${npmModuleName} -m manifest.yml                   # Shows unused assets summary after merge
+  ${npmModuleName} -m manifest.yml --no-asset-preview # Disable asset preview
+  
+The tool scans markdown files for image references and identifies unused assets.
+It supports YAML frontmatter 'copy-images-to' key for custom asset folder names.
     `
 };
 

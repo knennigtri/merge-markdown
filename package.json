@@ -1,6 +1,6 @@
 {
   "name": "@knennigtri/merge-markdown",
-  "version": "2.5.1",
+  "version": "3.0.0",
   "description": "Prepare input files to merge together and optionally output html/pdf/word presentation",
   "repository": {
     "type": "git",
@@ -53,7 +53,6 @@
     "markdown-link-check": "^3.12.1",
     "minimist": "^1.2.6",
     "mkdirp": "^3.0.1",
-    "node-pandoc": "^0.3.0",
     "tar": "^7.1.0",
     "valid-url": "^1.0.9",
     "wkhtmltopdf": "^0.4.0"

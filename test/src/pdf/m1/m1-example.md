@@ -98,19 +98,19 @@ Prerequisites:
 This is the beginning of the Task
 
 1. Image with Return, tab, and < img > with zoom 15%
-    <img src="../../../assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
-2. Image with NO Return and < img > <img src="../../../assets/sample-image.png" alt="sample-image" />
+    <img src="assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
+2. Image with NO Return and < img > <img src="assets/sample-image.png" alt="sample-image" />
 3. Image with Return, tab, and ! [] ()
-    ![sample-image](../../../assets/sample-image.png)
-4. Image with NO Return and ! [] () ![sample-image](../../../assets/sample-image.png)
+    ![sample-image](assets/sample-image.png)
+4. Image with NO Return and ! [] () ![sample-image](assets/sample-image.png)
 5. Image with Return only and < img >
-<img src="../../../assets/sample-image.png" alt="sample-image" />
+<img src="assets/sample-image.png" alt="sample-image" />
 6. Image with 2 Returns and < img >
 
-    <img src="../../../assets/sample-image.png" alt="sample-image" />
+    <img src="assets/sample-image.png" alt="sample-image" />
 
 7. Closing Image
-<img src="../../../assets/sample-image.png" alt="sample-image" />
+<img src="assets/sample-image.png" alt="sample-image" />
 
 > **Congratulations!** You have successfully created a daily purge task within a maintenance window.
 
@@ -120,7 +120,7 @@ Minimizing the number of workflow instances increases the performance of the wor
 
 Configure **Adobe Granite Workflow Purge Configuration** to purge workflow instances according their age and status. You can also purge workflow instances of all models or of a specific model .
 
-<img src="../../../assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
+<img src="assets/sample-image.png" alt="sample-image" style="zoom: 15%;" />
 
 You can also create multiple configurations of the service to purge workflow instances that satisfy different criteria. For example, create a configuration that purges the instances of a particular workflow model when they are running for much longer than the expected time. Create another configuration that purges all completed workflows after a certain number of days to minimize the size of the repository.
 

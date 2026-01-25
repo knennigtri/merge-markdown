@@ -11,7 +11,7 @@ Takes in a list of markdown files and merges them into a single output.md file w
 * auto-resolution of all relative links in files for assets, other markdown files no matter their location locally
 * built in link checker of final file
 * Use the Manifest file (json/yaml):
-  * Specify the input list of files (relative or absolute)
+  * Specify input files, folders, or patterns (relative or absolute)
   * Specify the output file (relative or absolute)
     * Add pandoc arguments for Word/HTML output
     * Add wkhtmltopdf arguments for PDF output
@@ -22,8 +22,6 @@ Takes in a list of markdown files and merges them into a single output.md file w
     * Create TOC with doctoc
     * Remove yaml from top of md file
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 # Contents
 
 - [Installation](#installation)
@@ -42,8 +40,6 @@ Takes in a list of markdown files and merges them into a single output.md file w
 - [Using Docker](#using-docker)
   - [Full CLI](#full-cli)
   - [Configurable Build](#configurable-build)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Installation
 
@@ -103,11 +99,16 @@ Arguments:
   --qa                                     QA mode.
   --skipLinkcheck                          Skips linkchecking
   --maintainAssetPaths                     Retains original asset paths
+  --lang <language>                        Language code for multilingual support (e.g., --lang=es)
+  --clean-assets [directory]               Clean unused assets in specified directory (or current directory)
+  --assets-dir <name>                      Name of assets folder (default: 'assets')
+  --fix                                    Actually delete unused assets (default: preview mode)
+  --no-asset-preview                       Disable asset preview during normal merge workflow
   --pdf                                    Output to PDF. Must have Pandoc and wkhtmltopdf installed!
   --html --word                            Output to HTML or Word. Must have Pandoc installed!
   -h, --help                               Displays this screen
   -h manifest | options |
-    outputOptions | qa | docker            See examples
+    outputOptions | qa | docker | assets   See examples
   -d, --debug                              See debug Options
 Default is manifest[.yml|.yaml|.json] unless specified in -m.
 
@@ -120,8 +121,9 @@ Download Docker: https://docs.docker.com/get-docker/
 This file can be in YAML or JSON format.
 
 * `input`: 
-  * `myFile1.md: {options}` *Local options*
-  * `myFile2.md: {options}`
+  * `myFile1.md: {options}` *File input with local options*
+  * `myFolder/: {options}` *Folder input (all immediate .md files)*
+  * `"pattern:regex": {options}` *Pattern input (regex matching, recursive)*
 * `output`:
   * `name: path/name.md`: of the resultant file
   * `{outputOptions}` See [Supported Output Options](#supported-output-options)
@@ -129,6 +131,11 @@ This file can be in YAML or JSON format.
 
 See [Supported Options](#supported-options)
 Relative or absolute are accepted
+
+**Input Types:**
+- **File**: Standard file path (e.g., `docs/readme.md`)
+- **Folder**: Path ending with `/` includes all immediate `.md` files (e.g., `chapters/`)
+- **Pattern**: Starts with `pattern:` followed by regex to match files recursively (e.g., `"pattern:.*chapter.*\\.md"`)
 
 
 ### Supported Options
@@ -191,8 +198,25 @@ Based on [doctoc](https://www.npmjs.com/package/doctoc#specifying-location-of-to
 
 ```html
   <!-- START auto-update -->
-  <!-- START doctoc -->
-  <!-- END doctoc -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+# Contents
+
+  - [Special Modes](#special-modes)
+- [Manifest Examples](#manifest-examples)
+  - [YAML used as input](#yaml-used-as-input)
+  - [JSON used as input](#json-used-as-input)
+  - [Replace keys within a single file](#replace-keys-within-a-single-file)
+  - [Options applied to all files](#options-applied-to-all-files)
+  - [Apply output options](#apply-output-options)
+  - [Use folder inputs](#use-folder-inputs)
+  - [Use pattern matching](#use-pattern-matching)
+  - [Mix files, folders, and patterns](#mix-files-folders-and-patterns)
+- [Using Docker](#using-docker)
+  - [Full CLI](#full-cli)
+  - [Configurable Build](#configurable-build)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
   <!-- END auto-update -->
 ```
 
@@ -427,6 +451,44 @@ output:
     pageSize: Letter
     footerLine: true
     footerCenter: Page [page]
+---
+```
+
+### Use folder inputs
+
+```yaml
+---
+input:
+  frontmatter.md: ""
+  chapters/: {noYAML: true, doctoc: true}
+  appendix/: {noYAML: true}
+output:
+  name: merged/book.md
+---
+```
+
+### Use pattern matching
+
+```yaml
+---
+input:
+  "pattern:lessons/lesson-[0-9]+\\.md": {doctoc: true}
+  "pattern:.*exercise.*\\.md": {noYAML: true}
+output:
+  name: merged/course.md
+---
+```
+
+### Mix files, folders, and patterns
+
+```yaml
+---
+input:
+  docs/intro.md: ""
+  tutorials/: {doctoc: true}
+  "pattern:m[0-9]+/.*\\.md": {noYAML: true}
+output:
+  name: merged/documentation.md
 ---
 ```
 
