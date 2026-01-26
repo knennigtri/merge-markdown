@@ -1,0 +1,12 @@
+---
+# This pattern matches all .md files in the current directory and subdirectories
+# Since the manifest is in manifests-failSafely/, this would only match .md files in that folder
+# This is an edge case test - patterns from subdirectories may not match files in parent dirs
+# Expected: Produces empty list (which should fail gracefully with "Invalid list")
+input:
+  "pattern:.*\\.md": {noYAML: true, doctoc: true}
+output:
+  name: ../merged/pattern-all-test.md
+  doctoc: true
+qa: {exclude: "(frontmatter)"}
+---

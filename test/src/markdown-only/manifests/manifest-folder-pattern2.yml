@@ -1,8 +1,0 @@
----
-input:
-  "pattern:.*\\.md": {noYAML: true, doctoc: true}
-output:
-  name: ../target/pattern-all-test.md
-  doctoc: true
-qa: {exclude: "(frontmatter)"}
----

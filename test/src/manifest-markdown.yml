@@ -1,0 +1,46 @@
+input:
+  asset-links.md:
+    replace:
+      \[#\]: 0
+  headers.md:
+    replace:
+      \[#\]: 1
+  markdown-examples.md:
+    replace:
+      \[#\]: 2
+noYAML: true
+doctoc: true
+replace:
+  <!--{timestamp}-->: 01/01/2024
+  <!--{title}-->: My Title
+  <!--{author}-->: Chuck Grant
+  <!--{documentType}-->: Instruction Manual
+  '### My h3 title': '#### My h4 title'
+  ({#(.*?)}): ''
+output:
+  name: merged/mergedFile.md
+  doctoc: true
+  pandoc:
+    css: '-c ../../src/theme/theme.css'
+    latexTemplate: '--template ../../src/theme/template.html'
+    referenceDoc: '--reference-doc ../../src/theme/reference.docx'
+  wkhtmltopdf:
+    marginBottom: .7in
+    marginTop: 1in
+    marginLeft: .7in
+    marginRight: .7in
+    pageSize: Letter
+    headerFontSize: 8
+    headerSpacing: 5
+    headerRight: '[section]'
+    footerLine: true
+    footerFontSize: 8
+    footerLeft: '[doctitle]'
+    footerCenter: ''
+    footerRight: '[page]'
+docker:
+  excludePaths:
+    - /target/
+    - /dist/
+qa:
+  exclude: (frontmatter|preamble)
