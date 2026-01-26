@@ -47,32 +47,27 @@ async function build(inputFile, outputFormat, manifestFileStr) {
   debug(`deleteGeneratedFiles: ${JSON.stringify(fileNames)}`);
   deleteGeneratedFiles(fileNames);
 
-  try {
-    const pandocOutputExt = outputFormat.includes(EXTS.docx) ? EXTS.docx : EXTS.html;
-    const resultPandocFile = await pandocWriteToFile(inputFile, manifestOutputPandoc, pandocOutputExt);
+  const pandocOutputExt = outputFormat.includes(EXTS.docx) ? EXTS.docx : EXTS.html;
+  const resultPandocFile = await pandocWriteToFile(inputFile, manifestOutputPandoc, pandocOutputExt);
+  
+  if (outputFormat.includes(EXTS.pdf)) {
+    const inputFileParsed = path.parse(inputFile);
+    const pdfFileName = path.join(inputFileParsed.dir, `${inputFileParsed.name}${EXTS.pdf}`);
+    return await wkhtmltopdfWriteToFile(resultPandocFile, manifestOutputWkhtmltopdf, pdfFileName);
+  } else {
+    const outputNewName = `${path.parse(manifestOutputName).name}${pandocOutputExt}`;
+    const outputPath = path.parse(resultPandocFile).dir;
+    const outputFile = path.join(outputPath, outputNewName);
+    debug(`${path.parse(resultPandocFile).base} >>  ${outputNewName}`);
     
-    if (outputFormat.includes(EXTS.pdf)) {
-      const inputFileParsed = path.parse(inputFile);
-      const pdfFileName = path.join(inputFileParsed.dir, `${inputFileParsed.name}${EXTS.pdf}`);
-      return await wkhtmltopdfWriteToFile(resultPandocFile, manifestOutputWkhtmltopdf, pdfFileName);
-    } else {
-      const outputNewName = `${path.parse(manifestOutputName).name}${pandocOutputExt}`;
-      const outputPath = path.parse(resultPandocFile).dir;
-      const outputFile = path.join(outputPath, outputNewName);
-      debug(`${path.parse(resultPandocFile).base} >>  ${outputNewName}`);
-      
-      try {
-        await fsPromises.rename(resultPandocFile, outputFile);
-        return outputFile;
-      } catch (err) {
-        console.error("\n❌ Error renaming output file:");
-        console.error("   " + err.message);
-        throw err;
-      }
+    try {
+      await fsPromises.rename(resultPandocFile, outputFile);
+      return outputFile;
+    } catch (err) {
+      console.error("\n❌ Error renaming output file:");
+      console.error("   " + err.message);
+      throw err;
     }
-  } catch (err) {
-    // Pandoc error already logged, just re-throw
-    throw err;
   }
 }
 
@@ -85,7 +80,7 @@ async function pandocWriteToFile(inputFile, pandocParams, outputExt) {
   debugPandoc("Args: " + JSON.stringify(pandocArgs));
   
   try {
-    const { stdout, stderr } = await execFileAsync("pandoc", [inputFile, ...pandocArgs]);
+    const { stderr } = await execFileAsync("pandoc", [inputFile, ...pandocArgs]);
     
     // Show any warnings even on success
     if (stderr && stderr.trim()) {

@@ -69,7 +69,7 @@ async function test(hideconsole) {
   console.log("\n>>> Testing Success Manifests (test/src/manifests-success/)");
   var successManifests = [];
   const successDir = "test/src/manifests-success";
-  const successFiles = fs.readdirSync(successDir).filter(f => f.endsWith('.yml'));
+  const successFiles = fs.readdirSync(successDir).filter(f => f.endsWith(".yml"));
   
   successFiles.forEach(file => {
     successManifests.push([`${successDir}/${file}`, false, false, false, 0]);
@@ -100,7 +100,7 @@ async function test(hideconsole) {
   console.log("\n>>> Testing Fail-Safely Manifests (test/src/manifests-failSafely/)");
   var failManifests = [];
   const failDir = "test/src/manifests-failSafely";
-  const failFiles = fs.readdirSync(failDir).filter(f => f.endsWith('.yml'));
+  const failFiles = fs.readdirSync(failDir).filter(f => f.endsWith(".yml"));
   
   failFiles.forEach(file => {
     failManifests.push([`${failDir}/${file}`, false, false, false, 1]);
@@ -209,7 +209,7 @@ Some content here.`;
     const previewResult = init.assetCleaner.cleanAssets(tempTestDir, "assets", false, false);
     
     if (previewResult.totalUnusedAssets === 1) {
-      console.log(`  ✓ PASS: Preview found 1 unused asset (as expected)`);
+      console.log("  ✓ PASS: Preview found 1 unused asset (as expected)");
       testsPassed++;
     } else {
       console.log(`  ✗ FAIL: Preview expected 1 unused, found ${previewResult.totalUnusedAssets}`);
@@ -223,15 +223,15 @@ Some content here.`;
     const fixResult = init.assetCleaner.cleanAssets(tempTestDir, "assets", true, false);
     
     if (fixResult.totalUnusedAssets === 1) {
-      console.log(`  ✓ PASS: Fix mode deleted 1 unused asset`);
+      console.log("  ✓ PASS: Fix mode deleted 1 unused asset");
       testsPassed++;
       
       // Verify file was actually deleted
       if (!fs.existsSync(path.join(tempAssetsDir, "unused-image.png"))) {
-        console.log(`  ✓ PASS: Unused file was actually deleted`);
+        console.log("  ✓ PASS: Unused file was actually deleted");
         testsPassed++;
       } else {
-        console.log(`  ✗ FAIL: Unused file still exists after deletion`);
+        console.log("  ✗ FAIL: Unused file still exists after deletion");
         errors++;
         testsFailed++;
         errArr.push(["Asset Cleaning Fix", tempTestDir, "File not deleted"]);
@@ -239,10 +239,10 @@ Some content here.`;
       
       // Verify used file still exists
       if (fs.existsSync(path.join(tempAssetsDir, "used-image.png"))) {
-        console.log(`  ✓ PASS: Used file was preserved`);
+        console.log("  ✓ PASS: Used file was preserved");
         testsPassed++;
       } else {
-        console.log(`  ✗ FAIL: Used file was incorrectly deleted`);
+        console.log("  ✗ FAIL: Used file was incorrectly deleted");
         errors++;
         testsFailed++;
         errArr.push(["Asset Cleaning Fix", tempTestDir, "Used file deleted"]);
@@ -297,7 +297,7 @@ Some content here.`;
 
   // Clean up created manifest file
   fs.unlink("./manifest.yml", (err) => {
-    if (err && err.code !== 'ENOENT') console.error("Error deleting manifest.yml:", err);
+    if (err && err.code !== "ENOENT") console.error("Error deleting manifest.yml:", err);
   });
 
   // Print summary
@@ -312,9 +312,9 @@ Some content here.`;
 
   if (errArr.length > 0) {
     console.error("Failed Tests:");
-    for (var m = 0; m < errArr.length; m++) {
-      console.error(`  [${errArr[m][0]}] ${errArr[m][1]}`);
-      console.error(`    └─ ${errArr[m][2]}`);
+    for (var n = 0; n < errArr.length; n++) {
+      console.error(`  [${errArr[n][0]}] ${errArr[n][1]}`);
+      console.error(`    └─ ${errArr[n][2]}`);
     }
     console.log("");
   }
