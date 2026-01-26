@@ -1,13 +1,8 @@
 ---
 input:
- ../frontmatter.md: ""
- ../lorem-module.md: ""
- ../ipsum-module.md: ""
- ../etiam-module.md: ""
-output: 
- name: ../merged/onlyGlobalOptions.md
-qa: {exclude: "(frontmatter|preamble)"}
-noYAML: true
+ ../asset-links.md: ""
+ ../headers.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 1: "}}
+ ../markdown-examples.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 2: "}}
 replace:
  <!--{timestamp}-->: 05/25/2021
  <!--{returnToMainTOC}-->: "[Return to Course Contents](#course-contents)"

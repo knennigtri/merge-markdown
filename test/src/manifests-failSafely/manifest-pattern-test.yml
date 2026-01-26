@@ -1,0 +1,13 @@
+---
+# This pattern tries to match module folders in the parent directory
+# Expected to match: ../m1/m1-example.md, ../m2/m2-example.md
+# Pattern: ../m[0-9]+/.*\.md means paths like ../m1/*.md, ../m2/*.md, etc.
+# This is an edge case test - patterns may not traverse to parent directories
+# Expected: Produces empty list (which should fail gracefully with "Invalid list")
+input:
+  "pattern:../m[0-9]+/.*\\.md": {noYAML: true, doctoc: true}
+output:
+  name: ../merged/pattern-test.md
+  doctoc: true
+qa: {exclude: "(frontmatter)"}
+---

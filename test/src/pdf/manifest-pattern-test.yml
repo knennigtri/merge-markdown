@@ -1,8 +1,0 @@
----
-input:
-  "pattern:m[0-9]+/.*\\.md": {noYAML: true, doctoc: true}
-output:
-  name: merged/pattern-test.md
-  doctoc: true
-qa: {exclude: "(frontmatter)"}
----
