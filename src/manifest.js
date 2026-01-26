@@ -477,7 +477,7 @@ exports.exists = function (inputArg) {
 * @param {*} dir location of input files
 * @param {*} fullProject boolean to add 'full project on create' paths
 */
-exports.createManifestFile = function (dir, fullProject) {
+exports.createManifestFile = async function (dir, fullProject) {
   const jsonObject = {
     input: {},
     noYAML: true,
@@ -530,10 +530,10 @@ exports.createManifestFile = function (dir, fullProject) {
     jsonObject.output.pandoc.referenceDoc = "--reference-doc theme/reference.docx";
   }
 
-  var inputArr = findMarkdownFiles(dir);
-  var counter = 0;
+  const inputArr = findMarkdownFiles(dir);
+  let counter = 0;
   inputArr.forEach(file => {
-    var inputOptions = {
+    const inputOptions = {
       replace: {
         "\\[#\\]": counter
       }
@@ -554,7 +554,7 @@ exports.createManifestFile = function (dir, fullProject) {
 
   // Write the package.json file if the fullProject flag is set
   if (fullProject) {
-    writeNPMFile();
+    await writeNPMFile();
   }
 };
 
@@ -584,7 +584,7 @@ function findMarkdownFiles(directoryPath) {
   return markdownFiles;
 }
 
-function writeNPMFile() {
+async function writeNPMFile() {
   const packageJsonPath = path.join(process.cwd(), "package.json");
 
   // Check if package.json already exists
