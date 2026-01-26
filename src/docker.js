@@ -117,154 +117,149 @@ async function runMergeMarkdownInDocker(manifestFileStr, cmdArgs) {
       }
     }
     console.log("--------Docker Container START--------");
-    getContainer()
-      .then(container => {
-        return container.inspect()
-          .then(info => {
-            if (info.State.Running == true) return container;
-            else return startContainer(container);
-          });
-      })
-      .then(resultContainer => {
-        console.log("Cleaning the docker working directory.");
-        const command = `rm -rf ${WORKING_DIR}/*`;
-        debugDocker(command);
-        return execContainer(resultContainer, command);
-      })
-      .then(resultContainer => {
-        console.log("Copying this project to the docker container.");
-        console.log(`Exclude Copying These Paths:\n${excludePaths.map(regex => `  ${regex.toString()}`).join("\n")}`);
-        return createTarArchive("./", TAR_NAME, excludePaths)
-          .then(() => {
-            console.log("Tar archive created successfully");
-            return copyIntoContainer(resultContainer, TAR_NAME, WORKING_DIR);
-          });
-      })
-      .then(resultContainer => {
-        console.log("Extracting files into the container.");
-        var extractCommand = `tar xzf ${WORKING_DIR}/${TAR_NAME} -C ${WORKING_DIR}`;
-        debugDocker(extractCommand);
-        return execContainer(resultContainer, extractCommand);
-      })
-      .then(resultContainer => {
-        debugDocker(`Running container is ${resultContainer.id}`);
+    
+    try {
+      // Get or create container
+      let container = await getContainer();
+      const info = await container.inspect();
+      
+      if (!info.State.Running) {
+        container = await startContainer(container);
+      }
+      
+      // Clean working directory
+      console.log("Cleaning the docker working directory.");
+      const cleanCommand = `rm -rf ${WORKING_DIR}/*`;
+      debugDocker(cleanCommand);
+      container = await execContainer(container, cleanCommand);
+      
+      // Create and copy archive
+      console.log("Copying this project to the docker container.");
+      console.log(`Exclude Copying These Paths:\n${excludePaths.map(regex => `  ${regex.toString()}`).join("\n")}`);
+      await createTarArchive("./", TAR_NAME, excludePaths);
+      console.log("Tar archive created successfully");
+      container = await copyIntoContainer(container, TAR_NAME, WORKING_DIR);
+      
+      // Extract files
+      console.log("Extracting files into the container.");
+      const extractCommand = `tar xzf ${WORKING_DIR}/${TAR_NAME} -C ${WORKING_DIR}`;
+      debugDocker(extractCommand);
+      container = await execContainer(container, extractCommand);
+      
+      // Install merge-markdown
+      debugDocker(`Running container is ${container.id}`);
+      const isDevelopment = process.env.NODE_ENV === "dev";
+      
+      if (isDevelopment) {
+        // Development mode: Install from local source
+        console.log("🔧 Development mode: Installing from local source...");
+        const commands = [
+          `cd ${WORKING_DIR}`,
+          "npm install --silent",
+          "npm link --silent"
+        ].join(" && ");
         
-        // Check for development mode from .env or environment
-        // Use NODE_ENV=dev to enable development mode (uses local src/ instead of npm registry)
-        const isDevelopment = process.env.NODE_ENV === "dev";
+        debugDocker(`Dev install command: ${commands}`);
+        container = await execContainer(container, ["/bin/sh", "-c", `export NODE_ENV=dev && ${commands}`], true);
+      } else {
+        // Production mode: Install from npm registry
+        console.log("Verifying merge-markdown installation in container...");
+        const checkCommand = "npm list -g @knennigtri/merge-markdown";
+        debugDocker(`Checking installation: ${checkCommand}`);
         
-        if (isDevelopment) {
-          // Development mode: Install from local source
-          console.log("🔧 Development mode: Installing from local source...");
-          const commands = [
-            `cd ${WORKING_DIR}`,
-            "npm install --silent",  // Install dependencies (suppress warnings)
-            "npm link --silent"      // Link globally (suppress warnings)
-          ].join(" && ");
+        try {
+          container = await execContainer(container, checkCommand, false);
+          debugDocker("merge-markdown is already installed");
+        } catch (checkErr) {
+          console.log("merge-markdown not found in container, installing...");
+          const versionToInstall = await getValidMergeMarkdownVersion(packageInfo.version);
           
-          debugDocker(`Dev install command: ${commands}`);
-          // Set NODE_ENV=dev in container so bin/global.js uses src/ instead of dist/
-          return execContainer(resultContainer, ["/bin/sh", "-c", `export NODE_ENV=dev && ${commands}`], true);
-        } else {
-          // Production mode: Install from npm registry (default behavior)
-          console.log("Verifying merge-markdown installation in container...");
-          const checkCommand = "npm list -g @knennigtri/merge-markdown";
-          debugDocker(`Checking installation: ${checkCommand}`);
-          return execContainer(resultContainer, checkCommand, false)
-            .then(() => {
-              debugDocker("merge-markdown is already installed");
-              return resultContainer;
-            })
-            .catch(async () => {
-              console.log("merge-markdown not found in container, installing...");
-              const versionToInstall = await getValidMergeMarkdownVersion(packageInfo.version);
-              
-              if (versionToInstall !== packageInfo.version) {
-                console.log(`Warning: Local version ${packageInfo.version} not available on npm registry. Installing ${versionToInstall} instead.`);
-              }
-              
-              const installCommand = `npm install -g @knennigtri/merge-markdown@${versionToInstall} --silent`;
-              console.log(`Installing: ${installCommand}`);
-              return execContainer(resultContainer, installCommand, true)
-                .catch((installError) => {
-                  // If specific version fails, try latest as final fallback
-                  if (versionToInstall !== "latest") {
-                    console.log("Installation failed, trying latest version as fallback...");
-                    const fallbackCommand = "npm install -g @knennigtri/merge-markdown@latest --silent";
-                    return execContainer(resultContainer, fallbackCommand, true);
-                  }
-                  throw installError;
-                });
-            });
-        }
-      })
-      .then(resultContainer => {
-        debugDocker(`Running container is ${resultContainer.id}`);
-
-        const npmModuleName = packageInfo.name.replace(/@[^/]+\//, "");
-        let requestedCMD = `${npmModuleName} ${cmdArgs}`;
-        requestedCMD = requestedCMD.replace("--docker", "");
-
-        // In development mode, set NODE_ENV=dev so bin/global.js uses src/ instead of dist/
-        const isDevelopment = process.env.NODE_ENV === "dev";
-        const envPrefix = isDevelopment ? "export NODE_ENV=dev && " : "";
-        
-        const commands = [`cd ${WORKING_DIR}`, `${envPrefix}${requestedCMD}`].join(" && ");
-        const dockerCMD = ["/bin/sh", "-c", commands];
-        debugDocker(dockerCMD);
-        debugDocker("Merging in Docker");
-        return execContainer(resultContainer, dockerCMD, true);
-
-      })
-      .then(resultContainer => {
-        debugDocker("Downloading locally");
-        debugDockerPaths(`WORKING_DIR: ${WORKING_DIR}`);
-        debugDockerPaths(`manifestOutputName: ${manifestOutputName}`);
-        debugDockerPaths(`manifestRelDir: ${manifestRelDir}`);
-        debugDockerPaths(`process.cwd(): ${process.cwd()}`); //ABS path where the npm command was executed
-
-        const relManifestOutputName = path.relative(process.cwd(), manifestOutputName);
-        const absManifestOutputName_inDocker = path.join(WORKING_DIR , relManifestOutputName);
-        const absManifestOutputName_parsed = path.parse(absManifestOutputName_inDocker);
-        const absManifestOutputName_name = absManifestOutputName_parsed.name; // Get the base filename without extension
-        const absManifestOutputName_dir = absManifestOutputName_parsed.dir; // Get the docker directory of output
-        debugDockerPaths(`Downloading merged Files from: ${absManifestOutputName_dir}`);
-
-        const outputPaths = [
-          absManifestOutputName_inDocker,
-          ...Object.values(presentationUtil.EXTS).map(ext => path.join(absManifestOutputName_dir, `${absManifestOutputName_name}${ext}`)),
-          ...Object.values(mergeUtil.EXTS).map(ext => path.join(absManifestOutputName_dir, `${absManifestOutputName_name}${ext}`)),
-          path.join(absManifestOutputName_dir, "temp.html")
-        ];
-        debugDockerPaths(`Downloading files if they exist:\n${outputPaths.map(p => `  ${p}`).join("\n")}`);
-
-        const destPath = path.parse(manifestOutputName).dir;
-        debugDockerPaths(`Downloading to ${destPath}`);
-         
-        // Ensure destination directory exists (non-destructive)
-        if (!fs.existsSync(destPath)) {
-          fs.mkdirSync(destPath, { recursive: true });
-          debugDockerPaths(`Created directory: ${destPath}`);
-        } else {
-          debugDockerPaths(`Directory already exists: ${destPath}`);
-        }
-         
-        return downloadFromContainer(resultContainer, outputPaths, destPath);
-      })
-      .then(() => {
-        if (debug.enabled("docker")) {
-          debugDocker(`Skipping ${TAR_NAME} file deletion in debug mode`);
-        } else {
-          const fileToDel = path.join("./", TAR_NAME);
-          fs.unlink(fileToDel, (err) => {
-            if (err) {
-              console.error(`Could not delete ${fileToDel}`);
+          if (versionToInstall !== packageInfo.version) {
+            console.log(`Warning: Local version ${packageInfo.version} not available on npm registry. Installing ${versionToInstall} instead.`);
+          }
+          
+          const installCommand = `npm install -g @knennigtri/merge-markdown@${versionToInstall} --silent`;
+          console.log(`Installing: ${installCommand}`);
+          
+          try {
+            container = await execContainer(container, installCommand, true);
+          } catch (installError) {
+            if (versionToInstall !== "latest") {
+              console.log("Installation failed, trying latest version as fallback...");
+              const fallbackCommand = "npm install -g @knennigtri/merge-markdown@latest --silent";
+              container = await execContainer(container, fallbackCommand, true);
+            } else {
+              throw installError;
             }
-          });
+          }
         }
-
-        console.log("--------Docker Container END--------");
-      });
+      }
+      
+      // Run merge-markdown command
+      debugDocker(`Running container is ${container.id}`);
+      const npmModuleName = packageInfo.name.replace(/@[^/]+\//, "");
+      let requestedCMD = `${npmModuleName} ${cmdArgs}`;
+      requestedCMD = requestedCMD.replace("--docker", "");
+      
+      const envPrefix = isDevelopment ? "export NODE_ENV=dev && " : "";
+      const commands = [`cd ${WORKING_DIR}`, `${envPrefix}${requestedCMD}`].join(" && ");
+      const dockerCMD = ["/bin/sh", "-c", commands];
+      debugDocker(dockerCMD);
+      debugDocker("Merging in Docker");
+      container = await execContainer(container, dockerCMD, true);
+      
+      // Download results
+      debugDocker("Downloading locally");
+      debugDockerPaths(`WORKING_DIR: ${WORKING_DIR}`);
+      debugDockerPaths(`manifestOutputName: ${manifestOutputName}`);
+      debugDockerPaths(`manifestRelDir: ${manifestRelDir}`);
+      debugDockerPaths(`process.cwd(): ${process.cwd()}`);
+      
+      const relManifestOutputName = path.relative(process.cwd(), manifestOutputName);
+      const absManifestOutputName_inDocker = path.join(WORKING_DIR, relManifestOutputName);
+      const absManifestOutputName_parsed = path.parse(absManifestOutputName_inDocker);
+      const absManifestOutputName_name = absManifestOutputName_parsed.name;
+      const absManifestOutputName_dir = absManifestOutputName_parsed.dir;
+      debugDockerPaths(`Downloading merged Files from: ${absManifestOutputName_dir}`);
+      
+      const outputPaths = [
+        absManifestOutputName_inDocker,
+        ...Object.values(presentationUtil.EXTS).map(ext => path.join(absManifestOutputName_dir, `${absManifestOutputName_name}${ext}`)),
+        ...Object.values(mergeUtil.EXTS).map(ext => path.join(absManifestOutputName_dir, `${absManifestOutputName_name}${ext}`)),
+        path.join(absManifestOutputName_dir, "temp.html")
+      ];
+      debugDockerPaths(`Downloading files if they exist:\n${outputPaths.map(p => `  ${p}`).join("\n")}`);
+      
+      const destPath = path.parse(manifestOutputName).dir;
+      debugDockerPaths(`Downloading to ${destPath}`);
+      
+      // Ensure destination directory exists
+      if (!fs.existsSync(destPath)) {
+        fs.mkdirSync(destPath, { recursive: true });
+        debugDockerPaths(`Created directory: ${destPath}`);
+      } else {
+        debugDockerPaths(`Directory already exists: ${destPath}`);
+      }
+      
+      await downloadFromContainer(container, outputPaths, destPath);
+      
+      // Cleanup
+      if (debug.enabled("docker")) {
+        debugDocker(`Skipping ${TAR_NAME} file deletion in debug mode`);
+      } else {
+        const fileToDel = path.join("./", TAR_NAME);
+        fs.unlink(fileToDel, (err) => {
+          if (err) {
+            console.error(`Could not delete ${fileToDel}`);
+          }
+        });
+      }
+      
+      console.log("--------Docker Container END--------");
+    } catch (containerErr) {
+      console.error("Error in Docker container workflow:", containerErr);
+      throw containerErr;
+    }
 
   } catch (err) {
     console.error("Error getting or creating container:", err);

@@ -33,17 +33,17 @@ exports.debbugOptions = {
   "asset-preview": "asset preview scanning during merge"
 };
 
-function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang, disableAssetPreview) {
-  var onlyQA = qaMode || false;
-  var skipLinkcheck = skip_linkcheck || false;
-  var keepAssetPaths = maintainAssetPaths || false;
-  var skipAssetPreview = disableAssetPreview || false;
+async function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang, disableAssetPreview) {
+  const onlyQA = qaMode || false;
+  const skipLinkcheck = skip_linkcheck || false;
+  const keepAssetPaths = maintainAssetPaths || false;
+  const skipAssetPreview = disableAssetPreview || false;
 
   //Set manifest variables
   const manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr, onlyQA, lang);
-  var manifestOutputName = manifest.output.name;
-  var manifestInput = manifest.input;
-  var manifestQARegEx;
+  const manifestOutputName = manifest.output.name;
+  const manifestInput = manifest.input;
+  let manifestQARegEx;
   if (manifest.qa) manifestQARegEx = new RegExp(manifest.qa.exclude);
   
   if (onlyQA) console.log("QA exclude regex: " + manifestQARegEx);
@@ -59,14 +59,14 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
   ]);
 
   //Iterate through all of the input files in manifest apply options
-  var fileArr = [];
-  var refFileArr = [];
-  var linkcheckPromises = [];
+  const fileArr = [];
+  const refFileArr = [];
+  const linkcheckPromises = [];
   
   console.log("\n📝 Processing input files...");
   
   Object.keys(manifestInput).forEach(function (inputKey) {
-    var inputFileName = path.basename(inputKey);
+    const inputFileName = path.basename(inputKey);
     if (onlyQA && manifestQARegEx.test(inputFileName)) {
       console.log("   ⊘ " + inputFileName + " (excluded for QA)");
       return;
@@ -82,20 +82,19 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
       return;
     }
     console.log("   ✓ " + inputFileName);
-    var origContent = fs.readFileSync(inputKey, "utf-8");
+    let origContent = fs.readFileSync(inputKey, "utf-8");
 
     //Force a new line at the end of the file to help with file merging
     origContent += "\n";
-    origContent += "";
 
     //updates all relative asset paths to the relative output location
-    var generatedContent = updateAssetRelPaths(origContent, path.dirname(inputKey), path.dirname(manifestOutputName), keepAssetPaths);
+    let generatedContent = updateAssetRelPaths(origContent, path.dirname(inputKey), path.dirname(manifestOutputName), keepAssetPaths);
 
     debug("--Apply file OPTIONS--");
     //Content, local options, global options
     generatedContent = applyContentOptions(generatedContent, manifestInput[inputKey], manifest);
 
-    var tempFile = inputKey + ".temp";
+    const tempFile = inputKey + ".temp";
     fs.writeFileSync(tempFile, generatedContent);
 
     if (!skipLinkcheck) {
@@ -111,55 +110,56 @@ function start(manifestFileStr, qaMode, skip_linkcheck, maintainAssetPaths, lang
   
   // Wait for all Phase 1 linkchecks to complete, then write results in order
   if (!skipLinkcheck && linkcheckPromises.length > 0) {
-    return Promise.all(linkcheckPromises).then((results) => {
-      // Write Phase 1 results in order
-      const linkcheckFile = replaceExtension(manifestOutputName, EXTS.linkcheck);
-      results.forEach((result) => {
-        if (fs.existsSync(linkcheckFile)) {
-          safelyWriteFile(linkcheckFile, result, true);
-        } else {
-          safelyWriteFile(linkcheckFile, result, false);
-        }
-      });
-      
-      // Continue with merge
-      return continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck);
+    const results = await Promise.all(linkcheckPromises);
+    
+    // Write Phase 1 results in order
+    const linkcheckFile = replaceExtension(manifestOutputName, EXTS.linkcheck);
+    results.forEach((result) => {
+      if (fs.existsSync(linkcheckFile)) {
+        safelyWriteFile(linkcheckFile, result, true);
+      } else {
+        safelyWriteFile(linkcheckFile, result, false);
+      }
     });
+    
+    // Continue with merge
+    return await continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck);
   } else {
-    return continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck);
+    return await continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck);
   }
 }
 
-function continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck) {
+async function continueMerge(fileArr, refFileArr, manifestOutputName, onlyQA, manifest, skipAssetPreview, skipLinkcheck) {
   //Merge lists and output single markdown file
-  var mergedFileArr = fileArr.concat(refFileArr);
+  const mergedFileArr = fileArr.concat(refFileArr);
 
   if (mergedFileArr.length > 0) {
     console.log("\n🔗 Merging " + mergedFileArr.length + " file(s)...");
   }
   
-  var fileToWrite = manifestOutputName;
+  let fileToWrite = manifestOutputName;
   if (onlyQA) {
     fileToWrite = replaceExtension(fileToWrite, EXTS.qa);
   }
-  return createSingleFile(mergedFileArr, fileToWrite, manifest, skipAssetPreview, skipLinkcheck);
+  return await createSingleFile(mergedFileArr, fileToWrite, manifest, skipAssetPreview, skipLinkcheck);
 }
 
 async function createSingleFile(list, fileToWrite, manifestJSON, skipAssetPreview, skipLinkcheck) {
   debug("Creating single file");
   if (!list || list.length === 0) {
     console.log("List to merge is not valid. Aborting..");
-    return Promise.reject(new Error("Invalid list"));
+    throw new Error("Invalid list");
   }
-  return concat(list).then((resultContent) => {
+  
+  try {
+    const resultContent = await concat(list);
+    
+    let contentToWrite = resultContent;
     if (Object.prototype.hasOwnProperty.call(manifestJSON.output, "doctoc") && manifestJSON.output.doctoc) {
-      manifestJSON.output.doctoc;
-      var outDoctoc = optionBuildTOC(resultContent, manifestJSON.output.doctoc, manifestJSON.doctoc);
-      return safelyWriteFile(fileToWrite, outDoctoc);
-    } else {
-      return safelyWriteFile(fileToWrite, resultContent);
+      contentToWrite = optionBuildTOC(resultContent, manifestJSON.output.doctoc, manifestJSON.doctoc);
     }
-  }).then((result) => {
+    
+    const result = safelyWriteFile(fileToWrite, contentToWrite);
     deleteGeneratedFiles(list); //cleanup
     
     // Phase 2: Check internal anchors in merged file
@@ -175,7 +175,10 @@ async function createSingleFile(list, fileToWrite, manifestJSON, skipAssetPrevie
     }
     
     return result;
-  });
+  } catch (err) {
+    console.error("Error creating single file:", err);
+    throw err;
+  }
 }
 
 //Content, local options, global options

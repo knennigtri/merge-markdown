@@ -28,7 +28,7 @@ const debbugOptions = {
   "asset-cleaner": "Asset cleaning debug messages"
 };
 
-function run() {
+async function run() {
   const argsHelp = args.h || args.help;
   const argsVersion = args.v || args.version;
   const argsDebug = args.d || args.debug;
@@ -82,11 +82,11 @@ function run() {
 
   if (argsCreate) {
     if(argsUseDocker) console.log("Docker cannot be used with --Create mode");
-    var inputFilesPath = ".";
+    let inputFilesPath = ".";
     if (typeof argsCreate === "string") {
       inputFilesPath = argsCreate;
     }
-    manifestUtil.createManifestFile(inputFilesPath, argsFullProject);
+    await manifestUtil.createManifestFile(inputFilesPath, argsFullProject);
     if(argsFullProject){
       const themeSourcePath = path.join(__dirname, "theme");
       debugCLI("Theme folder source: " + themeSourcePath);
@@ -113,7 +113,7 @@ function run() {
 
   //Require -m
   //If file, expect a manifest file, otherwise look for default file in given directory
-  var manifestFilePath;
+  let manifestFilePath;
   try {
     if (argsManifest && typeof argsManifest === "string") {
       manifestFilePath = manifestUtil.exists(argsManifest);
@@ -132,34 +132,30 @@ function run() {
 
   if (argsUseDocker) {
     console.log(`[Docker Mode] Building ${npmModuleName} in a container.`);
-    dockerMerger.runMergeMarkdownInDocker(manifestFilePath, process.argv.slice(2).join(" "));
+    await dockerMerger.runMergeMarkdownInDocker(manifestFilePath, process.argv.slice(2).join(" "));
     return;
   }
 
   debugCLI("manifest found at: " + manifestFilePath);
   const relativeManifest = path.relative(process.cwd(), manifestFilePath);
   console.log("📋 Manifest: " + relativeManifest);
+  
   try {
-    merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths, argsLang, argsNoAssetPreview)
-      .then(resultMarkdownFile => {
-        //Add presentation
-        var outputFormat = "";
-        if (argsWORD) outputFormat = presentation.EXTS.docx;
-        if (argsHTML) outputFormat = presentation.EXTS.html;
-        if (argsPDF) outputFormat = presentation.EXTS.pdf;
-        return presentation.build(resultMarkdownFile, outputFormat, manifestFilePath);
-      })
-      .then(resultFile => {
-        const relativePath = path.relative(process.cwd(), resultFile);
-        console.log("\n✅ Output: " + relativePath);
-      })
-      .catch(() => {
-        // Error details already logged by the respective functions
-        // Just exit with error code
-        process.exit(1);
-      });
+    const resultMarkdownFile = await merge.start(manifestFilePath, argsQA, argsSkipLinkcheck, argsMaintainAssetPaths, argsLang, argsNoAssetPreview);
+    
+    //Add presentation
+    let outputFormat = "";
+    if (argsWORD) outputFormat = presentation.EXTS.docx;
+    if (argsHTML) outputFormat = presentation.EXTS.html;
+    if (argsPDF) outputFormat = presentation.EXTS.pdf;
+    
+    const resultFile = await presentation.build(resultMarkdownFile, outputFormat, manifestFilePath);
+    const relativePath = path.relative(process.cwd(), resultFile);
+    console.log("\n✅ Output: " + relativePath);
   } catch (err) {
-    console.error(err);
+    // Error details already logged by the respective functions
+    // Just exit with error code
+    process.exit(1);
   }
 }
 
