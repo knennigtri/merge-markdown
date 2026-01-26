@@ -10,7 +10,7 @@
   "scripts": {
     "preversion": "git fetch --tags && npm run lint:fix && npm run test:noLogs",
     "version": "npm audit fix && npm run build",
-    "postversion": "git push --follow-tags",
+    "postversion": "git push",
     "clean": "rimraf **/merged && rimraf test/theme && rimraf test/manifest.yml && rimraf test/target",
     "lint": "eslint '**/*.js?(x)'",
     "lint:fix": "npm run lint -- --fix",
