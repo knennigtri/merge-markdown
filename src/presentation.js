@@ -1,7 +1,10 @@
 const manifestUtil = require("./manifest.js");
 const fs = require("fs");
+const fsPromises = require("fs").promises;
 const path = require("path");
-const {execFile} = require("child_process");
+const { promisify } = require("util");
+const { execFile } = require("child_process");
+const execFileAsync = promisify(execFile);
 const wkhtmltopdf = require("wkhtmltopdf");
 const debug = require("debug")("presentation");
 const debugPandoc = require("debug")("pandoc");
@@ -25,115 +28,94 @@ const EXTS = {
 };
 exports.EXTS = EXTS;
 
-var build = async function (inputFile, outputFormat, manifestFileStr) {
-  if(!outputFormat) return inputFile;
+async function build(inputFile, outputFormat, manifestFileStr) {
+  if (!outputFormat) return inputFile;
 
   console.log("\n📄 Converting to " + outputFormat + "...");
   
-  let manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr);
+  const manifest = manifestUtil.getJSON_withABSPaths(manifestFileStr);
   const manifestOutputName = manifest.output.name;
   const manifestOutputPandoc = manifest.output.pandoc;
   const manifestOutputWkhtmltopdf = manifest.output.wkhtmltopdf;
 
   const fileNames = [];
-  var generatedFiles = path.parse(inputFile);
+  const generatedFiles = path.parse(inputFile);
   for (const ext in EXTS) {
-    const fileName = path.join(generatedFiles.dir,`${generatedFiles.name}${ext}`);
+    const fileName = path.join(generatedFiles.dir, `${generatedFiles.name}${ext}`);
     fileNames.push(fileName);
   }
   debug(`deleteGeneratedFiles: ${JSON.stringify(fileNames)}`);
   deleteGeneratedFiles(fileNames);
 
-  return new Promise((resolve, reject) => {
-
-    let pandocOutputExt = EXTS.html; //required for html and pdf output
-    if(outputFormat.includes(EXTS.docx)) {
-      pandocOutputExt = EXTS.docx;
+  const pandocOutputExt = outputFormat.includes(EXTS.docx) ? EXTS.docx : EXTS.html;
+  const resultPandocFile = await pandocWriteToFile(inputFile, manifestOutputPandoc, pandocOutputExt);
+  
+  if (outputFormat.includes(EXTS.pdf)) {
+    const inputFileParsed = path.parse(inputFile);
+    const pdfFileName = path.join(inputFileParsed.dir, `${inputFileParsed.name}${EXTS.pdf}`);
+    return await wkhtmltopdfWriteToFile(resultPandocFile, manifestOutputWkhtmltopdf, pdfFileName);
+  } else {
+    const outputNewName = `${path.parse(manifestOutputName).name}${pandocOutputExt}`;
+    const outputPath = path.parse(resultPandocFile).dir;
+    const outputFile = path.join(outputPath, outputNewName);
+    debug(`${path.parse(resultPandocFile).base} >>  ${outputNewName}`);
+    
+    try {
+      await fsPromises.rename(resultPandocFile, outputFile);
+      return outputFile;
+    } catch (err) {
+      console.error("\n❌ Error renaming output file:");
+      console.error("   " + err.message);
+      throw err;
     }
-
-    pandocWriteToFile(inputFile, manifestOutputPandoc, pandocOutputExt)
-      .then(resultPandocFile => {
-        if (outputFormat.includes(EXTS.pdf)) {
-          const inputFileParsed = path.parse(inputFile);
-          const pdfFileName = path.join(inputFileParsed.dir, `${inputFileParsed.name}${EXTS.pdf}`);
-          return wkhtmltopdfWriteToFile(resultPandocFile, manifestOutputWkhtmltopdf, pdfFileName)
-            .then(resultPdfFile => {
-              resolve(resultPdfFile);
-            })
-            .catch(err => {
-              reject(err);
-            });
-        } else {
-          var outputNewName = `${path.parse(manifestOutputName).name}${pandocOutputExt}`;
-          var outputPath = path.parse(resultPandocFile).dir;
-          var outputFile = path.join(outputPath, outputNewName);
-          debug(`${path.parse(resultPandocFile).base} >>  ${outputNewName}`);
-          fs.rename(resultPandocFile, outputFile, (err) => {
-            if (err) {
-              console.error("\n❌ Error renaming output file:");
-              console.error("   " + err.message);
-              reject(err);
-            } else {
-              resolve(outputFile);
-            }
-          });
-        }
-      })
-      .catch(err => {
-        // Pandoc error already logged, just reject silently
-        reject(err);
-      });
-  });
-};
+  }
+}
 
 // Input and Output files are expected to be ABS
-function pandocWriteToFile(inputFile, pandocParams, outputExt) {
+async function pandocWriteToFile(inputFile, pandocParams, outputExt) {
   debug(`Creating ${outputExt} using Pandoc...`);
-  var outputFile = path.join(path.parse(inputFile).dir, `temp${outputExt}`);
-  var pandocArgs = buildPandocArgsArray(pandocParams, outputFile);
+  const outputFile = path.join(path.parse(inputFile).dir, `temp${outputExt}`);
+  const pandocArgs = buildPandocArgsArray(pandocParams, outputFile);
   debugPandoc("input: " + inputFile);
   debugPandoc("Args: " + JSON.stringify(pandocArgs));
   
-  return new Promise((resolve, reject) => {
-    // Use execFile instead of node-pandoc for better error handling
-    execFile("pandoc", [inputFile, ...pandocArgs], (err, stdout, stderr) => {
-      if (err) {
-        // Check if output file was created despite error/warning
-        if (fs.existsSync(outputFile)) {
-          // File created successfully, stderr was just a warning
-          if (stderr) {
-            const warningMsg = stderr.trim();
-            if (warningMsg) {
-              console.log("   ⚠ Pandoc warning: " + warningMsg.split("\n")[0]);
-              debugPandoc("Full warning: " + warningMsg);
-            }
-          }
-          console.log("   ✓ Generated " + path.parse(outputFile).base);
-          resolve(outputFile);
-        } else {
-          // Real error - file not created
-          console.error("\n❌ Pandoc error:");
-          if (err.code === "ENOENT") {
-            console.error("   Pandoc not found. Make sure it's installed and in your PATH");
-            console.error("   Install: https://pandoc.org/installing.html");
-          } else {
-            console.error("   " + (stderr ? stderr.trim() : err.message));
-            console.error("   Docs: https://pandoc.org/MANUAL.html");
-          }
-          reject(err);
+  try {
+    const { stderr } = await execFileAsync("pandoc", [inputFile, ...pandocArgs]);
+    
+    // Show any warnings even on success
+    if (stderr && stderr.trim()) {
+      const warningMsg = stderr.trim();
+      console.log("   ⚠ " + warningMsg.split("\n")[0]);
+      debugPandoc("Full output: " + warningMsg);
+    }
+    console.log("   ✓ Generated " + path.parse(outputFile).base);
+    return outputFile;
+  } catch (err) {
+    // Check if output file was created despite error/warning
+    if (fs.existsSync(outputFile)) {
+      // File created successfully, stderr was just a warning
+      if (err.stderr) {
+        const warningMsg = err.stderr.trim();
+        if (warningMsg) {
+          console.log("   ⚠ Pandoc warning: " + warningMsg.split("\n")[0]);
+          debugPandoc("Full warning: " + warningMsg);
         }
-      } else {
-        // Show any warnings even on success
-        if (stderr && stderr.trim()) {
-          const warningMsg = stderr.trim();
-          console.log("   ⚠ " + warningMsg.split("\n")[0]);
-          debugPandoc("Full output: " + warningMsg);
-        }
-        console.log("   ✓ Generated " + path.parse(outputFile).base);
-        resolve(outputFile);
       }
-    });
-  });
+      console.log("   ✓ Generated " + path.parse(outputFile).base);
+      return outputFile;
+    } else {
+      // Real error - file not created
+      console.error("\n❌ Pandoc error:");
+      if (err.code === "ENOENT") {
+        console.error("   Pandoc not found. Make sure it's installed and in your PATH");
+        console.error("   Install: https://pandoc.org/installing.html");
+      } else {
+        console.error("   " + (err.stderr ? err.stderr.trim() : err.message));
+        console.error("   Docs: https://pandoc.org/MANUAL.html");
+      }
+      throw err;
+    }
+  }
 }
 
 // Input and Output files are expected to be ABS

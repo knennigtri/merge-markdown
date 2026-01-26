@@ -1,0 +1,10 @@
+---
+input:
+  ../../../src/theme/frontmatter.md: ""
+  ../m1/: {noYAML: true}
+  "pattern:../m2/.*example.*\\.md": {doctoc: true}
+output:
+  name: ../merged/mixed-test.md
+  doctoc: true
+qa: {exclude: "(frontmatter)"}
+---

@@ -1,0 +1,13 @@
+---
+# This pattern tries to match files in the parent directory (../)
+# Expected to match: ../asset-links.md, ../headers.md, ../markdown-examples.md
+# Pattern: \.\./.*\.md means paths starting with "../" and ending with ".md"
+# This is an edge case test - patterns may not traverse to parent directories
+# Expected: Produces empty list (which should fail gracefully with "Invalid list")
+input:
+  "pattern:\\.\\./.*\\.md": {noYAML: true, doctoc: true}
+output:
+  name: ../merged/pattern-parent-test.md
+  doctoc: true
+qa: {exclude: "(frontmatter)"}
+---

@@ -1,0 +1,19 @@
+---
+input:
+ ../../../src/theme/frontmatter.md: ''
+ ../m1/m1-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 1:"}}
+ ../m2/m2-example.md: {noYAML: true, TOC: true, replace: {<!--#-->: "Module 2:"}}
+output:
+ name: "../merged/deprecated-manifest.md"
+qa: {exclude: "(frontmatter)"}
+TOC: true
+replace:
+ <!--{copyrightYear}-->: 2022
+ <!--{author}-->: Ronan Boxer
+mergedTOC: true
+pandoc:
+ css: -c ../../../src/theme/theme.css
+wkhtmltopdf:
+ marginBottom: 1in
+ marginTop: 1in
+---

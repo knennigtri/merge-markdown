@@ -1,0 +1,12 @@
+---
+input:
+  ../m1/: {noYAML: true, doctoc: true, replace: {"<!--#-->": "Module 1:"}}
+  ../m2/: {noYAML: true, doctoc: true, replace: {"<!--#-->": "Module 2:"}}
+output:
+  name: ../merged/folder-test.md
+  doctoc: true
+qa: {exclude: "(frontmatter)"}
+replace:
+  <!--{copyrightYear}-->: 2024
+  <!--{timestamp}-->: 01/24/2026
+---

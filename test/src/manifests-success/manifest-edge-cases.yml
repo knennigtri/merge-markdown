@@ -1,0 +1,9 @@
+---
+input:
+  ../nonexistent-folder/: {noYAML: true}
+  "pattern:thispatternmatchesnothing\\.md": {doctoc: true}
+  ../m1/: {noYAML: true}
+output:
+  name: ../merged/edge-cases-test.md
+  doctoc: true
+---
